@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -26,6 +27,11 @@ class _PairingScreenState extends State<PairingScreen> {
   @override
   void initState() {
     super.initState();
+    // Contrairement à l'écran de conduite (verrouillé en paysage), le scan
+    // du QR code doit rester libre : le portrait est souvent plus pratique
+    // pour viser l'écran du PC. Réaffirmé ici au cas où on revienne depuis
+    // l'écran de conduite, qui verrouille le paysage.
+    SystemChrome.setPreferredOrientations(DeviceOrientation.values);
     _requestCameraPermission();
   }
 
