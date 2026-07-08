@@ -73,6 +73,17 @@ class BeamngClient {
     _stateController.add(s);
   }
 
+  void _startControlTimer() {
+    _controlTimer?.cancel();
+    final interval = _modActive
+        ? ModProtocol.controlIntervalMs
+        : controlIntervalMs;
+    _controlTimer = Timer.periodic(
+      Duration(milliseconds: interval),
+      (_) => _sendControlPacket(),
+    );
+  }
+
   /// Lance la découverte + le handshake natif avec le code lu sur le QR
   /// code, démarre l'envoi de contrôle, puis sonde discrètement la
   /// présence du mod optionnel.
@@ -182,10 +193,7 @@ class BeamngClient {
     // maintenant complété.
     _controlSocket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, 0);
 
-    _controlTimer = Timer.periodic(
-      Duration(milliseconds: controlIntervalMs),
-      (_) => _sendControlPacket(),
-    );
+    _startControlTimer();
 
     _setState(BeamngConnectionState.connected);
 
@@ -229,6 +237,7 @@ class BeamngClient {
           _modPingTimer = null;
           _modActive = true;
           _modActiveController.add(true);
+          _startControlTimer(); // passe à 16ms (~60Hz) pour le mod
         }
         return;
       }

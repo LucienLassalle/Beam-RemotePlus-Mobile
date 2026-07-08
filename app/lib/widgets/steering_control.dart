@@ -53,7 +53,9 @@ class _SteeringControlState extends State<SteeringControl> {
       widget.onSteeringChanged(0.5);
       return;
     }
-    _tiltSub = accelerometerEventStream().listen((event) {
+    _tiltSub = accelerometerEventStream(
+      samplingPeriod: SensorInterval.gameInterval,
+    ).listen((event) {
       final angle =
           math.asin(
             (event.y /
