@@ -3,6 +3,11 @@ import 'package:flutter/material.dart';
 /// Pédale verticale analogique : la position du doigt dans la zone définit
 /// directement la valeur 0.0-1.0 envoyée au jeu (pas juste appuyé/relâché
 /// comme l'ancienne app). Relâcher ramène la valeur à 0.
+///
+/// Implémenté avec [Listener] (événements pointeur bruts) plutôt qu'un
+/// GestureDetector : évite la compétition de gestes qui déclenchait un
+/// onTapCancel après ~500ms de maintien, réinitialisant la pédale à 0 et
+/// faisant disparaître l'interface si le geste système interceptait le touch.
 class PedalControl extends StatefulWidget {
   final String label;
   final Color color;
@@ -22,8 +27,8 @@ class PedalControl extends StatefulWidget {
 class _PedalControlState extends State<PedalControl> {
   double _value = 0;
 
-  void _setValue(double v, BoxConstraints constraints) {
-    final clamped = (1 - v / constraints.maxHeight).clamp(0.0, 1.0);
+  void _setValue(double dy, BoxConstraints constraints) {
+    final clamped = (1 - dy / constraints.maxHeight).clamp(0.0, 1.0);
     setState(() => _value = clamped);
     widget.onChanged(clamped);
   }
@@ -37,14 +42,11 @@ class _PedalControlState extends State<PedalControl> {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        return GestureDetector(
-          onVerticalDragUpdate: (d) =>
-              _setValue(d.localPosition.dy, constraints),
-          onVerticalDragEnd: (_) => _release(),
-          onVerticalDragCancel: _release,
-          onTapDown: (d) => _setValue(d.localPosition.dy, constraints),
-          onTapUp: (_) => _release(),
-          onTapCancel: _release,
+        return Listener(
+          onPointerDown: (e) => _setValue(e.localPosition.dy, constraints),
+          onPointerMove: (e) => _setValue(e.localPosition.dy, constraints),
+          onPointerUp: (_) => _release(),
+          onPointerCancel: (_) => _release(),
           child: Container(
             width: 84,
             decoration: BoxDecoration(
