@@ -278,6 +278,15 @@ class BeamngClient {
     }
   }
 
+  /// Envoie une commande textuelle au mod (ex: changement de véhicule).
+  /// Sans effet si le mod n'est pas actif ou la connexion absente.
+  void sendCommand(String command) {
+    final sock = _modSocket;
+    final host = _hostAddress;
+    if (sock == null || host == null || !_modActive) return;
+    sock.send(utf8.encode(command), host, ModProtocol.hostPort);
+  }
+
   /// Met à jour les commandes envoyées au prochain tick. À appeler depuis
   /// l'UI (volant, pédales) aussi souvent que nécessaire ; l'envoi réel est
   /// cadencé par [controlIntervalMs] (natif) ou [ModProtocol.controlIntervalMs]

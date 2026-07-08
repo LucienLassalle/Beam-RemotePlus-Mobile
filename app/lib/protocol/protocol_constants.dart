@@ -27,11 +27,11 @@ class BeamngProtocol {
 }
 
 /// Constantes du protocole complémentaire ouvert par le mod optionnel
-/// Beam-RemotePlus (télémétrie riche + pédales analogiques). Absent du
-/// jeu natif ; l'app sonde ce canal et se dégrade proprement s'il ne
-/// répond pas.
+/// Beam-RemotePlus (télémétrie riche + pédales analogiques + commandes).
+/// Absent du jeu natif ; l'app sonde ce canal et se dégrade proprement
+/// s'il ne répond pas.
 class ModProtocol {
-  /// Port sur lequel le mod écoute (ping + contrôle), côté PC.
+  /// Port sur lequel le mod écoute (ping + contrôle + commandes), côté PC.
   static const int hostPort = 4446;
 
   /// Port sur lequel l'app écoute (pong + télémétrie), côté téléphone.
@@ -42,4 +42,10 @@ class ModProtocol {
 
   static const int pingTimeoutMs = 600;
   static const int controlIntervalMs = 16; // ~60Hz
+
+  // Commandes textuelles (préfixe 'cmd|'), toujours >12 octets donc
+  // distinguables des paquets de contrôle binaires (exactement 12 octets).
+  static const String cmdPrefix = 'cmd|';
+  static const String cmdNextVehicle = 'cmd|next_vehicle';
+  static const String cmdPrevVehicle = 'cmd|prev_vehicle';
 }
