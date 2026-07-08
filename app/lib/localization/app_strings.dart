@@ -110,5 +110,13 @@ class Strings {
       AppLanguage.fr: 'Connexion perdue.',
       AppLanguage.en: 'Connection lost.',
     },
+    'vehicle_prev': {
+      AppLanguage.fr: 'Véhicule précédent',
+      AppLanguage.en: 'Previous vehicle',
+    },
+    'vehicle_next': {
+      AppLanguage.fr: 'Véhicule suivant',
+      AppLanguage.en: 'Next vehicle',
+    },
   };
 }

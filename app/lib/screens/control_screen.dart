@@ -8,9 +8,11 @@ import '../localization/app_strings.dart';
 import '../platform/gesture_exclusion.dart';
 import '../protocol/beamng_client.dart';
 import '../protocol/mod_packets.dart';
+import '../protocol/protocol_constants.dart';
 import '../widgets/pedal_control.dart';
 import '../widgets/rpm_led_bar.dart';
 import '../widgets/steering_control.dart';
+import '../widgets/vehicle_switch_buttons.dart';
 
 class ControlScreen extends StatefulWidget {
   final BeamngClient client;
@@ -242,6 +244,19 @@ class _ControlScreenState extends State<ControlScreen>
                           onPressed: _openSettings,
                         ),
                       ],
+                    ),
+                  ),
+                  Positioned(
+                    top: 4,
+                    left: 4,
+                    child: VehicleSwitchButtons(
+                      enabled: _modActive,
+                      onPrev: () => widget.client.sendCommand(
+                        ModProtocol.cmdPrevVehicle,
+                      ),
+                      onNext: () => widget.client.sendCommand(
+                        ModProtocol.cmdNextVehicle,
+                      ),
                     ),
                   ),
                 ],
