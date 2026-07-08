@@ -25,36 +25,40 @@ void main() {
     });
   });
 
-  group('ModProtocol vehicle commands', () {
-    test('cmdNextVehicle commence par cmdPrefix', () {
-      expect(
-        ModProtocol.cmdNextVehicle.startsWith(ModProtocol.cmdPrefix),
-        isTrue,
-      );
+  group('ModProtocol commands', () {
+    final allCmds = [
+      ModProtocol.cmdNextVehicle,
+      ModProtocol.cmdPrevVehicle,
+      ModProtocol.cmdCamNext,
+      ModProtocol.cmdCamPrev,
+    ];
+
+    test('toutes les commandes commencent par cmdPrefix', () {
+      for (final cmd in allCmds) {
+        expect(
+          cmd.startsWith(ModProtocol.cmdPrefix),
+          isTrue,
+          reason: '$cmd ne commence pas par ${ModProtocol.cmdPrefix}',
+        );
+      }
     });
 
-    test('cmdPrevVehicle commence par cmdPrefix', () {
-      expect(
-        ModProtocol.cmdPrevVehicle.startsWith(ModProtocol.cmdPrefix),
-        isTrue,
-      );
-    });
-
-    test('cmdNextVehicle vaut exactement cmd|next_vehicle', () {
+    test('valeurs exactes des constantes', () {
       expect(ModProtocol.cmdNextVehicle, 'cmd|next_vehicle');
-    });
-
-    test('cmdPrevVehicle vaut exactement cmd|prev_vehicle', () {
       expect(ModProtocol.cmdPrevVehicle, 'cmd|prev_vehicle');
+      expect(ModProtocol.cmdCamNext, 'cmd|cam_next');
+      expect(ModProtocol.cmdCamPrev, 'cmd|cam_prev');
     });
 
-    test('les commandes ont plus de 12 octets (distinguables du paquet binaire)', () {
-      expect(ModProtocol.cmdNextVehicle.length, greaterThan(12));
-      expect(ModProtocol.cmdPrevVehicle.length, greaterThan(12));
+    test('toutes les commandes ont plus de 12 octets (distinguables du binaire)', () {
+      for (final cmd in allCmds) {
+        expect(cmd.length, greaterThan(12), reason: '$cmd <= 12 chars');
+      }
     });
 
-    test('les deux commandes sont différentes', () {
-      expect(ModProtocol.cmdNextVehicle, isNot(ModProtocol.cmdPrevVehicle));
+    test('toutes les commandes sont distinctes (pas de collision)', () {
+      final set = allCmds.toSet();
+      expect(set.length, allCmds.length);
     });
   });
 
