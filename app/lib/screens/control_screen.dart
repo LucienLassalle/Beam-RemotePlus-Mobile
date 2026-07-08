@@ -30,10 +30,17 @@ class _ControlScreenState extends State<ControlScreen>
   bool _invertSteering = true;
   bool _useKmh = true;
   bool _hapticsOnShift = false;
-  bool _pitchGearShift = false; // changement de rapport par pitch (boîte manuelle)
+  bool _pitchGearShift = false;
   bool _modActive = false;
   bool _wasShiftLightOn = false;
   Duration? _latency;
+
+  // Recalibration : incrémenter déclenche un reset dans SteeringControl.
+  int _recalibrateCounter = 0;
+
+  // Flash visuel au changement de rapport.
+  Color? _gearFlashColor;
+  Timer? _gearFlashTimer;
 
   StreamSubscription<bool>? _modActiveSub;
   StreamSubscription<ModTelemetryPacket>? _modTelemetrySub;
@@ -94,9 +101,18 @@ class _ControlScreenState extends State<ControlScreen>
     if (state == AppLifecycleState.resumed) _applyImmersiveMode();
   }
 
+  void _triggerGearFlash({required bool isUp}) {
+    _gearFlashTimer?.cancel();
+    setState(() => _gearFlashColor = isUp ? Colors.cyanAccent : Colors.orangeAccent);
+    _gearFlashTimer = Timer(const Duration(milliseconds: 280), () {
+      if (mounted) setState(() => _gearFlashColor = null);
+    });
+  }
+
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _gearFlashTimer?.cancel();
     WakelockPlus.disable();
     SystemChrome.setPreferredOrientations(DeviceOrientation.values);
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
@@ -181,6 +197,40 @@ class _ControlScreenState extends State<ControlScreen>
                           setState(() => _pitchGearShift = v);
                         },
                 ),
+                // ── Options avancées ──────────────────────────────────────
+                const Divider(height: 24),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 16, bottom: 4),
+                    child: Text(
+                      Strings.t('settings_advanced_title'),
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: Colors.white38,
+                            letterSpacing: 1.2,
+                          ),
+                    ),
+                  ),
+                ),
+                ListTile(
+                  title: Text(Strings.t('settings_recalibrate_title')),
+                  subtitle: Text(Strings.t('settings_recalibrate_subtitle')),
+                  enabled: _tiltMode,
+                  trailing: const Icon(Icons.my_location, size: 20),
+                  onTap: !_tiltMode
+                      ? null
+                      : () {
+                          setState(() => _recalibrateCounter++);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content:
+                                  Text(Strings.t('settings_recalibrate_done')),
+                              duration: const Duration(seconds: 2),
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        },
+                ),
               ],
             ),
           ),
@@ -190,6 +240,78 @@ class _ControlScreenState extends State<ControlScreen>
   }
 
   void _sendCmd(String cmd) => widget.client.sendCommand(cmd);
+
+  void _openHelp() {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Text(
+                  Strings.t('help_title'),
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ),
+              const SizedBox(height: 12),
+              _HelpRow(
+                icon: Icons.swipe_left_alt,
+                color: Colors.redAccent,
+                title: Strings.t('help_brake'),
+                desc: Strings.t('help_brake_desc'),
+              ),
+              _HelpRow(
+                icon: Icons.swipe_right_alt,
+                color: Colors.greenAccent,
+                title: Strings.t('help_throttle'),
+                desc: Strings.t('help_throttle_desc'),
+              ),
+              if (_tiltMode)
+                _HelpRow(
+                  icon: Icons.screen_rotation,
+                  color: Colors.blueAccent,
+                  title: Strings.t('help_steering_tilt'),
+                  desc: Strings.t('help_steering_tilt_desc'),
+                )
+              else
+                _HelpRow(
+                  icon: Icons.drag_handle,
+                  color: Colors.blueAccent,
+                  title: Strings.t('help_steering_touch'),
+                  desc: Strings.t('help_steering_touch_desc'),
+                ),
+              if (_tiltMode && _pitchGearShift)
+                _HelpRow(
+                  icon: Icons.arrow_upward,
+                  color: Colors.cyanAccent,
+                  title: Strings.t('help_gear_pitch'),
+                  desc: Strings.t('help_gear_pitch_desc'),
+                  modRequired: true,
+                ),
+              _HelpRow(
+                icon: Icons.skip_previous,
+                color: Colors.white54,
+                title: Strings.t('help_vehicle'),
+                desc: Strings.t('help_vehicle_desc'),
+                modRequired: true,
+              ),
+              _HelpRow(
+                icon: Icons.flip_camera_android,
+                color: Colors.white54,
+                title: Strings.t('help_camera'),
+                desc: Strings.t('help_camera_desc'),
+                modRequired: true,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -224,6 +346,7 @@ class _ControlScreenState extends State<ControlScreen>
                   tiltMode: false,
                   sensitivity: _sensitivity,
                   invert: _invertSteering,
+                  recalibrateCounter: _recalibrateCounter,
                   onSteeringChanged: (v) =>
                       widget.client.updateControls(steering: v),
                 ),
@@ -236,13 +359,20 @@ class _ControlScreenState extends State<ControlScreen>
                   tiltMode: true,
                   sensitivity: _sensitivity,
                   invert: _invertSteering,
+                  recalibrateCounter: _recalibrateCounter,
                   onSteeringChanged: (v) =>
                       widget.client.updateControls(steering: v),
                   onGearUp: (_pitchGearShift && _modActive)
-                      ? () => _sendCmd(ModProtocol.cmdGearUp)
+                      ? () {
+                          _sendCmd(ModProtocol.cmdGearUp);
+                          _triggerGearFlash(isUp: true);
+                        }
                       : null,
                   onGearDown: (_pitchGearShift && _modActive)
-                      ? () => _sendCmd(ModProtocol.cmdGearDown)
+                      ? () {
+                          _sendCmd(ModProtocol.cmdGearDown);
+                          _triggerGearFlash(isUp: false);
+                        }
                       : null,
                 ),
               ),
@@ -271,7 +401,17 @@ class _ControlScreenState extends State<ControlScreen>
                 ),
               ),
 
-            // ── Couche 4 : statut + réglages (haut droite) ──────────────
+            // ── Couche 3b : flash visuel changement de rapport ──────────
+            if (_gearFlashColor != null)
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: Container(
+                    color: _gearFlashColor!.withValues(alpha: 0.22),
+                  ),
+                ),
+              ),
+
+            // ── Couche 4 : statut + réglages + aide (haut droite) ───────
             Positioned(
               top: 4,
               right: 4,
@@ -280,6 +420,12 @@ class _ControlScreenState extends State<ControlScreen>
                   _StatusChip(
                     connectionState: widget.client.state,
                     latency: _latency,
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.help_outline, color: Colors.white54),
+                    iconSize: 20,
+                    onPressed: _openHelp,
+                    tooltip: '?',
                   ),
                   IconButton(
                     icon: const Icon(Icons.settings, color: Colors.white70),
@@ -480,6 +626,70 @@ class _MiniGauge extends StatelessWidget {
                 color:
                     ratio > 0.85 ? Colors.redAccent : Colors.blueAccent,
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HelpRow extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final String title;
+  final String desc;
+  final bool modRequired;
+
+  const _HelpRow({
+    required this.icon,
+    required this.color,
+    required this.title,
+    required this.desc,
+    this.modRequired = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: color, size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(title,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w600, fontSize: 13)),
+                    if (modRequired) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 5, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: Colors.white12,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          Strings.t('help_mod_required'),
+                          style: const TextStyle(
+                              fontSize: 9, color: Colors.white38),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Text(desc,
+                    style: const TextStyle(
+                        fontSize: 12, color: Colors.white54)),
+              ],
             ),
           ),
         ],

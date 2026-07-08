@@ -27,6 +27,10 @@ class SteeringControl extends StatefulWidget {
   /// Angle de pitch (degrés) au-delà de la position de repos pour déclencher.
   final double gearShiftThresholdDeg;
 
+  /// Incrémentez cette valeur pour déclencher une recalibration immédiate
+  /// (réinitialise la position de repos mesurée au démarrage).
+  final int recalibrateCounter;
+
   const SteeringControl({
     super.key,
     required this.onSteeringChanged,
@@ -36,6 +40,7 @@ class SteeringControl extends StatefulWidget {
     this.onGearUp,
     this.onGearDown,
     this.gearShiftThresholdDeg = 25,
+    this.recalibrateCounter = 0,
   });
 
   @override
@@ -62,7 +67,12 @@ class _SteeringControlState extends State<SteeringControl> {
   @override
   void didUpdateWidget(covariant SteeringControl oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.tiltMode != oldWidget.tiltMode) _updateTiltSubscription();
+    if (widget.tiltMode != oldWidget.tiltMode) {
+      _updateTiltSubscription();
+    } else if (widget.recalibrateCounter != oldWidget.recalibrateCounter) {
+      // Recalibration manuelle : réinitialise sans couper le stream.
+      _resetCalibration();
+    }
   }
 
   @override

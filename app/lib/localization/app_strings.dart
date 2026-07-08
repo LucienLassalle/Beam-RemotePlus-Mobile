@@ -134,5 +134,85 @@ class Strings {
       AppLanguage.fr: 'Avant = montée · Arrière = descente (boîte manuelle)',
       AppLanguage.en: 'Forward = up · Backward = down (manual gearbox)',
     },
+    'settings_advanced_title': {
+      AppLanguage.fr: 'Options avancées',
+      AppLanguage.en: 'Advanced',
+    },
+    'settings_recalibrate_title': {
+      AppLanguage.fr: 'Recalibrer la direction',
+      AppLanguage.en: 'Recalibrate steering',
+    },
+    'settings_recalibrate_subtitle': {
+      AppLanguage.fr: 'Remet le centre à zéro depuis la position actuelle',
+      AppLanguage.en: 'Re-zeroes the center from current holding position',
+    },
+    'settings_recalibrate_done': {
+      AppLanguage.fr: 'Calibration lancée…',
+      AppLanguage.en: 'Recalibrating…',
+    },
+    'help_title': {
+      AppLanguage.fr: 'Aide — Contrôles',
+      AppLanguage.en: 'Help — Controls',
+    },
+    'help_brake': {
+      AppLanguage.fr: 'Frein',
+      AppLanguage.en: 'Brake',
+    },
+    'help_brake_desc': {
+      AppLanguage.fr: 'Zone gauche : glisser vers le haut',
+      AppLanguage.en: 'Left zone: slide up',
+    },
+    'help_throttle': {
+      AppLanguage.fr: 'Accélérateur',
+      AppLanguage.en: 'Throttle',
+    },
+    'help_throttle_desc': {
+      AppLanguage.fr: 'Zone droite : glisser vers le haut',
+      AppLanguage.en: 'Right zone: slide up',
+    },
+    'help_steering_tilt': {
+      AppLanguage.fr: 'Direction (inclinaison)',
+      AppLanguage.en: 'Steering (tilt)',
+    },
+    'help_steering_tilt_desc': {
+      AppLanguage.fr: 'Incliner le téléphone gauche / droite',
+      AppLanguage.en: 'Tilt phone left / right',
+    },
+    'help_steering_touch': {
+      AppLanguage.fr: 'Direction (tactile)',
+      AppLanguage.en: 'Steering (touch)',
+    },
+    'help_steering_touch_desc': {
+      AppLanguage.fr: 'Glisser le doigt horizontalement (centre)',
+      AppLanguage.en: 'Drag finger horizontally (center)',
+    },
+    'help_gear_pitch': {
+      AppLanguage.fr: 'Changement de rapport',
+      AppLanguage.en: 'Gear shift',
+    },
+    'help_gear_pitch_desc': {
+      AppLanguage.fr: 'Pitch avant = montée · Pitch arrière = descente (mod + boîte manuelle)',
+      AppLanguage.en: 'Pitch forward = up · Pitch back = down (mod + manual gearbox)',
+    },
+    'help_vehicle': {
+      AppLanguage.fr: 'Changer de véhicule',
+      AppLanguage.en: 'Switch vehicle',
+    },
+    'help_vehicle_desc': {
+      AppLanguage.fr: 'Boutons ◀ ▶ en haut à gauche (mod requis)',
+      AppLanguage.en: '◀ ▶ buttons top-left (mod required)',
+    },
+    'help_camera': {
+      AppLanguage.fr: 'Changer de caméra',
+      AppLanguage.en: 'Switch camera',
+    },
+    'help_camera_desc': {
+      AppLanguage.fr: 'Boutons caméra en bas au centre (mod requis)',
+      AppLanguage.en: 'Camera buttons bottom-center (mod required)',
+    },
+    'help_mod_required': {
+      AppLanguage.fr: 'Mod requis',
+      AppLanguage.en: 'Mod required',
+    },
   };
 }

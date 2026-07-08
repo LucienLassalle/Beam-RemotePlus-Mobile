@@ -93,16 +93,14 @@ class BeamngClient {
 
     final info = NetworkInfo();
     final myIp = await info.getWifiIP();
-    final broadcastIp = await info.getWifiBroadcast();
-
-    if (myIp == null || broadcastIp == null) {
-      _setState(BeamngConnectionState.error);
-      throw StateError(
-        'Impossible de déterminer l\'adresse WiFi locale. '
-        'Vérifiez que le téléphone est bien connecté en WiFi, '
-        'sur le même réseau que le PC.',
-      );
-    }
+    // En mode point d'accès mobile, getWifiIP() renvoie null (le chip WiFi
+    // est en AP, pas en STA). On se rabat sur anyIPv4 pour la socket de
+    // réception et sur le broadcast global 255.255.255.255 pour l'envoi :
+    // le PC connecté à l'AP reçoit quand même la diffusion et répond à
+    // l'IP de la passerelle (le téléphone), que anyIPv4 capture.
+    final broadcastIp = await info.getWifiBroadcast() ?? '255.255.255.255';
+    final bindAddress =
+        myIp != null ? InternetAddress(myIp) : InternetAddress.anyIPv4;
 
     final deviceName = await _resolveDeviceName();
     final handshakeMessage =
@@ -111,7 +109,7 @@ class BeamngClient {
         '${BeamngProtocol.handshakePrefix}|$securityCode';
 
     final socket = await RawDatagramSocket.bind(
-      InternetAddress(myIp),
+      bindAddress,
       BeamngProtocol.clientPort,
       reuseAddress: true,
     );
