@@ -126,5 +126,13 @@ class Strings {
       AppLanguage.fr: 'Caméra suivante',
       AppLanguage.en: 'Next camera',
     },
+    'settings_pitch_gear_title': {
+      AppLanguage.fr: 'Changement de vitesse au pitch',
+      AppLanguage.en: 'Pitch gear shifting',
+    },
+    'settings_pitch_gear_subtitle': {
+      AppLanguage.fr: 'Avant = montée · Arrière = descente (boîte manuelle)',
+      AppLanguage.en: 'Forward = up · Backward = down (manual gearbox)',
+    },
   };
 }

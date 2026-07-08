@@ -30,6 +30,7 @@ class _ControlScreenState extends State<ControlScreen>
   bool _invertSteering = true;
   bool _useKmh = true;
   bool _hapticsOnShift = false;
+  bool _pitchGearShift = false; // changement de rapport par pitch (boîte manuelle)
   bool _modActive = false;
   bool _wasShiftLightOn = false;
   Duration? _latency;
@@ -169,6 +170,17 @@ class _ControlScreenState extends State<ControlScreen>
                           setState(() => _hapticsOnShift = v);
                         },
                 ),
+                SwitchListTile(
+                  title: Text(Strings.t('settings_pitch_gear_title')),
+                  subtitle: Text(Strings.t('settings_pitch_gear_subtitle')),
+                  value: _pitchGearShift,
+                  onChanged: !_tiltMode
+                      ? null
+                      : (v) {
+                          setSheetState(() => _pitchGearShift = v);
+                          setState(() => _pitchGearShift = v);
+                        },
+                ),
               ],
             ),
           ),
@@ -202,7 +214,7 @@ class _ControlScreenState extends State<ControlScreen>
                   : const _MinimalDashboard(),
             ),
 
-            // ── Couche 2 : volant (mode tactile uniquement) ─────────────
+            // ── Couche 2 : volant ────────────────────────────────────────
             if (!_tiltMode)
               Positioned(
                 bottom: 20,
@@ -217,8 +229,6 @@ class _ControlScreenState extends State<ControlScreen>
                 ),
               )
             else
-              // En mode inclinaison : le SteeringControl n'affiche rien
-              // mais doit quand même exister pour émettre les données.
               Positioned(
                 width: 0,
                 height: 0,
@@ -228,6 +238,12 @@ class _ControlScreenState extends State<ControlScreen>
                   invert: _invertSteering,
                   onSteeringChanged: (v) =>
                       widget.client.updateControls(steering: v),
+                  onGearUp: (_pitchGearShift && _modActive)
+                      ? () => _sendCmd(ModProtocol.cmdGearUp)
+                      : null,
+                  onGearDown: (_pitchGearShift && _modActive)
+                      ? () => _sendCmd(ModProtocol.cmdGearDown)
+                      : null,
                 ),
               ),
 
