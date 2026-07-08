@@ -8,26 +8,23 @@ import 'package:sensors_plus/sensors_plus.dart';
 /// du téléphone (accéléromètre), au choix. Émet une valeur 0.0 (droite) à
 /// 1.0 (gauche), 0.5 = centre — même convention que le protocole natif.
 ///
-/// Pas de filtre EMA supplémentaire : Android filtre déjà en interne, et
-/// tout filtre applicatif introduit exactement la "linéarité" (lag sur
-/// changement brusque de direction) que l'on cherche à éviter.
+/// Calibration automatique : les [_calibSamples] premiers échantillons
+/// établissent la position de repos (zéro absolu). La direction et le pitch
+/// sont ensuite mesurés RELATIVEMENT à cette position, ce qui corrige les
+/// biais d'accéléromètre et la tenue naturelle du téléphone.
 ///
-/// Fonctionnalité optionnelle : changement de rapport par pitch.
-/// Pencher le téléphone vers l'avant = montée de rapport, vers l'arrière =
-/// descente. Activé uniquement si [onGearUp]/[onGearDown] sont fournis.
+/// Pas de filtre EMA : Android filtre déjà en interne, et tout filtre
+/// applicatif réintroduit le "lag sur changement de direction".
 class SteeringControl extends StatefulWidget {
   final ValueChanged<double> onSteeringChanged;
   final bool tiltMode;
   final double sensitivity;
   final bool invert;
 
-  /// Si non null, un pitch > [gearShiftThresholdDeg] déclenche onGearUp.
   final VoidCallback? onGearUp;
-
-  /// Si non null, un pitch < -[gearShiftThresholdDeg] déclenche onGearDown.
   final VoidCallback? onGearDown;
 
-  /// Angle de pitch (degrés) à dépasser pour déclencher un changement.
+  /// Angle de pitch (degrés) au-delà de la position de repos pour déclencher.
   final double gearShiftThresholdDeg;
 
   const SteeringControl({
@@ -38,7 +35,7 @@ class SteeringControl extends StatefulWidget {
     this.invert = false,
     this.onGearUp,
     this.onGearDown,
-    this.gearShiftThresholdDeg = 28,
+    this.gearShiftThresholdDeg = 25,
   });
 
   @override
@@ -48,16 +45,24 @@ class SteeringControl extends StatefulWidget {
 class _SteeringControlState extends State<SteeringControl> {
   StreamSubscription<AccelerometerEvent>? _tiltSub;
 
-  // Debounce gear shift : on ne peut déclencher qu'un shift par passage
-  // par la zone neutre (évite les shifts répétés tant qu'incliné).
-  bool _gearArmed = true; // true = prêt à déclencher un shift
+  // ── Calibration ─────────────────────────────────────────────────────────
+  static const int _calibSamples = 20;
+  int _calibCount = 0;
+  double _accumX = 0, _accumY = 0, _accumZ = 0;
+  double _restX = 0, _restY = 0, _restMag = 1;
+  bool _calibrated = false;
+
+  // ── Gear shift debounce ──────────────────────────────────────────────────
+  // Un seul shift par passage par la zone neutre ; + cooldown 600 ms.
+  bool _gearArmed = true;
+  DateTime _lastShift = DateTime.fromMillisecondsSinceEpoch(0);
+  static const Duration _shiftCooldown = Duration(milliseconds: 600);
+  static const double _neutralZoneDeg = 20.0;
 
   @override
   void didUpdateWidget(covariant SteeringControl oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.tiltMode != oldWidget.tiltMode) {
-      _updateTiltSubscription();
-    }
+    if (widget.tiltMode != oldWidget.tiltMode) _updateTiltSubscription();
   }
 
   @override
@@ -66,10 +71,17 @@ class _SteeringControlState extends State<SteeringControl> {
     _updateTiltSubscription();
   }
 
+  void _resetCalibration() {
+    _calibCount = 0;
+    _accumX = _accumY = _accumZ = 0;
+    _calibrated = false;
+    _gearArmed = true;
+  }
+
   void _updateTiltSubscription() {
     _tiltSub?.cancel();
     _tiltSub = null;
-    _gearArmed = true;
+    _resetCalibration();
     if (!widget.tiltMode) {
       widget.onSteeringChanged(0.5);
       return;
@@ -80,47 +92,77 @@ class _SteeringControlState extends State<SteeringControl> {
   }
 
   void _onAccelerometerEvent(AccelerometerEvent event) {
-    // ── Direction (roll en mode paysage) ───────────────────────────────
-    final magnitude = math.sqrt(
+    final mag = math.sqrt(
       event.x * event.x + event.y * event.y + event.z * event.z,
     );
-    if (magnitude < 0.01) return; // téléphone en apesanteur, ignorer
+    if (mag < 0.5) return; // quasi-apesanteur, ignorer
 
-    final rollAngle =
-        math.asin((event.y / magnitude).clamp(-1.0, 1.0)) * 180 / math.pi;
-    final sign = widget.invert ? 1 : -1;
+    // ── Phase de calibration (premiers échantillons) ─────────────────────
+    if (!_calibrated) {
+      _accumX += event.x;
+      _accumY += event.y;
+      _accumZ += event.z;
+      _calibCount++;
+      if (_calibCount >= _calibSamples) {
+        _restX = _accumX / _calibSamples;
+        _restY = _accumY / _calibSamples;
+        final rz = _accumZ / _calibSamples;
+        _restMag = math.sqrt(_restX * _restX + _restY * _restY + rz * rz);
+        if (_restMag < 0.5) _restMag = 9.81; // sécurité
+        _calibrated = true;
+      }
+      // Pendant la calibration, émettre le centre pour ne pas avoir de
+      // saut brusque au premier échantillon calibré.
+      widget.onSteeringChanged(0.5);
+      return;
+    }
+
+    // ── Direction (roll en mode paysage) ─────────────────────────────────
+    // On mesure l'angle de roulis courant MOINS l'angle de repos calibré,
+    // ce qui annule tout biais d'offset ou d'inclinaison naturelle du tél.
+    final rawRollDeg =
+        math.asin((event.y / mag).clamp(-1.0, 1.0)) * 180 / math.pi;
+    final restRollDeg =
+        math.asin((_restY / _restMag).clamp(-1.0, 1.0)) * 180 / math.pi;
+    final rollDeg = rawRollDeg - restRollDeg;
+
+    final sign = widget.invert ? 1.0 : -1.0;
+    // sensitivity=1.0 → ±45° = lock complet ; 0.6 → ±75°.
+    final maxDeg = 45.0 / widget.sensitivity;
     final steering =
-        (sign * rollAngle * widget.sensitivity / 75).clamp(-0.5, 0.5) + 0.5;
+        (sign * rollDeg / maxDeg / 2).clamp(-0.5, 0.5) + 0.5;
     widget.onSteeringChanged(steering.clamp(0.0, 1.0));
 
-    // ── Pitch (avant/arrière) → changement de rapport ─────────────────
-    _checkGearShift(event, magnitude);
+    // ── Pitch (avant/arrière) → changement de rapport ────────────────────
+    _checkGearShift(event, mag);
   }
 
-  // En mode paysage gauche, l'axe X du capteur mesure le pitch
-  // (inclinaison avant/arrière du téléphone).
-  // Valeur positive = haut de l'écran incliné vers l'utilisateur (recul).
-  // Valeur négative = haut de l'écran éloigné (avancée).
-  void _checkGearShift(AccelerometerEvent event, double magnitude) {
+  void _checkGearShift(AccelerometerEvent event, double mag) {
     if (widget.onGearUp == null && widget.onGearDown == null) return;
 
-    final pitchAngle =
-        math.asin((event.x / magnitude).clamp(-1.0, 1.0)) * 180 / math.pi;
+    // Pitch RELATIF à la position de repos calibrée.
+    final rawPitchDeg =
+        math.asin((event.x / mag).clamp(-1.0, 1.0)) * 180 / math.pi;
+    final restPitchDeg =
+        math.asin((_restX / _restMag).clamp(-1.0, 1.0)) * 180 / math.pi;
+    final pitchDeg = rawPitchDeg - restPitchDeg;
+
     final threshold = widget.gearShiftThresholdDeg;
-    const neutral = 15.0; // zone morte de retour
+    final now = DateTime.now();
 
     if (_gearArmed) {
-      if (pitchAngle < -threshold) {
-        // Avant → montée de rapport
+      if (pitchDeg < -threshold &&
+          now.difference(_lastShift) >= _shiftCooldown) {
         widget.onGearUp?.call();
         _gearArmed = false;
-      } else if (pitchAngle > threshold) {
-        // Arrière → descente de rapport
+        _lastShift = now;
+      } else if (pitchDeg > threshold &&
+          now.difference(_lastShift) >= _shiftCooldown) {
         widget.onGearDown?.call();
         _gearArmed = false;
+        _lastShift = now;
       }
-    } else if (pitchAngle.abs() < neutral) {
-      // Retour en position neutre → prêt pour le prochain shift
+    } else if (pitchDeg.abs() < _neutralZoneDeg) {
       _gearArmed = true;
     }
   }
@@ -138,9 +180,7 @@ class _SteeringControlState extends State<SteeringControl> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.tiltMode) {
-      return const SizedBox.shrink();
-    }
+    if (widget.tiltMode) return const SizedBox.shrink();
 
     return LayoutBuilder(
       builder: (context, constraints) {

@@ -36,8 +36,14 @@ class _ZoneControlsState extends State<ZoneControls> {
   double _brakeVal = 0;
   double _throttleVal = 0;
 
-  double _compute(double dy, double height) =>
-      (1 - dy / height).clamp(0.0, 1.0);
+  // La zone active va du bas (0%) jusqu'à [_topDeadZone] du haut (100%).
+  // Au-delà (doigt dans la zone morte), on renvoie 1.0.
+  static const double _topDeadZone = 0.10;
+
+  double _compute(double dy, double height) {
+    if (dy < height * _topDeadZone) return 1.0;
+    return ((height - dy) / (height * (1 - _topDeadZone))).clamp(0.0, 1.0);
+  }
 
   void _update(Map<int, double> ptrs, bool isLeft) {
     final v = ptrs.isEmpty ? 0.0 : ptrs.values.reduce(math.max);
@@ -203,11 +209,27 @@ class _GradientFillPainter extends CustomPainter {
   final Color color;
   const _GradientFillPainter(this.value, this.color);
 
+  static const double _topDeadZone = 0.10;
+
   @override
   void paint(Canvas canvas, Size size) {
+    // Ligne de démarcation à 90% (limite de la zone active)
+    final boundaryY = size.height * _topDeadZone;
+    final linePaint = Paint()
+      ..color = color.withValues(alpha: 0.25)
+      ..strokeWidth = 1.0;
+    canvas.drawLine(
+      Offset(0, boundaryY),
+      Offset(size.width, boundaryY),
+      linePaint,
+    );
+
     if (value <= 0) return;
-    final fillHeight = size.height * value;
-    final rect = Rect.fromLTWH(0, size.height - fillHeight, size.width, fillHeight);
+    // Le remplissage ne dépasse jamais la ligne des 90%
+    final maxFill = size.height * (1 - _topDeadZone);
+    final fillHeight = maxFill * value;
+    final rect = Rect.fromLTWH(
+        0, size.height - fillHeight, size.width, fillHeight);
     final paint = Paint()
       ..shader = LinearGradient(
         begin: Alignment.bottomCenter,
@@ -223,4 +245,7 @@ class _GradientFillPainter extends CustomPainter {
   @override
   bool shouldRepaint(_GradientFillPainter old) =>
       old.value != value || old.color != color;
+  // La ligne de démarcation est statique : pas besoin de la redessiner si
+  // seule la valeur change, mais shouldRepaint retourne vrai dans ce cas de
+  // toute façon (value change), donc pas d'optimisation supplémentaire.
 }

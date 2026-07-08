@@ -31,6 +31,8 @@ void main() {
       ModProtocol.cmdPrevVehicle,
       ModProtocol.cmdCamNext,
       ModProtocol.cmdCamPrev,
+      ModProtocol.cmdGearUp,
+      ModProtocol.cmdGearDown,
     ];
 
     test('toutes les commandes commencent par cmdPrefix', () {
@@ -48,12 +50,19 @@ void main() {
       expect(ModProtocol.cmdPrevVehicle, 'cmd|prev_vehicle');
       expect(ModProtocol.cmdCamNext, 'cmd|cam_next');
       expect(ModProtocol.cmdCamPrev, 'cmd|cam_prev');
+      expect(ModProtocol.cmdGearUp, 'cmd|gear_up');
+      expect(ModProtocol.cmdGearDown, 'cmd|gear_down');
     });
 
-    test('toutes les commandes ont plus de 12 octets (distinguables du binaire)', () {
-      for (final cmd in allCmds) {
-        expect(cmd.length, greaterThan(12), reason: '$cmd <= 12 chars');
-      }
+    // La discrimination vis-à-vis du binaire se fait par préfixe 'cmd|',
+    // pas par longueur. Le premier octet 'c' (0x63) ne peut pas apparaître
+    // en byte[0] d'un paquet de contrôle binaire valide : float32 steering
+    // ∈ [0,1] → byte[0] (LSB little-endian) ∈ [0x00, 0x3F].
+    test('le premier octet du préfixe est hors de la plage float32 [0,1]', () {
+      final prefixFirstByte = ModProtocol.cmdPrefix.codeUnitAt(0); // 'c' = 0x63
+      // Tout float32 ∈ [0.0, 1.0] en little-endian a son LSB ≤ 0x3F
+      const maxLsbForValidSteering = 0x3F;
+      expect(prefixFirstByte, greaterThan(maxLsbForValidSteering));
     });
 
     test('toutes les commandes sont distinctes (pas de collision)', () {

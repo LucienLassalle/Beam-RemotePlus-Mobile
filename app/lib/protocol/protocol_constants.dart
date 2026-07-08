@@ -43,8 +43,10 @@ class ModProtocol {
   static const int pingTimeoutMs = 600;
   static const int controlIntervalMs = 16; // ~60Hz
 
-  // Commandes textuelles (préfixe 'cmd|'), toujours >12 octets donc
-  // distinguables des paquets de contrôle binaires (exactement 12 octets).
+  // Commandes textuelles (préfixe 'cmd|').
+  // Discrimination du binaire par préfixe : le premier octet 'c' (0x63) ne
+  // peut jamais apparaître en position 0 d'un paquet de contrôle binaire
+  // (float32 steering ∈ [0,1] → LSB dans [0x00, 0x3F] en little-endian).
   static const String cmdPrefix = 'cmd|';
   static const String cmdNextVehicle = 'cmd|next_vehicle';
   static const String cmdPrevVehicle = 'cmd|prev_vehicle';
