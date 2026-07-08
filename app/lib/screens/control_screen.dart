@@ -9,10 +9,10 @@ import '../platform/gesture_exclusion.dart';
 import '../protocol/beamng_client.dart';
 import '../protocol/mod_packets.dart';
 import '../protocol/protocol_constants.dart';
-import '../widgets/pedal_control.dart';
 import '../widgets/rpm_led_bar.dart';
 import '../widgets/steering_control.dart';
 import '../widgets/vehicle_switch_buttons.dart';
+import '../widgets/zone_controls.dart';
 
 class ControlScreen extends StatefulWidget {
   final BeamngClient client;
@@ -34,7 +34,6 @@ class _ControlScreenState extends State<ControlScreen>
   bool _wasShiftLightOn = false;
   Duration? _latency;
 
-  final GlobalKey _controlsRowKey = GlobalKey();
   StreamSubscription<bool>? _modActiveSub;
   StreamSubscription<ModTelemetryPacket>? _modTelemetrySub;
   Timer? _immersiveReasserTimer;
@@ -46,15 +45,16 @@ class _ControlScreenState extends State<ControlScreen>
     WakelockPlus.enable();
     _applyImmersiveMode();
     SystemChrome.setPreferredOrientations([DeviceOrientation.landscapeLeft]);
-    // Sur certains appareils/versions d'Android, une pression prolongée
-    // (n'importe où, pas seulement en bord d'écran) refait réapparaître les
-    // barres système malgré le mode immersif. On le réaffirme donc en
-    // continu plutôt qu'une seule fois, pour limiter la fenêtre visible de
-    // la perturbation au lieu de compter sur un seul appel initial.
+    // Réaffirmation périodique : certains appareils sortent du mode immersif
+    // lors d'un appui prolongé malgré immersiveSticky.
     _immersiveReasserTimer = Timer.periodic(
       const Duration(milliseconds: 800),
       (_) => _applyImmersiveMode(),
     );
+    // Exclure toute la zone de contrôle des gestes système Android au
+    // prochain frame (taille réelle disponible après layout).
+    WidgetsBinding.instance.addPostFrameCallback((_) => _setFullScreenExclusion());
+    Future.delayed(const Duration(milliseconds: 600), _setFullScreenExclusion);
 
     _modActive = widget.client.modActive;
     widget.client.latencyStream.listen((d) {
@@ -69,53 +69,28 @@ class _ControlScreenState extends State<ControlScreen>
       }
       _wasShiftLightOn = t.shiftLight;
     });
-
-    WidgetsBinding.instance.addPostFrameCallback((_) => _updateGestureExclusion());
-    // Rejoue la mesure après que la mise en page se soit stabilisée (les
-    // insets système peuvent encore bouger juste après le premier frame),
-    // au cas où le premier calcul aurait capturé une taille transitoire.
-    Future.delayed(const Duration(milliseconds: 600), _updateGestureExclusion);
   }
 
   void _applyImmersiveMode() {
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
   }
 
-  /// Exclut la zone des pédales/volant (avec une marge généreuse) des
-  /// gestes système Android (retour arrière, panneaux latéraux
-  /// constructeur...), qui sinon interceptent le toucher lors d'un appui
-  /// prolongé près des bords/coins de l'écran et interrompent l'affichage
-  /// de l'app.
-  void _updateGestureExclusion() {
+  void _setFullScreenExclusion() {
     if (!mounted) return;
-    final renderObject = _controlsRowKey.currentContext?.findRenderObject();
-    if (renderObject is! RenderBox || !renderObject.hasSize) return;
-
-    const margin = 40.0;
-    final topLeft = renderObject.localToGlobal(Offset.zero);
-    final size = renderObject.size;
-    final pixelRatio = MediaQuery.of(context).devicePixelRatio;
-
-    final rect = Rect.fromLTWH(
-      (topLeft.dx - margin) * pixelRatio,
-      (topLeft.dy - margin) * pixelRatio,
-      (size.width + margin * 2) * pixelRatio,
-      (size.height + margin * 2) * pixelRatio,
-    );
-
+    final size = MediaQuery.of(context).size;
+    final ratio = MediaQuery.of(context).devicePixelRatio;
+    // Exclut la totalité de l'écran : empêche les gestes système (bord
+    // gauche/droit/bas) d'interférer avec les zones de frein/accélérateur
+    // qui occupent les côtés de l'affichage.
+    final rect = Rect.fromLTWH(0, 0, size.width * ratio, size.height * ratio);
     GestureExclusion.setRects([rect]).catchError((Object e) {
-      debugPrint('GestureExclusion.setRects failed: $e');
+      debugPrint('GestureExclusion error: $e');
     });
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // Android peut ressortir du mode immersif après une révélation
-    // temporaire des barres système (geste depuis le bord de l'écran) ;
-    // on le réaffirme à chaque retour au premier plan.
-    if (state == AppLifecycleState.resumed) {
-      _applyImmersiveMode();
-    }
+    if (state == AppLifecycleState.resumed) _applyImmersiveMode();
   }
 
   @override
@@ -134,162 +109,178 @@ class _ControlScreenState extends State<ControlScreen>
   void _openSettings() {
     showModalBottomSheet(
       context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setSheetState) {
-            // En paysage sur téléphone, la hauteur disponible est faible :
-            // sans défilement, les derniers réglages étaient tronqués
-            // (invisibles) sans aucune erreur visible.
-            return SafeArea(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    Strings.t('settings_title'),
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  SwitchListTile(
-                    title: Text(Strings.t('settings_tilt_title')),
-                    subtitle: Text(Strings.t('settings_tilt_subtitle')),
-                    value: _tiltMode,
-                    onChanged: (v) {
-                      setSheetState(() => _tiltMode = v);
-                      setState(() => _tiltMode = v);
-                    },
-                  ),
-                  ListTile(
-                    title: Text(Strings.t('settings_sensitivity_title')),
-                    subtitle: Slider(
-                      min: 0.2,
-                      max: 1.0,
-                      value: _sensitivity,
-                      onChanged: (v) {
-                        setSheetState(() => _sensitivity = v);
-                        setState(() => _sensitivity = v);
-                      },
-                    ),
-                  ),
-                  SwitchListTile(
-                    title: Text(Strings.t('settings_invert_title')),
-                    value: _invertSteering,
-                    onChanged: (v) {
-                      setSheetState(() => _invertSteering = v);
-                      setState(() => _invertSteering = v);
-                    },
-                  ),
-                  SwitchListTile(
-                    title: Text(Strings.t('settings_unit_title')),
-                    subtitle: Text(Strings.t('settings_unit_subtitle')),
-                    value: _useKmh,
-                    onChanged: (v) {
-                      setSheetState(() => _useKmh = v);
-                      setState(() => _useKmh = v);
-                    },
-                  ),
-                  SwitchListTile(
-                    title: Text(Strings.t('settings_haptics_title')),
-                    subtitle: Text(Strings.t('settings_haptics_subtitle')),
-                    value: _hapticsOnShift,
-                    onChanged: !_modActive
-                        ? null
-                        : (v) {
-                            setSheetState(() => _hapticsOnShift = v);
-                            setState(() => _hapticsOnShift = v);
-                          },
-                  ),
-                ],
+      builder: (context) => StatefulBuilder(
+        builder: (context, setSheetState) => SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  Strings.t('settings_title'),
+                  style: Theme.of(context).textTheme.titleMedium,
                 ),
-              ),
-            );
-          },
-        );
-      },
+                SwitchListTile(
+                  title: Text(Strings.t('settings_tilt_title')),
+                  subtitle: Text(Strings.t('settings_tilt_subtitle')),
+                  value: _tiltMode,
+                  onChanged: (v) {
+                    setSheetState(() => _tiltMode = v);
+                    setState(() => _tiltMode = v);
+                  },
+                ),
+                ListTile(
+                  title: Text(Strings.t('settings_sensitivity_title')),
+                  subtitle: Slider(
+                    min: 0.2,
+                    max: 1.0,
+                    value: _sensitivity,
+                    onChanged: (v) {
+                      setSheetState(() => _sensitivity = v);
+                      setState(() => _sensitivity = v);
+                    },
+                  ),
+                ),
+                SwitchListTile(
+                  title: Text(Strings.t('settings_invert_title')),
+                  value: _invertSteering,
+                  onChanged: (v) {
+                    setSheetState(() => _invertSteering = v);
+                    setState(() => _invertSteering = v);
+                  },
+                ),
+                SwitchListTile(
+                  title: Text(Strings.t('settings_unit_title')),
+                  subtitle: Text(Strings.t('settings_unit_subtitle')),
+                  value: _useKmh,
+                  onChanged: (v) {
+                    setSheetState(() => _useKmh = v);
+                    setState(() => _useKmh = v);
+                  },
+                ),
+                SwitchListTile(
+                  title: Text(Strings.t('settings_haptics_title')),
+                  subtitle: Text(Strings.t('settings_haptics_subtitle')),
+                  value: _hapticsOnShift,
+                  onChanged: !_modActive
+                      ? null
+                      : (v) {
+                          setSheetState(() => _hapticsOnShift = v);
+                          setState(() => _hapticsOnShift = v);
+                        },
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
+
+  void _sendCmd(String cmd) => widget.client.sendCommand(cmd);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
-        child: Column(
+        child: Stack(
           children: [
-            Expanded(
-              child: Stack(
+            // ── Couche 0 : zones tactiles frein / accélérateur ──────────
+            Positioned.fill(
+              child: ZoneControls(
+                onBrakeChanged: (v) => widget.client.updateControls(brake: v),
+                onThrottleChanged: (v) =>
+                    widget.client.updateControls(throttle: v),
+              ),
+            ),
+
+            // ── Couche 1 : tableau de bord centré ───────────────────────
+            Center(
+              child: _modActive
+                  ? _FullDashboard(client: widget.client, useKmh: _useKmh)
+                  : const _MinimalDashboard(),
+            ),
+
+            // ── Couche 2 : volant (mode tactile uniquement) ─────────────
+            if (!_tiltMode)
+              Positioned(
+                bottom: 20,
+                left: MediaQuery.of(context).size.width * 0.33,
+                right: MediaQuery.of(context).size.width * 0.33,
+                child: SteeringControl(
+                  tiltMode: false,
+                  sensitivity: _sensitivity,
+                  invert: _invertSteering,
+                  onSteeringChanged: (v) =>
+                      widget.client.updateControls(steering: v),
+                ),
+              )
+            else
+              // En mode inclinaison : le SteeringControl n'affiche rien
+              // mais doit quand même exister pour émettre les données.
+              Positioned(
+                width: 0,
+                height: 0,
+                child: SteeringControl(
+                  tiltMode: true,
+                  sensitivity: _sensitivity,
+                  invert: _invertSteering,
+                  onSteeringChanged: (v) =>
+                      widget.client.updateControls(steering: v),
+                ),
+              ),
+
+            // ── Couche 3 : boutons caméra (centre, bas) ─────────────────
+            if (_modActive)
+              Positioned(
+                bottom: 8,
+                left: 0,
+                right: 0,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _CamButton(
+                      icon: Icons.photo_camera_back,
+                      tooltip: Strings.t('cam_prev'),
+                      onTap: () => _sendCmd(ModProtocol.cmdCamPrev),
+                    ),
+                    const SizedBox(width: 8),
+                    _CamButton(
+                      icon: Icons.flip_camera_android,
+                      tooltip: Strings.t('cam_next'),
+                      onTap: () => _sendCmd(ModProtocol.cmdCamNext),
+                    ),
+                  ],
+                ),
+              ),
+
+            // ── Couche 4 : statut + réglages (haut droite) ──────────────
+            Positioned(
+              top: 4,
+              right: 4,
+              child: Row(
                 children: [
-                  Center(
-                    child: _modActive
-                        ? _FullDashboard(
-                            client: widget.client,
-                            useKmh: _useKmh,
-                          )
-                        : const _MinimalDashboard(),
+                  _StatusChip(
+                    connectionState: widget.client.state,
+                    latency: _latency,
                   ),
-                  Positioned(
-                    top: 4,
-                    right: 4,
-                    child: Row(
-                      children: [
-                        _StatusChip(
-                          connectionState: widget.client.state,
-                          latency: _latency,
-                        ),
-                        IconButton(
-                          icon: const Icon(
-                            Icons.settings,
-                            color: Colors.white70,
-                          ),
-                          onPressed: _openSettings,
-                        ),
-                      ],
-                    ),
-                  ),
-                  Positioned(
-                    top: 4,
-                    left: 4,
-                    child: VehicleSwitchButtons(
-                      enabled: _modActive,
-                      onPrev: () => widget.client.sendCommand(
-                        ModProtocol.cmdPrevVehicle,
-                      ),
-                      onNext: () => widget.client.sendCommand(
-                        ModProtocol.cmdNextVehicle,
-                      ),
-                    ),
+                  IconButton(
+                    icon: const Icon(Icons.settings, color: Colors.white70),
+                    onPressed: _openSettings,
                   ),
                 ],
               ),
             ),
-            Padding(
-              key: _controlsRowKey,
-              padding: const EdgeInsets.fromLTRB(24, 8, 24, 28),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  PedalControl(
-                    label: Strings.t('pedal_brake'),
-                    color: Colors.redAccent,
-                    onChanged: (v) => widget.client.updateControls(brake: v),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: SteeringControl(
-                      tiltMode: _tiltMode,
-                      sensitivity: _sensitivity,
-                      invert: _invertSteering,
-                      onSteeringChanged: (v) =>
-                          widget.client.updateControls(steering: v),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  PedalControl(
-                    label: Strings.t('pedal_throttle'),
-                    color: Colors.greenAccent,
-                    onChanged: (v) => widget.client.updateControls(throttle: v),
-                  ),
-                ],
+
+            // ── Couche 5 : changement de véhicule (haut gauche) ─────────
+            Positioned(
+              top: 4,
+              left: 4,
+              child: VehicleSwitchButtons(
+                enabled: _modActive,
+                onPrev: () => _sendCmd(ModProtocol.cmdPrevVehicle),
+                onNext: () => _sendCmd(ModProtocol.cmdNextVehicle),
               ),
             ),
           ],
@@ -299,8 +290,8 @@ class _ControlScreenState extends State<ControlScreen>
   }
 }
 
-/// Tableau de bord complet, affiché uniquement quand le mod optionnel est
-/// détecté (seule source fiable de télémétrie aujourd'hui).
+// ────────────────────────────────────────────────────────────────────────────
+
 class _FullDashboard extends StatelessWidget {
   final BeamngClient client;
   final bool useKmh;
@@ -313,13 +304,18 @@ class _FullDashboard extends StatelessWidget {
       stream: client.modTelemetryStream,
       builder: (context, snapshot) {
         final t = snapshot.data;
-        final speed = t == null ? 0 : (useKmh ? t.speedKmh : t.speedMph).round();
+        final speed =
+            t == null ? 0 : (useKmh ? t.speedKmh : t.speedMph).round();
         final unit = useKmh ? 'km/h' : 'mph';
 
         return Column(
           mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            RpmLedBar(rpm: t?.rpm ?? 0, redlineRpm: t?.redlineRpm ?? 7000),
+            RpmLedBar(
+              rpm: t?.rpm ?? 0,
+              redlineRpm: t?.redlineRpm ?? 7000,
+            ),
             const SizedBox(height: 4),
             Text(
               '${(t?.rpm ?? 0).round()} RPM',
@@ -329,6 +325,7 @@ class _FullDashboard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   '$speed',
@@ -343,10 +340,7 @@ class _FullDashboard extends StatelessWidget {
                   padding: const EdgeInsets.only(bottom: 18, left: 6),
                   child: Text(
                     unit,
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 20,
-                    ),
+                    style: const TextStyle(color: Colors.white70, fontSize: 20),
                   ),
                 ),
                 const SizedBox(width: 28),
@@ -366,6 +360,7 @@ class _FullDashboard extends StatelessWidget {
             const SizedBox(height: 8),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 _MiniGauge(
                   label: Strings.t('gauge_fuel'),
@@ -387,9 +382,6 @@ class _FullDashboard extends StatelessWidget {
   }
 }
 
-/// Affiché tant que le mod optionnel n'est pas détecté : seuls la
-/// direction et l'accélération/freinage natifs sont disponibles, donc
-/// aucune télémétrie n'est montrée (le canal natif n'en fournit pas).
 class _MinimalDashboard extends StatelessWidget {
   const _MinimalDashboard();
 
@@ -400,12 +392,12 @@ class _MinimalDashboard extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.info_outline, color: Colors.white38, size: 36),
-          const SizedBox(height: 12),
+          const Icon(Icons.info_outline, color: Colors.white24, size: 28),
+          const SizedBox(height: 8),
           Text(
             Strings.t('mod_banner'),
             textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.white54, fontSize: 13),
+            style: const TextStyle(color: Colors.white38, fontSize: 11),
           ),
         ],
       ),
@@ -422,8 +414,9 @@ class _StatusChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final label = switch (connectionState) {
-      BeamngConnectionState.connected =>
-        latency != null ? '${latency!.inMilliseconds}ms' : Strings.t('status_connected'),
+      BeamngConnectionState.connected => latency != null
+          ? '${latency!.inMilliseconds}ms'
+          : Strings.t('status_connected'),
       BeamngConnectionState.discovering => Strings.t('status_connecting'),
       BeamngConnectionState.timeout => Strings.t('status_timeout'),
       BeamngConnectionState.error => Strings.t('status_error'),
@@ -468,11 +461,43 @@ class _MiniGauge extends StatelessWidget {
                 value: ratio,
                 minHeight: 6,
                 backgroundColor: Colors.white12,
-                color: ratio > 0.85 ? Colors.redAccent : Colors.blueAccent,
+                color:
+                    ratio > 0.85 ? Colors.redAccent : Colors.blueAccent,
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _CamButton extends StatelessWidget {
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onTap;
+
+  const _CamButton({
+    required this.icon,
+    required this.tooltip,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: Colors.black38,
+        borderRadius: BorderRadius.circular(8),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(8),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            child: Icon(icon, color: Colors.white54, size: 22),
+          ),
+        ),
       ),
     );
   }

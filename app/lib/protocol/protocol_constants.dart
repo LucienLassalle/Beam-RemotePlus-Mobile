@@ -48,4 +48,6 @@ class ModProtocol {
   static const String cmdPrefix = 'cmd|';
   static const String cmdNextVehicle = 'cmd|next_vehicle';
   static const String cmdPrevVehicle = 'cmd|prev_vehicle';
+  static const String cmdCamNext = 'cmd|cam_next';
+  static const String cmdCamPrev = 'cmd|cam_prev';
 }

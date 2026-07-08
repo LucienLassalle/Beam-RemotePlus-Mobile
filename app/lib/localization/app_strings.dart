@@ -118,5 +118,13 @@ class Strings {
       AppLanguage.fr: 'Véhicule suivant',
       AppLanguage.en: 'Next vehicle',
     },
+    'cam_prev': {
+      AppLanguage.fr: 'Caméra précédente',
+      AppLanguage.en: 'Previous camera',
+    },
+    'cam_next': {
+      AppLanguage.fr: 'Caméra suivante',
+      AppLanguage.en: 'Next camera',
+    },
   };
 }
