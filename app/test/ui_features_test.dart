@@ -102,6 +102,48 @@ void main() {
       expect(const Color(0xFFFF9800).red, greaterThan(200)); // rouge dominant
     });
   });
+
+  group('ZoneControls — zones mortes haut/bas', () {
+    // Reproduit la logique de _ZoneControlsState._compute sans dépendance Flutter.
+    const topDead    = 0.20;
+    const bottomDead = 0.10;
+    const active     = 1.0 - topDead - bottomDead; // 0.70
+    const h          = 1000.0; // hauteur fictive
+
+    double compute(double dy) {
+      if (dy < h * topDead) return 1.0;
+      if (dy > h * (1.0 - bottomDead)) return 0.0;
+      return ((h * (1.0 - bottomDead) - dy) / (h * active)).clamp(0.0, 1.0);
+    }
+
+    test('zone morte haute (0-20%) → 1.0', () {
+      expect(compute(0), equals(1.0));
+      expect(compute(h * topDead - 1), equals(1.0));
+    });
+
+    test('zone morte basse (90-100%) → 0.0', () {
+      expect(compute(h * (1.0 - bottomDead) + 1), equals(0.0));
+      expect(compute(h), equals(0.0));
+    });
+
+    test('frontière haute (dy = h*0.20) → 1.0', () {
+      // Juste en dehors de la zone morte haute : valeur max de la zone active
+      expect(compute(h * topDead), closeTo(1.0, 1e-9));
+    });
+
+    test('frontière basse (dy = h*0.90) → 0.0', () {
+      expect(compute(h * (1.0 - bottomDead)), closeTo(0.0, 1e-9));
+    });
+
+    test('milieu de la zone active (dy = h*0.55) → ~0.5', () {
+      // Milieu entre 20% et 90% : dy = (0.20 + 0.90) / 2 * h = 0.55 * h
+      expect(compute(h * 0.55), closeTo(0.5, 1e-9));
+    });
+
+    test('zone active totale = 70%', () {
+      expect(active, closeTo(0.70, 1e-9));
+    });
+  });
 }
 
 // Fallback pour Color sans flutter/material.

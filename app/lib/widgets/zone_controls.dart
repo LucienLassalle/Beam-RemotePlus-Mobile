@@ -36,13 +36,18 @@ class _ZoneControlsState extends State<ZoneControls> {
   double _brakeVal = 0;
   double _throttleVal = 0;
 
-  // La zone active va du bas (0%) jusqu'à [_topDeadZone] du haut (100%).
-  // Au-delà (doigt dans la zone morte), on renvoie 1.0.
-  static const double _topDeadZone = 0.10;
+  // Zone morte haute : 20% du haut → toujours 1.0 (plein frein/gaz)
+  // Zone morte basse : 10% du bas  → toujours 0.0 (relâché)
+  // Zone active : 70% au milieu, mappe [bas mort → haut mort] sur [0.0 → 1.0]
+  static const double _topDeadZone    = 0.20;
+  static const double _bottomDeadZone = 0.10;
+  static const double _activeZone = 1.0 - _topDeadZone - _bottomDeadZone; // 0.70
 
   double _compute(double dy, double height) {
     if (dy < height * _topDeadZone) return 1.0;
-    return ((height - dy) / (height * (1 - _topDeadZone))).clamp(0.0, 1.0);
+    if (dy > height * (1.0 - _bottomDeadZone)) return 0.0;
+    return ((height * (1.0 - _bottomDeadZone) - dy) / (height * _activeZone))
+        .clamp(0.0, 1.0);
   }
 
   void _update(Map<int, double> ptrs, bool isLeft) {
@@ -209,27 +214,30 @@ class _GradientFillPainter extends CustomPainter {
   final Color color;
   const _GradientFillPainter(this.value, this.color);
 
-  static const double _topDeadZone = 0.10;
+  static const double _topDeadZone    = 0.20;
+  static const double _bottomDeadZone = 0.10;
+  static const double _activeZone = 1.0 - _topDeadZone - _bottomDeadZone;
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Ligne de démarcation à 90% (limite de la zone active)
-    final boundaryY = size.height * _topDeadZone;
     final linePaint = Paint()
       ..color = color.withValues(alpha: 0.25)
       ..strokeWidth = 1.0;
-    canvas.drawLine(
-      Offset(0, boundaryY),
-      Offset(size.width, boundaryY),
-      linePaint,
-    );
+
+    // Ligne haute : limite supérieure de la zone active (20%)
+    final topY = size.height * _topDeadZone;
+    canvas.drawLine(Offset(0, topY), Offset(size.width, topY), linePaint);
+
+    // Ligne basse : limite inférieure de la zone active (90%)
+    final bottomY = size.height * (1.0 - _bottomDeadZone);
+    canvas.drawLine(Offset(0, bottomY), Offset(size.width, bottomY), linePaint);
 
     if (value <= 0) return;
-    // Le remplissage ne dépasse jamais la ligne des 90%
-    final maxFill = size.height * (1 - _topDeadZone);
+
+    // Remplissage de bas en haut dans la zone active uniquement
+    final maxFill   = size.height * _activeZone;
     final fillHeight = maxFill * value;
-    final rect = Rect.fromLTWH(
-        0, size.height - fillHeight, size.width, fillHeight);
+    final rect = Rect.fromLTWH(0, bottomY - fillHeight, size.width, fillHeight);
     final paint = Paint()
       ..shader = LinearGradient(
         begin: Alignment.bottomCenter,
@@ -245,7 +253,4 @@ class _GradientFillPainter extends CustomPainter {
   @override
   bool shouldRepaint(_GradientFillPainter old) =>
       old.value != value || old.color != color;
-  // La ligne de démarcation est statique : pas besoin de la redessiner si
-  // seule la valeur change, mais shouldRepaint retourne vrai dans ce cas de
-  // toute façon (value change), donc pas d'optimisation supplémentaire.
 }
