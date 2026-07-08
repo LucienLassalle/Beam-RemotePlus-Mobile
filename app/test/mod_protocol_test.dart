@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:app/protocol/mod_packets.dart';
+import 'package:app/protocol/protocol_constants.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -21,6 +22,39 @@ void main() {
       final d = ByteData.sublistView(packet.toBytes());
       expect(d.getFloat32(0, Endian.little), 0.0);
       expect(d.getFloat32(4, Endian.little), 1.0);
+    });
+  });
+
+  group('ModProtocol vehicle commands', () {
+    test('cmdNextVehicle commence par cmdPrefix', () {
+      expect(
+        ModProtocol.cmdNextVehicle.startsWith(ModProtocol.cmdPrefix),
+        isTrue,
+      );
+    });
+
+    test('cmdPrevVehicle commence par cmdPrefix', () {
+      expect(
+        ModProtocol.cmdPrevVehicle.startsWith(ModProtocol.cmdPrefix),
+        isTrue,
+      );
+    });
+
+    test('cmdNextVehicle vaut exactement cmd|next_vehicle', () {
+      expect(ModProtocol.cmdNextVehicle, 'cmd|next_vehicle');
+    });
+
+    test('cmdPrevVehicle vaut exactement cmd|prev_vehicle', () {
+      expect(ModProtocol.cmdPrevVehicle, 'cmd|prev_vehicle');
+    });
+
+    test('les commandes ont plus de 12 octets (distinguables du paquet binaire)', () {
+      expect(ModProtocol.cmdNextVehicle.length, greaterThan(12));
+      expect(ModProtocol.cmdPrevVehicle.length, greaterThan(12));
+    });
+
+    test('les deux commandes sont différentes', () {
+      expect(ModProtocol.cmdNextVehicle, isNot(ModProtocol.cmdPrevVehicle));
     });
   });
 
