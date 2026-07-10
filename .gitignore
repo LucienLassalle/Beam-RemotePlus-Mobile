@@ -1,0 +1,3 @@
+# Cache persistant du debug keystore Android utilisé par les builds Podman
+# (voir scripts/build_apk.sh) : généré localement, ne doit jamais être commité.
+docker/.android-home-cache/

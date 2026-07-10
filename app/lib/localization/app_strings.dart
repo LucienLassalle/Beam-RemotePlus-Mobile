@@ -214,5 +214,33 @@ class Strings {
       AppLanguage.fr: 'Mod requis',
       AppLanguage.en: 'Mod required',
     },
+    'reset_vehicle_tooltip': {
+      AppLanguage.fr: 'Maintenir pour réinitialiser le véhicule',
+      AppLanguage.en: 'Hold to reset vehicle',
+    },
+    'reset_vehicle_done': {
+      AppLanguage.fr: 'Véhicule réinitialisé',
+      AppLanguage.en: 'Vehicle reset',
+    },
+    'help_reset_vehicle': {
+      AppLanguage.fr: 'Réinitialiser le véhicule',
+      AppLanguage.en: 'Reset vehicle',
+    },
+    'help_reset_vehicle_desc': {
+      AppLanguage.fr: 'Bouton ⟲ en haut au centre : maintenir pour confirmer (mod requis)',
+      AppLanguage.en: '⟲ button top-center: hold to confirm (mod required)',
+    },
+    'debug_mode_tooltip': {
+      AppLanguage.fr: 'Mode debug (logs de connexion détaillés)',
+      AppLanguage.en: 'Debug mode (detailed connection logs)',
+    },
+    'debug_mode_on': {
+      AppLanguage.fr: 'Mode debug activé : voir adb logcat',
+      AppLanguage.en: 'Debug mode on: check adb logcat',
+    },
+    'debug_mode_off': {
+      AppLanguage.fr: 'Mode debug désactivé',
+      AppLanguage.en: 'Debug mode off',
+    },
   };
 }

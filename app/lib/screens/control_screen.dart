@@ -9,6 +9,7 @@ import '../platform/gesture_exclusion.dart';
 import '../protocol/beamng_client.dart';
 import '../protocol/mod_packets.dart';
 import '../protocol/protocol_constants.dart';
+import '../widgets/reset_vehicle_button.dart';
 import '../widgets/rpm_led_bar.dart';
 import '../widgets/steering_control.dart';
 import '../widgets/vehicle_switch_buttons.dart';
@@ -241,6 +242,19 @@ class _ControlScreenState extends State<ControlScreen>
 
   void _sendCmd(String cmd) => widget.client.sendCommand(cmd);
 
+  void _recoverStart() => _sendCmd(ModProtocol.cmdRecoverStart);
+
+  void _recoverStop() {
+    _sendCmd(ModProtocol.cmdRecoverStop);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(Strings.t('reset_vehicle_done')),
+        duration: const Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
   void _openHelp() {
     showModalBottomSheet(
       context: context,
@@ -304,6 +318,13 @@ class _ControlScreenState extends State<ControlScreen>
                 color: Colors.white54,
                 title: Strings.t('help_camera'),
                 desc: Strings.t('help_camera_desc'),
+                modRequired: true,
+              ),
+              _HelpRow(
+                icon: Icons.restart_alt,
+                color: Colors.white54,
+                title: Strings.t('help_reset_vehicle'),
+                desc: Strings.t('help_reset_vehicle_desc'),
                 modRequired: true,
               ),
             ],
@@ -443,6 +464,21 @@ class _ControlScreenState extends State<ControlScreen>
                 enabled: _modActive,
                 onPrev: () => _sendCmd(ModProtocol.cmdPrevVehicle),
                 onNext: () => _sendCmd(ModProtocol.cmdNextVehicle),
+              ),
+            ),
+
+            // ── Couche 6 : reset véhicule (haut centre, à l'écart des
+            // zones de pédales/volant, appui maintenu requis) ────────────
+            Positioned(
+              top: 4,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: ResetVehicleButton(
+                  enabled: _modActive,
+                  onRecoverStart: _recoverStart,
+                  onRecoverStop: _recoverStop,
+                ),
               ),
             ),
           ],

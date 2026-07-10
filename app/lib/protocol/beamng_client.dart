@@ -5,6 +5,8 @@ import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:network_info_plus/network_info_plus.dart';
 
+import '../debug/app_debug.dart';
+import '../platform/hotspot_network_info.dart';
 import 'control_packet.dart';
 import 'mod_packets.dart';
 import 'protocol_constants.dart';
@@ -93,14 +95,33 @@ class BeamngClient {
 
     final info = NetworkInfo();
     final myIp = await info.getWifiIP();
-    // En mode point d'accès mobile, getWifiIP() renvoie null (le chip WiFi
-    // est en AP, pas en STA). On se rabat sur anyIPv4 pour la socket de
-    // réception et sur le broadcast global 255.255.255.255 pour l'envoi :
-    // le PC connecté à l'AP reçoit quand même la diffusion et répond à
-    // l'IP de la passerelle (le téléphone), que anyIPv4 capture.
+    // myIp ne doit JAMAIS servir à lier la socket de réception : sur
+    // certains téléphones/ROMs, en mode point d'accès mobile,
+    // NetworkInfo().getWifiIP() ne renvoie pas null comme documenté mais
+    // l'IP de l'interface data mobile (ex: 10.x.x.x, plage CGNAT typique),
+    // sans que rien ne permette de le détecter depuis ce plugin (bug
+    // constaté en diagnostic : voir historique). Lier la socket à cette IP
+    // fait qu'elle n'écoute plus que sur cette interface et ignore toute
+    // réponse arrivant sur l'interface WiFi/hotspot réelle. anyIPv4 est
+    // sans risque et évite complètement de dépendre de cette détection.
     final broadcastIp = await info.getWifiBroadcast() ?? '255.255.255.255';
-    final bindAddress =
-        myIp != null ? InternetAddress(myIp) : InternetAddress.anyIPv4;
+
+    // Découverte native systématique (pas seulement si myIp est null) :
+    // énumère les interfaces système côté Android en excluant les
+    // interfaces data mobile connues, donc fiable même quand myIp du
+    // plugin ment. Best-effort : si indisponible, on garde broadcastIp
+    // seul. Les adresses trouvées sont utilisées en complément, jamais en
+    // remplacement, pour ne rien casser sur les configurations où
+    // l'ancien comportement fonctionnait déjà.
+    final extraBroadcastIp = await HotspotNetworkInfo.getLikelyHotspotBroadcast();
+    final broadcastTargets = <String>{
+      broadcastIp,
+      if (extraBroadcastIp != null) extraBroadcastIp,
+    }.toList();
+    AppDebug.log(
+      'connect(): myIp(plugin)=$myIp broadcastIp(plugin)=$broadcastIp '
+      'extraBroadcastIp(natif)=$extraBroadcastIp targets=$broadcastTargets',
+    );
 
     final deviceName = await _resolveDeviceName();
     final handshakeMessage =
@@ -109,7 +130,7 @@ class BeamngClient {
         '${BeamngProtocol.handshakePrefix}|$securityCode';
 
     final socket = await RawDatagramSocket.bind(
-      bindAddress,
+      InternetAddress.anyIPv4,
       BeamngProtocol.clientPort,
       reuseAddress: true,
     );
@@ -136,6 +157,10 @@ class BeamngClient {
 
       if (!completer.isCompleted) {
         final msg = utf8.decode(dg.data, allowMalformed: true);
+        AppDebug.log(
+          'connect(): datagram reçu de ${dg.address.address}:${dg.port} '
+          '= "$msg" (attendu "$expectedResponse")',
+        );
         if (msg == expectedResponse) {
           completer.complete(dg.address);
         }
@@ -155,11 +180,10 @@ class BeamngClient {
           t.cancel();
           return;
         }
-        sendSocket.send(
-          utf8.encode(handshakeMessage),
-          InternetAddress(broadcastIp),
-          BeamngProtocol.hostPort,
-        );
+        final payload = utf8.encode(handshakeMessage);
+        for (final target in broadcastTargets) {
+          sendSocket.send(payload, InternetAddress(target), BeamngProtocol.hostPort);
+        }
       },
     );
 
@@ -173,6 +197,7 @@ class BeamngClient {
         ),
       );
     } on TimeoutException {
+      AppDebug.log('connect(): timeout, aucune réponse reçue sur $broadcastTargets');
       sendTimer.cancel();
       sendSocket.close();
       socket.close();

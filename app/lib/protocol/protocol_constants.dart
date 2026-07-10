@@ -54,4 +54,6 @@ class ModProtocol {
   static const String cmdCamPrev = 'cmd|cam_prev';
   static const String cmdGearUp = 'cmd|gear_up';
   static const String cmdGearDown = 'cmd|gear_down';
+  static const String cmdRecoverStart = 'cmd|recover_start';
+  static const String cmdRecoverStop = 'cmd|recover_stop';
 }

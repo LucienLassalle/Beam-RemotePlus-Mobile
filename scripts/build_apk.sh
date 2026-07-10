@@ -12,8 +12,16 @@ DOCKER_DIR="$MOBILE_DIR/docker"
 PACKAGE_DIR="$(cd "$MOBILE_DIR/.." && pwd)/Package"
 IMAGE_NAME="beamng-remoteplus-flutter:latest"
 APK_NAME="BeamNG-RemotePlus.apk"
+# Le conteneur tourne en root (voir Containerfile) et n'a pas de config de
+# signature release custom : Gradle retombe sur le debug keystore par
+# défaut, auto-généré sous ~/.android au premier build. Sans ce montage
+# persistant, chaque `podman run --rm` en génère un nouveau -> signature
+# différente à chaque build -> `adb install` échoue en
+# INSTALL_FAILED_UPDATE_INCOMPATIBLE sur une install déjà présente sur le
+# téléphone.
+ANDROID_HOME_CACHE="$MOBILE_DIR/docker/.android-home-cache"
 
-mkdir -p "$PACKAGE_DIR"
+mkdir -p "$PACKAGE_DIR" "$ANDROID_HOME_CACHE"
 
 # --- Construire l'image si absente ou si --rebuild-image est passé ---
 REBUILD=false
@@ -32,6 +40,7 @@ fi
 echo "==> Build de l'APK (flutter build apk --release)…"
 podman run --rm \
   -v "$APP_DIR:/workspace:Z" \
+  -v "$ANDROID_HOME_CACHE:/root/.android:Z" \
   -w /workspace \
   "$IMAGE_NAME" \
   -c "flutter pub get && flutter build apk --release"

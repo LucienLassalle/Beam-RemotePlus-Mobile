@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+import '../debug/app_debug.dart';
 import '../localization/app_strings.dart';
 import '../protocol/beamng_client.dart';
 import '../protocol/pairing_code.dart';
@@ -84,7 +85,32 @@ class _PairingScreenState extends State<PairingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(Strings.t('app_title'))),
+      appBar: AppBar(
+        title: Text(Strings.t('app_title')),
+        actions: [
+          IconButton(
+            icon: Icon(
+              Icons.bug_report,
+              color: AppDebug.enabled ? Colors.orangeAccent : null,
+            ),
+            tooltip: Strings.t('debug_mode_tooltip'),
+            onPressed: () {
+              setState(() => AppDebug.enabled = !AppDebug.enabled);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    AppDebug.enabled
+                        ? Strings.t('debug_mode_on')
+                        : Strings.t('debug_mode_off'),
+                  ),
+                  duration: const Duration(seconds: 2),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            },
+          ),
+        ],
+      ),
       body: !_permissionGranted
           ? Center(
               child: Padding(
