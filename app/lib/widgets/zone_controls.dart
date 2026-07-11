@@ -17,11 +17,18 @@ class ZoneControls extends StatefulWidget {
   /// Fraction de largeur d'écran occupée par chaque zone latérale.
   final double zoneFraction;
 
+  /// false : aucun rendu visuel (ni bordure, ni dégradé, ni label) — la
+  /// détection tactile reste strictement identique. Permet à un thème de
+  /// garder les pédales fonctionnelles sans qu'elles n'occupent visuellement
+  /// l'écran (le tableau de bord peut alors s'étendre par-dessus).
+  final bool showChrome;
+
   const ZoneControls({
     super.key,
     required this.onBrakeChanged,
     required this.onThrottleChanged,
     this.zoneFraction = 0.32,
+    this.showChrome = true,
   });
 
   @override
@@ -101,6 +108,7 @@ class _ZoneControlsState extends State<ZoneControls> {
                   color: Colors.redAccent,
                   label: 'FREIN',
                   alignLabel: Alignment.bottomLeft,
+                  showChrome: widget.showChrome,
                 ),
               ),
             ),
@@ -133,6 +141,7 @@ class _ZoneControlsState extends State<ZoneControls> {
                   color: Colors.greenAccent,
                   label: 'GAZ',
                   alignLabel: Alignment.bottomRight,
+                  showChrome: widget.showChrome,
                 ),
               ),
             ),
@@ -148,17 +157,20 @@ class _ZonePainter extends StatelessWidget {
   final Color color;
   final String label;
   final Alignment alignLabel;
+  final bool showChrome;
 
   const _ZonePainter({
     required this.value,
     required this.color,
     required this.label,
     required this.alignLabel,
+    required this.showChrome,
   });
 
   @override
   Widget build(BuildContext context) {
-    final alpha = (value * 0.35 + 0.05).clamp(0.05, 0.40);
+    if (!showChrome) return const SizedBox.expand();
+
     return Stack(
       children: [
         // Fond dégradé de bas en haut proportionnel à la valeur

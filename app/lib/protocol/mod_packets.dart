@@ -24,16 +24,20 @@ class ModControlPacket {
 }
 
 /// Télémétrie reçue du mod (port 4447). Miroir exact de `rp_telemetry_t`
-/// côté Lua (struct FFI de 8 floats, little-endian).
+/// côté Lua (struct FFI de 9 floats, little-endian).
 class ModTelemetryPacket {
   final double speed; // m/s
   final double rpm;
   final double redlineRpm;
   final int gear; // 0=R, 1=N, 2+=rapport engagé - 1, même convention que le natif
   final double fuel; // 0-1
-  final double engineTemp; // °C
+  final double engineTemp; // °C (eau/liquide de refroidissement)
   final int lights; // bitfield, voir lightsBit*
   final bool shiftLight;
+
+  /// °C. 0 si le véhicule ne remonte pas cette valeur (électrique côté mod
+  /// non standard selon les véhicules) — à traiter comme "non disponible".
+  final double oilTemp;
 
   const ModTelemetryPacket({
     required this.speed,
@@ -44,9 +48,10 @@ class ModTelemetryPacket {
     required this.engineTemp,
     required this.lights,
     required this.shiftLight,
+    required this.oilTemp,
   });
 
-  static const int sizeBytes = 32;
+  static const int sizeBytes = 36;
 
   factory ModTelemetryPacket.fromBytes(Uint8List bytes) {
     if (bytes.length < sizeBytes) {
@@ -65,6 +70,7 @@ class ModTelemetryPacket {
       engineTemp: d.getFloat32(20, le),
       lights: d.getFloat32(24, le).round(),
       shiftLight: d.getFloat32(28, le) >= 0.5,
+      oilTemp: d.getFloat32(32, le),
     );
   }
 
@@ -75,6 +81,7 @@ class ModTelemetryPacket {
   static const int lightBitSignalRight = 16;
   static const int lightBitOilWarning = 32;
   static const int lightBitAbs = 64;
+  static const int lightBitTc = 128;
 
   bool get lowBeam => (lights & lightBitLowBeam) != 0;
   bool get highBeam => (lights & lightBitHighBeam) != 0;
@@ -83,6 +90,7 @@ class ModTelemetryPacket {
   bool get signalRight => (lights & lightBitSignalRight) != 0;
   bool get oilWarning => (lights & lightBitOilWarning) != 0;
   bool get absActive => (lights & lightBitAbs) != 0;
+  bool get tractionControlActive => (lights & lightBitTc) != 0;
 
   double get speedKmh => speed * 3.6;
   double get speedMph => speed * 2.23694;

@@ -50,6 +50,24 @@ class Strings {
       AppLanguage.fr: 'Paramètres',
       AppLanguage.en: 'Settings',
     },
+    'settings_readonly_title': {
+      AppLanguage.fr: 'Interface en lecture seule',
+      AppLanguage.en: 'Read-only interface',
+    },
+    'settings_readonly_subtitle': {
+      AppLanguage.fr:
+          'Coupe le volant, le frein et l\'accélérateur (les réglages et l\'aide restent accessibles)',
+      AppLanguage.en:
+          'Disables steering, brake and throttle (settings and help stay available)',
+    },
+    'settings_theme_title': {
+      AppLanguage.fr: 'Thème',
+      AppLanguage.en: 'Theme',
+    },
+    'settings_theme_subtitle': {
+      AppLanguage.fr: 'Change la disposition et l\'apparence de l\'écran',
+      AppLanguage.en: 'Changes the layout and look of the screen',
+    },
     'settings_tilt_title': {
       AppLanguage.fr: 'Direction par inclinaison',
       AppLanguage.en: 'Tilt steering',

@@ -9,8 +9,9 @@ import '../platform/gesture_exclusion.dart';
 import '../protocol/beamng_client.dart';
 import '../protocol/mod_packets.dart';
 import '../protocol/protocol_constants.dart';
+import '../themes/control_theme.dart';
+import '../themes/theme_registry.dart';
 import '../widgets/reset_vehicle_button.dart';
-import '../widgets/rpm_led_bar.dart';
 import '../widgets/steering_control.dart';
 import '../widgets/vehicle_switch_buttons.dart';
 import '../widgets/zone_controls.dart';
@@ -26,6 +27,8 @@ class ControlScreen extends StatefulWidget {
 
 class _ControlScreenState extends State<ControlScreen>
     with WidgetsBindingObserver {
+  bool _readOnly = false;
+  String _themeId = 'default';
   bool _tiltMode = true;
   double _rotationRangeDeg = 900;
   bool _invertSteering = true;
@@ -140,6 +143,42 @@ class _ControlScreenState extends State<ControlScreen>
                   Strings.t('settings_title'),
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
+                SwitchListTile(
+                  title: Text(Strings.t('settings_readonly_title')),
+                  subtitle: Text(Strings.t('settings_readonly_subtitle')),
+                  secondary: const Icon(Icons.visibility_outlined),
+                  value: _readOnly,
+                  onChanged: (v) {
+                    setSheetState(() => _readOnly = v);
+                    _setReadOnly(v);
+                  },
+                ),
+                ListTile(
+                  title: Text(Strings.t('settings_theme_title')),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(Strings.t('settings_theme_subtitle')),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 4,
+                        children: [
+                          for (final t in availableThemes)
+                            ChoiceChip(
+                              label: Text(t.displayName),
+                              selected: _themeId == t.id,
+                              onSelected: (_) {
+                                setSheetState(() => _themeId = t.id);
+                                setState(() => _themeId = t.id);
+                              },
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(height: 24),
                 SwitchListTile(
                   title: Text(Strings.t('settings_tilt_title')),
                   subtitle: Text(Strings.t('settings_tilt_subtitle')),
@@ -280,6 +319,33 @@ class _ControlScreenState extends State<ControlScreen>
 
   void _sendCmd(String cmd) => widget.client.sendCommand(cmd);
 
+  // ── Mode lecture seule ────────────────────────────────────────────────
+  // Coupe uniquement les entrées qui font bouger le véhicule (volant,
+  // frein, accélérateur, changement de rapport, caméra, véhicule, reset) ;
+  // les réglages et l'aide restent toujours accessibles, quel que soit le
+  // thème actif (voir ControlSurface / chrome obligatoire dans build()).
+  void _setReadOnly(bool v) {
+    setState(() => _readOnly = v);
+    if (v) {
+      widget.client.updateControls(steering: 0.5, throttle: 0, brake: 0);
+    }
+  }
+
+  void _updateSteering(double v) {
+    if (_readOnly) return;
+    widget.client.updateControls(steering: v);
+  }
+
+  void _updateBrake(double v) {
+    if (_readOnly) return;
+    widget.client.updateControls(brake: v);
+  }
+
+  void _updateThrottle(double v) {
+    if (_readOnly) return;
+    widget.client.updateControls(throttle: v);
+  }
+
   void _recoverStart() => _sendCmd(ModProtocol.cmdRecoverStart);
 
   void _recoverStop() {
@@ -372,116 +438,124 @@ class _ControlScreenState extends State<ControlScreen>
     );
   }
 
+  // ── Widgets de contrôle pré-câblés, fournis à n'importe quel thème via
+  // ControlSurface : la logique (capteurs, gating lecture-seule, mod actif)
+  // vit ici une seule fois, un thème ne fait que les positionner. ────────
+
+  Widget get _steeringWidget => IgnorePointer(
+        ignoring: _readOnly,
+        child: SteeringControl(
+          tiltMode: _tiltMode,
+          rotationRangeDeg: _rotationRangeDeg,
+          invert: _invertSteering,
+          smoothing: _steeringSmoothing,
+          recalibrateCounter: _recalibrateCounter,
+          onSteeringChanged: _updateSteering,
+          onGearUp: (_pitchGearShift && _modActive && !_readOnly)
+              ? () {
+                  _sendCmd(ModProtocol.cmdGearUp);
+                  _triggerGearFlash(isUp: true);
+                }
+              : null,
+          onGearDown: (_pitchGearShift && _modActive && !_readOnly)
+              ? () {
+                  _sendCmd(ModProtocol.cmdGearDown);
+                  _triggerGearFlash(isUp: false);
+                }
+              : null,
+        ),
+      );
+
+  Widget get _pedalsWidget => IgnorePointer(
+        ignoring: _readOnly,
+        child: ZoneControls(
+          onBrakeChanged: _updateBrake,
+          onThrottleChanged: _updateThrottle,
+        ),
+      );
+
+  Widget get _pedalsWidgetInvisible => IgnorePointer(
+        ignoring: _readOnly,
+        child: ZoneControls(
+          onBrakeChanged: _updateBrake,
+          onThrottleChanged: _updateThrottle,
+          showChrome: false,
+        ),
+      );
+
+  Widget get _cameraButtonsWidget {
+    if (!_modActive) return const SizedBox.shrink();
+    return IgnorePointer(
+      ignoring: _readOnly,
+      child: AnimatedOpacity(
+        opacity: _readOnly ? 0.3 : 1.0,
+        duration: const Duration(milliseconds: 200),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _CamButton(
+              icon: Icons.photo_camera_back,
+              tooltip: Strings.t('cam_prev'),
+              onTap: () => _sendCmd(ModProtocol.cmdCamPrev),
+            ),
+            const SizedBox(width: 8),
+            _CamButton(
+              icon: Icons.flip_camera_android,
+              tooltip: Strings.t('cam_next'),
+              onTap: () => _sendCmd(ModProtocol.cmdCamNext),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget get _vehicleSwitchWidget => VehicleSwitchButtons(
+        enabled: _modActive && !_readOnly,
+        onPrev: () => _sendCmd(ModProtocol.cmdPrevVehicle),
+        onNext: () => _sendCmd(ModProtocol.cmdNextVehicle),
+      );
+
+  Widget get _resetVehicleWidget => ResetVehicleButton(
+        enabled: _modActive && !_readOnly,
+        onRecoverStart: _recoverStart,
+        onRecoverStop: _recoverStop,
+      );
+
   @override
   Widget build(BuildContext context) {
+    final surface = ControlSurface(
+      telemetry: widget.client.modTelemetryStream,
+      modActive: _modActive,
+      connectionState: widget.client.state,
+      latency: _latency,
+      useKmh: _useKmh,
+      readOnly: _readOnly,
+      gearFlashColor: _gearFlashColor,
+      steeringWidget: _steeringWidget,
+      pedalsWidget: _pedalsWidget,
+      pedalsWidgetInvisible: _pedalsWidgetInvisible,
+      cameraButtonsWidget: _cameraButtonsWidget,
+      vehicleSwitchWidget: _vehicleSwitchWidget,
+      resetVehicleWidget: _resetVehicleWidget,
+    );
+
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
         child: Stack(
           children: [
-            // ── Couche 0 : zones tactiles frein / accélérateur ──────────
-            Positioned.fill(
-              child: ZoneControls(
-                onBrakeChanged: (v) => widget.client.updateControls(brake: v),
-                onThrottleChanged: (v) =>
-                    widget.client.updateControls(throttle: v),
-              ),
-            ),
+            themeById(_themeId).build(context, surface),
 
-            // ── Couche 1 : tableau de bord centré ───────────────────────
-            Center(
-              child: _modActive
-                  ? _FullDashboard(client: widget.client, useKmh: _useKmh)
-                  : const _MinimalDashboard(),
-            ),
-
-            // ── Couche 2 : volant ────────────────────────────────────────
-            if (!_tiltMode)
-              Positioned(
-                bottom: 20,
-                left: MediaQuery.of(context).size.width * 0.33,
-                right: MediaQuery.of(context).size.width * 0.33,
-                child: SteeringControl(
-                  tiltMode: false,
-                  rotationRangeDeg: _rotationRangeDeg,
-                  invert: _invertSteering,
-                  smoothing: _steeringSmoothing,
-                  recalibrateCounter: _recalibrateCounter,
-                  onSteeringChanged: (v) =>
-                      widget.client.updateControls(steering: v),
-                ),
-              )
-            else
-              Positioned(
-                width: 0,
-                height: 0,
-                child: SteeringControl(
-                  tiltMode: true,
-                  rotationRangeDeg: _rotationRangeDeg,
-                  invert: _invertSteering,
-                  smoothing: _steeringSmoothing,
-                  recalibrateCounter: _recalibrateCounter,
-                  onSteeringChanged: (v) =>
-                      widget.client.updateControls(steering: v),
-                  onGearUp: (_pitchGearShift && _modActive)
-                      ? () {
-                          _sendCmd(ModProtocol.cmdGearUp);
-                          _triggerGearFlash(isUp: true);
-                        }
-                      : null,
-                  onGearDown: (_pitchGearShift && _modActive)
-                      ? () {
-                          _sendCmd(ModProtocol.cmdGearDown);
-                          _triggerGearFlash(isUp: false);
-                        }
-                      : null,
-                ),
-              ),
-
-            // ── Couche 3 : boutons caméra (centre, bas) ─────────────────
-            if (_modActive)
-              Positioned(
-                bottom: 8,
-                left: 0,
-                right: 0,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _CamButton(
-                      icon: Icons.photo_camera_back,
-                      tooltip: Strings.t('cam_prev'),
-                      onTap: () => _sendCmd(ModProtocol.cmdCamPrev),
-                    ),
-                    const SizedBox(width: 8),
-                    _CamButton(
-                      icon: Icons.flip_camera_android,
-                      tooltip: Strings.t('cam_next'),
-                      onTap: () => _sendCmd(ModProtocol.cmdCamNext),
-                    ),
-                  ],
-                ),
-              ),
-
-            // ── Couche 3b : flash visuel changement de rapport ──────────
-            if (_gearFlashColor != null)
-              Positioned.fill(
-                child: IgnorePointer(
-                  child: Container(
-                    color: _gearFlashColor!.withValues(alpha: 0.22),
-                  ),
-                ),
-              ),
-
-            // ── Couche 4 : statut + réglages + aide (haut droite) ───────
+            // ── Chrome obligatoire : Paramètres + Aide. Toujours posé
+            // par-dessus le thème actif, jamais masquable par lui — c'est
+            // le seul moyen garanti de sortir du mode lecture seule ou de
+            // changer de thème. ─────────────────────────────────────────
             Positioned(
               top: 4,
               right: 4,
               child: Row(
                 children: [
-                  _StatusChip(
-                    connectionState: widget.client.state,
-                    latency: _latency,
-                  ),
                   IconButton(
                     icon: const Icon(Icons.help_outline, color: Colors.white54),
                     iconSize: 20,
@@ -495,32 +569,6 @@ class _ControlScreenState extends State<ControlScreen>
                 ],
               ),
             ),
-
-            // ── Couche 5 : changement de véhicule (haut gauche) ─────────
-            Positioned(
-              top: 4,
-              left: 4,
-              child: VehicleSwitchButtons(
-                enabled: _modActive,
-                onPrev: () => _sendCmd(ModProtocol.cmdPrevVehicle),
-                onNext: () => _sendCmd(ModProtocol.cmdNextVehicle),
-              ),
-            ),
-
-            // ── Couche 6 : reset véhicule (haut centre, à l'écart des
-            // zones de pédales/volant, appui maintenu requis) ────────────
-            Positioned(
-              top: 4,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: ResetVehicleButton(
-                  enabled: _modActive,
-                  onRecoverStart: _recoverStart,
-                  onRecoverStop: _recoverStop,
-                ),
-              ),
-            ),
           ],
         ),
       ),
@@ -529,186 +577,6 @@ class _ControlScreenState extends State<ControlScreen>
 }
 
 // ────────────────────────────────────────────────────────────────────────────
-
-class _FullDashboard extends StatelessWidget {
-  final BeamngClient client;
-  final bool useKmh;
-
-  const _FullDashboard({required this.client, required this.useKmh});
-
-  @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<ModTelemetryPacket>(
-      stream: client.modTelemetryStream,
-      builder: (context, snapshot) {
-        final t = snapshot.data;
-        final speed =
-            t == null ? 0 : (useKmh ? t.speedKmh : t.speedMph).round();
-        final unit = useKmh ? 'km/h' : 'mph';
-
-        return Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            RpmLedBar(
-              rpm: t?.rpm ?? 0,
-              redlineRpm: t?.redlineRpm ?? 7000,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              '${(t?.rpm ?? 0).round()} RPM',
-              style: const TextStyle(color: Colors.white54, fontSize: 12),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  '$speed',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 88,
-                    fontWeight: FontWeight.bold,
-                    height: 1,
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 18, left: 6),
-                  child: Text(
-                    unit,
-                    style: const TextStyle(color: Colors.white70, fontSize: 20),
-                  ),
-                ),
-                const SizedBox(width: 28),
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 14),
-                  child: Text(
-                    t?.gearLabel ?? '-',
-                    style: const TextStyle(
-                      color: Colors.orangeAccent,
-                      fontSize: 44,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _MiniGauge(
-                  label: Strings.t('gauge_fuel'),
-                  value: (t?.fuel ?? 0) * 100,
-                  max: 100,
-                ),
-                const SizedBox(width: 16),
-                _MiniGauge(
-                  label: Strings.t('gauge_temp'),
-                  value: t?.engineTemp ?? 0,
-                  max: 120,
-                ),
-              ],
-            ),
-          ],
-        );
-      },
-    );
-  }
-}
-
-class _MinimalDashboard extends StatelessWidget {
-  const _MinimalDashboard();
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 40),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.info_outline, color: Colors.white24, size: 28),
-          const SizedBox(height: 8),
-          Text(
-            Strings.t('mod_banner'),
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.white38, fontSize: 11),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StatusChip extends StatelessWidget {
-  final BeamngConnectionState connectionState;
-  final Duration? latency;
-
-  const _StatusChip({required this.connectionState, required this.latency});
-
-  @override
-  Widget build(BuildContext context) {
-    final label = switch (connectionState) {
-      BeamngConnectionState.connected => latency != null
-          ? '${latency!.inMilliseconds}ms'
-          : Strings.t('status_connected'),
-      BeamngConnectionState.discovering => Strings.t('status_connecting'),
-      BeamngConnectionState.timeout => Strings.t('status_timeout'),
-      BeamngConnectionState.error => Strings.t('status_error'),
-      BeamngConnectionState.idle => Strings.t('status_idle'),
-    };
-    final color = connectionState == BeamngConnectionState.connected
-        ? Colors.greenAccent
-        : Colors.redAccent;
-    return Text(label, style: TextStyle(color: color, fontSize: 12));
-  }
-}
-
-class _MiniGauge extends StatelessWidget {
-  final String label;
-  final double value;
-  final double max;
-
-  const _MiniGauge({
-    required this.label,
-    required this.value,
-    required this.max,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final ratio = max == 0 ? 0.0 : (value / max).clamp(0.0, 1.0);
-    return SizedBox(
-      width: 120,
-      child: Row(
-        children: [
-          SizedBox(
-            width: 44,
-            child: Text(
-              label,
-              style: const TextStyle(color: Colors.white54, fontSize: 11),
-            ),
-          ),
-          Expanded(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(4),
-              child: LinearProgressIndicator(
-                value: ratio,
-                minHeight: 6,
-                backgroundColor: Colors.white12,
-                color:
-                    ratio > 0.85 ? Colors.redAccent : Colors.blueAccent,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 class _HelpRow extends StatelessWidget {
   final IconData icon;
