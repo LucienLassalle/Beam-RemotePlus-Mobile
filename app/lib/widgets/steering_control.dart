@@ -12,14 +12,21 @@ import 'package:sensors_plus/sensors_plus.dart';
 /// établissent la position de repos (zéro absolu). La direction et le pitch
 /// sont ensuite mesurés RELATIVEMENT à cette position, ce qui corrige les
 /// biais d'accéléromètre et la tenue naturelle du téléphone.
-///
-/// Pas de filtre EMA : Android filtre déjà en interne, et tout filtre
-/// applicatif réintroduit le "lag sur changement de direction".
 class SteeringControl extends StatefulWidget {
   final ValueChanged<double> onSteeringChanged;
   final bool tiltMode;
-  final double sensitivity;
+
+  /// Plage de rotation "virtuelle" du volant, en degrés, au sens où
+  /// l'entendent les volants de simracing (360° = arcade/rapide, 900° =
+  /// simulation lourde). Le téléphone ne peut physiquement s'incliner que
+  /// dans une plage confortable (~90° maxi) : cette valeur ne change donc
+  /// pas la course physique du capteur, mais le "rapport" entre l'angle
+  /// d'inclinaison du téléphone et le verrouillage complet — voir
+  /// [maxTiltDegFor]. Plus la plage est grande, plus il faut incliner pour
+  /// atteindre le plein braquage (comportement plus doux, façon volant lourd).
+  final double rotationRangeDeg;
   final bool invert;
+  final bool smoothing;
 
   final VoidCallback? onGearUp;
   final VoidCallback? onGearDown;
@@ -35,13 +42,24 @@ class SteeringControl extends StatefulWidget {
     super.key,
     required this.onSteeringChanged,
     this.tiltMode = true,
-    this.sensitivity = 0.6,
+    this.rotationRangeDeg = 900,
     this.invert = false,
+    this.smoothing = true,
     this.onGearUp,
     this.onGearDown,
     this.gearShiftThresholdDeg = 25,
     this.recalibrateCounter = 0,
   });
+
+  /// Angle d'inclinaison réel du téléphone (degrés, par rapport au repos)
+  /// nécessaire pour atteindre le verrouillage complet, pour une plage de
+  /// rotation [rotationRangeDeg] donnée. Étalonné pour qu'une plage "360°"
+  /// (le défaut) corresponde à ~75° d'inclinaison — une plage confortable où
+  /// la direction reste proportionnelle à l'inclinaison. Exposée pour que
+  /// l'écran de réglages puisse afficher la même valeur que celle réellement
+  /// utilisée par le capteur.
+  static double maxTiltDegFor(double rotationRangeDeg) =>
+      rotationRangeDeg * (75.0 / 360.0);
 
   @override
   State<SteeringControl> createState() => _SteeringControlState();
@@ -63,6 +81,30 @@ class _SteeringControlState extends State<SteeringControl> {
   DateTime _lastShift = DateTime.fromMillisecondsSinceEpoch(0);
   static const Duration _shiftCooldown = Duration(milliseconds: 600);
   static const double _neutralZoneDeg = 20.0;
+
+  // ── Anti-vibration ────────────────────────────────────────────────────
+  // Le bruit du capteur (micro-variations à chaque échantillon) se traduit
+  // directement en tremblement du volant si on l'envoie tel quel. Un EMA
+  // léger (constante de temps ~60-80 ms à la fréquence d'échantillonnage
+  // "game") absorbe ce bruit sans introduire de lag perceptible sur un
+  // mouvement de main volontaire, qui est bien plus lent. La zone morte
+  // élimine le résidu de tremblement autour du centre (position au repos).
+  static const double _emaAlpha = 0.35;
+  static const double _centerDeadzoneDeg = 0.6;
+  double? _smoothedRollDeg;
+
+  // ── Rejet de secousse (main crispée lors d'un tête-à-queue) ────────────
+  // Sous rotation pure, la norme du vecteur accéléromètre reste ~constante
+  // (= g), seule sa direction change. Un à-coup de la main (réflexe au
+  // moment d'un dérapage) ajoute une vraie accélération linéaire, qui elle
+  // fait dévier la norme de sa valeur au repos — et rend l'angle calculé
+  // n'importe quoi le temps de l'à-coup, alors que l'inclinaison "logique"
+  // du téléphone n'a pas vraiment changé. On réduit alors la confiance
+  // accordée à l'échantillon (au lieu de le figer complètement, pour ne
+  // jamais cesser de suivre l'utilisateur) le temps que ça se stabilise.
+  static const double _shakeSoftDeviation = 2.0; // m/s², tolérance normale
+  static const double _shakeHardDeviation = 6.0; // m/s², secousse franche
+  static const double _shakeMinConfidence = 0.08;
 
   @override
   void didUpdateWidget(covariant SteeringControl oldWidget) {
@@ -86,6 +128,7 @@ class _SteeringControlState extends State<SteeringControl> {
     _accumX = _accumY = _accumZ = 0;
     _calibrated = false;
     _gearArmed = true;
+    _smoothedRollDeg = null;
   }
 
   void _updateTiltSubscription() {
@@ -134,11 +177,34 @@ class _SteeringControlState extends State<SteeringControl> {
         math.asin((event.y / mag).clamp(-1.0, 1.0)) * 180 / math.pi;
     final restRollDeg =
         math.asin((_restY / _restMag).clamp(-1.0, 1.0)) * 180 / math.pi;
-    final rollDeg = rawRollDeg - restRollDeg;
+    var rollDeg = rawRollDeg - restRollDeg;
+
+    // ── Confiance selon l'écart de norme (détection de secousse) ─────────
+    final magDeviation = (mag - _restMag).abs();
+    final shakeConfidence = magDeviation <= _shakeSoftDeviation
+        ? 1.0
+        : magDeviation >= _shakeHardDeviation
+            ? _shakeMinConfidence
+            : 1.0 -
+                (magDeviation - _shakeSoftDeviation) /
+                    (_shakeHardDeviation - _shakeSoftDeviation) *
+                    (1.0 - _shakeMinConfidence);
+
+    // ── Lissage anti-vibration (EMA) + zone morte au centre ───────────────
+    // La confiance de secousse s'applique toujours (même lissage désactivé) :
+    // c'est une correction de fiabilité du capteur, pas une préférence de
+    // confort — elle ralentit juste la mise à jour pendant l'à-coup, sans
+    // jamais figer complètement le volant.
+    final baseAlpha = widget.smoothing ? _emaAlpha : 1.0;
+    final alpha = baseAlpha * shakeConfidence;
+    _smoothedRollDeg = _smoothedRollDeg == null
+        ? rollDeg
+        : _smoothedRollDeg! + alpha * (rollDeg - _smoothedRollDeg!);
+    rollDeg = _smoothedRollDeg!;
+    if (rollDeg.abs() < _centerDeadzoneDeg) rollDeg = 0;
 
     final sign = widget.invert ? 1.0 : -1.0;
-    // sensitivity=1.0 → ±45° = lock complet ; 0.6 → ±75°.
-    final maxDeg = 45.0 / widget.sensitivity;
+    final maxDeg = SteeringControl.maxTiltDegFor(widget.rotationRangeDeg);
     final steering =
         (sign * rollDeg / maxDeg / 2).clamp(-0.5, 0.5) + 0.5;
     widget.onSteeringChanged(steering.clamp(0.0, 1.0));

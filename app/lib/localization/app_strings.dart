@@ -58,13 +58,33 @@ class Strings {
       AppLanguage.fr: 'Sinon : glisser le doigt horizontalement',
       AppLanguage.en: 'Otherwise: drag your finger horizontally',
     },
-    'settings_sensitivity_title': {
-      AppLanguage.fr: 'Sensibilité de la direction',
-      AppLanguage.en: 'Steering sensitivity',
+    'settings_rotation_range_title': {
+      AppLanguage.fr: 'Plage de rotation du volant',
+      AppLanguage.en: 'Wheel rotation range',
+    },
+    'settings_rotation_range_subtitle': {
+      AppLanguage.fr:
+          'Comme sur un vrai volant : 360° = rapide et nerveux, 900° = plus lourd et progressif.',
+      AppLanguage.en:
+          'Like on a real wheel: 360° = quick and nervous, 900° = heavier and more progressive.',
+    },
+    'settings_rotation_range_hint': {
+      AppLanguage.fr: 'Il faut incliner d\'environ {deg}° pour braquer à fond.',
+      AppLanguage.en: 'Tilt about {deg}° to reach full lock.',
     },
     'settings_invert_title': {
       AppLanguage.fr: 'Inverser la direction',
       AppLanguage.en: 'Invert steering',
+    },
+    'settings_smoothing_title': {
+      AppLanguage.fr: 'Stabiliser le volant',
+      AppLanguage.en: 'Stabilize steering',
+    },
+    'settings_smoothing_subtitle': {
+      AppLanguage.fr:
+          'Atténue les tremblements dus au capteur (léger délai en échange)',
+      AppLanguage.en:
+          'Reduces sensor jitter/shake (adds a small delay in exchange)',
     },
     'settings_unit_title': {
       AppLanguage.fr: 'Unité km/h',

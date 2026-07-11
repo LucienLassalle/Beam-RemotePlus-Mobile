@@ -27,8 +27,10 @@ class ControlScreen extends StatefulWidget {
 class _ControlScreenState extends State<ControlScreen>
     with WidgetsBindingObserver {
   bool _tiltMode = true;
-  double _sensitivity = 0.6;
+  double _rotationRangeDeg = 900;
   bool _invertSteering = true;
+  bool _steeringSmoothing = true;
+  static const List<double> _rotationRangeOptions = [360, 540, 720, 900];
   bool _useKmh = true;
   bool _hapticsOnShift = false;
   bool _pitchGearShift = false;
@@ -148,15 +150,40 @@ class _ControlScreenState extends State<ControlScreen>
                   },
                 ),
                 ListTile(
-                  title: Text(Strings.t('settings_sensitivity_title')),
-                  subtitle: Slider(
-                    min: 0.2,
-                    max: 1.0,
-                    value: _sensitivity,
-                    onChanged: (v) {
-                      setSheetState(() => _sensitivity = v);
-                      setState(() => _sensitivity = v);
-                    },
+                  title: Text(Strings.t('settings_rotation_range_title')),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(Strings.t('settings_rotation_range_subtitle')),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        children: [
+                          for (final r in _rotationRangeOptions)
+                            ChoiceChip(
+                              label: Text('${r.round()}°'),
+                              selected: _rotationRangeDeg == r,
+                              onSelected: (_) {
+                                setSheetState(() => _rotationRangeDeg = r);
+                                setState(() => _rotationRangeDeg = r);
+                              },
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        Strings.t('settings_rotation_range_hint').replaceFirst(
+                          '{deg}',
+                          SteeringControl.maxTiltDegFor(_rotationRangeDeg)
+                              .round()
+                              .toString(),
+                        ),
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Colors.white38,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 SwitchListTile(
@@ -166,6 +193,17 @@ class _ControlScreenState extends State<ControlScreen>
                     setSheetState(() => _invertSteering = v);
                     setState(() => _invertSteering = v);
                   },
+                ),
+                SwitchListTile(
+                  title: Text(Strings.t('settings_smoothing_title')),
+                  subtitle: Text(Strings.t('settings_smoothing_subtitle')),
+                  value: _steeringSmoothing,
+                  onChanged: !_tiltMode
+                      ? null
+                      : (v) {
+                          setSheetState(() => _steeringSmoothing = v);
+                          setState(() => _steeringSmoothing = v);
+                        },
                 ),
                 SwitchListTile(
                   title: Text(Strings.t('settings_unit_title')),
@@ -365,8 +403,9 @@ class _ControlScreenState extends State<ControlScreen>
                 right: MediaQuery.of(context).size.width * 0.33,
                 child: SteeringControl(
                   tiltMode: false,
-                  sensitivity: _sensitivity,
+                  rotationRangeDeg: _rotationRangeDeg,
                   invert: _invertSteering,
+                  smoothing: _steeringSmoothing,
                   recalibrateCounter: _recalibrateCounter,
                   onSteeringChanged: (v) =>
                       widget.client.updateControls(steering: v),
@@ -378,8 +417,9 @@ class _ControlScreenState extends State<ControlScreen>
                 height: 0,
                 child: SteeringControl(
                   tiltMode: true,
-                  sensitivity: _sensitivity,
+                  rotationRangeDeg: _rotationRangeDeg,
                   invert: _invertSteering,
+                  smoothing: _steeringSmoothing,
                   recalibrateCounter: _recalibrateCounter,
                   onSteeringChanged: (v) =>
                       widget.client.updateControls(steering: v),
