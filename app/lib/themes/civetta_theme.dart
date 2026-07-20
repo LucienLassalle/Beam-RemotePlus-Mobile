@@ -27,8 +27,7 @@ class CivettaTheme implements ControlTheme {
   Widget build(BuildContext context, ControlSurface surface) {
     return Stack(
       children: [
-        Positioned.fill(child: surface.pedalsWidgetInvisible),
-
+        // ── Tableau de bord : arrière-plan du thème ──────────────────────
         Center(
           child: surface.modActive
               ? _Dash(
@@ -38,6 +37,9 @@ class CivettaTheme implements ControlTheme {
                 )
               : const Icon(Icons.info_outline, color: Colors.white24, size: 28),
         ),
+
+        // ── Pédales : contrôle, posé par-dessus le tableau de bord ───────
+        Positioned.fill(child: surface.pedalsWidgetInvisible),
 
         Positioned(
           bottom: 20,

@@ -20,10 +20,8 @@ class DefaultTheme implements ControlTheme {
   Widget build(BuildContext context, ControlSurface surface) {
     return Stack(
       children: [
-        // ── Pédales frein / accélérateur, plein écran ───────────────────
-        Positioned.fill(child: surface.pedalsWidget),
-
-        // ── Tableau de bord centré ───────────────────────────────────────
+        // ── Tableau de bord centré : arrière-plan du thème, toujours
+        // sous les contrôles ci-dessous. ────────────────────────────────
         Center(
           child: surface.modActive
               ? _FullDashboard(
@@ -32,6 +30,10 @@ class DefaultTheme implements ControlTheme {
                 )
               : const _MinimalDashboard(),
         ),
+
+        // ── Pédales frein / accélérateur, plein écran : contrôle, posé
+        // par-dessus le tableau de bord. ────────────────────────────────
+        Positioned.fill(child: surface.pedalsWidget),
 
         // ── Volant : bande basse, centrée. Invisible en mode inclinaison
         // (le widget se masque lui-même), barre de glissement en mode
