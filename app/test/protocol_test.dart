@@ -80,14 +80,34 @@ void main() {
   });
 
   group('PairingCode', () {
-    test('extrait le code après le #', () {
-      final code = PairingCode.tryParse('beamng-drive#A1B2C3');
+    test('extrait le code après le # (ancien format BeamNG < 0.39)', () {
+      final code = PairingCode.tryParse('beamng-drive#54688');
       expect(code, isNotNull);
-      expect(code!.securityCode, 'A1B2C3');
+      expect(code!.securityCode, '54688');
     });
 
-    test('rejette un texte sans #', () {
+    test('extrait le code de l\'URL Play Store (format QR BeamNG >= 0.39)', () {
+      final code = PairingCode.tryParse(
+        'https://play.google.com/store/apps/details?id=com.beamng.remotecontrol#54688',
+      );
+      expect(code, isNotNull);
+      expect(code!.securityCode, '54688');
+    });
+
+    test('accepte un code brut tapé à la main', () {
+      expect(PairingCode.tryParse('54688')?.securityCode, '54688');
+      expect(PairingCode.tryParse('  4200 ')?.securityCode, '4200');
+    });
+
+    test('extrait 5 chiffres noyés dans du texte (pas de #)', () {
+      expect(PairingCode.tryParse('code: 54688 (BeamNG)')?.securityCode, '54688');
+    });
+
+    test('rejette un contenu sans code numérique exploitable', () {
       expect(PairingCode.tryParse('pas-de-hash'), isNull);
+      expect(PairingCode.tryParse('beamng#abc'), isNull);
+      expect(PairingCode.tryParse(''), isNull);
+      expect(PairingCode.tryParse('123'), isNull); // trop court
     });
   });
 }

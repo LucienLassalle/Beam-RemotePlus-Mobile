@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:app/protocol/mod_discovery.dart';
 import 'package:app/protocol/mod_packets.dart';
 import 'package:app/protocol/protocol_constants.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -72,8 +73,8 @@ void main() {
   });
 
   group('ModTelemetryPacket', () {
-    test('parse un paquet little-endian de 8 floats (miroir du struct FFI Lua)', () {
-      final bytes = Uint8List(32);
+    test('parse un paquet little-endian de 9 floats (miroir du struct FFI Lua)', () {
+      final bytes = Uint8List(36);
       final d = ByteData.sublistView(bytes);
       const le = Endian.little;
 
@@ -85,6 +86,7 @@ void main() {
       d.setFloat32(20, 88.5, le); // engineTemp
       d.setFloat32(24, ModTelemetryPacket.lightBitSignalRight.toDouble(), le);
       d.setFloat32(28, 1.0, le); // shiftLight
+      d.setFloat32(32, 95.0, le); // oilTemp
 
       final packet = ModTelemetryPacket.fromBytes(bytes);
 
@@ -97,6 +99,7 @@ void main() {
       expect(packet.signalRight, isTrue);
       expect(packet.signalLeft, isFalse);
       expect(packet.shiftLight, isTrue);
+      expect(packet.oilTemp, closeTo(95.0, 1e-2));
     });
 
     test('rejette un paquet trop court', () {
@@ -104,6 +107,79 @@ void main() {
         () => ModTelemetryPacket.fromBytes(Uint8List(10)),
         throwsFormatException,
       );
+    });
+
+    test('neutralise NaN/Infinity au lieu de planter (régression)', () {
+      // Cas réel observé : juste après un spawn/changement/récupération de
+      // véhicule, electrics.values peut transitoirement remonter NaN côté
+      // jeu (ex: gearIndex). double.round() lève UnsupportedError sur une
+      // valeur non finie -> fromBytes ne doit donc JAMAIS appeler round()
+      // sur une valeur brute non assainie.
+      final bytes = Uint8List(36);
+      final d = ByteData.sublistView(bytes);
+      const le = Endian.little;
+
+      d.setFloat32(0, double.nan, le); // speed
+      d.setFloat32(4, double.infinity, le); // rpm
+      d.setFloat32(8, double.negativeInfinity, le); // redlineRpm
+      d.setFloat32(12, double.nan, le); // gear (le cas qui plantait)
+      d.setFloat32(16, double.nan, le); // fuel
+      d.setFloat32(20, double.infinity, le); // engineTemp
+      d.setFloat32(24, double.nan, le); // lights (le cas qui plantait)
+      d.setFloat32(28, double.nan, le); // shiftLight
+      d.setFloat32(32, double.nan, le); // oilTemp
+
+      late ModTelemetryPacket packet;
+      expect(() => packet = ModTelemetryPacket.fromBytes(bytes), returnsNormally);
+
+      expect(packet.speed, 0.0);
+      expect(packet.rpm, 0.0);
+      expect(packet.redlineRpm, 0.0);
+      expect(packet.gear, 1); // point mort par défaut, pas -1/'R'
+      expect(packet.fuel, 0.0);
+      expect(packet.engineTemp, 0.0);
+      expect(packet.lights, 0);
+      expect(packet.shiftLight, isFalse); // NaN >= 0.5 est déjà false
+      expect(packet.oilTemp, 0.0);
+    });
+  });
+
+  group('ModDiscovery.parseHello', () {
+    test('parse code + label', () {
+      final r = ModDiscovery.parseHello(
+        'beamngremoteplus|hello|54688|BeamNG de Loka',
+        '192.168.1.42',
+      );
+      expect(r, isNotNull);
+      expect(r!.securityCode, '54688');
+      expect(r.label, 'BeamNG de Loka');
+      expect(r.hostAddress, '192.168.1.42');
+    });
+
+    test('label par défaut si absent', () {
+      final r = ModDiscovery.parseHello(
+        'beamngremoteplus|hello|54688',
+        '10.0.0.1',
+      );
+      expect(r, isNotNull);
+      expect(r!.securityCode, '54688');
+      expect(r.label, 'BeamNG.drive');
+    });
+
+    test('rejette un message non-hello', () {
+      expect(
+        ModDiscovery.parseHello('beamngremoteplus|pong|54688|1', '10.0.0.1'),
+        isNull,
+      );
+      expect(ModDiscovery.parseHello('', '10.0.0.1'), isNull);
+      expect(
+        ModDiscovery.parseHello('beamngremoteplus|hello|', '10.0.0.1'),
+        isNull,
+      );
+    });
+
+    test('le message discover a le bon format', () {
+      expect(ModProtocol.discoverMessage, 'beamngremoteplus|discover');
     });
   });
 }

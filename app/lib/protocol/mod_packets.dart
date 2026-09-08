@@ -53,6 +53,16 @@ class ModTelemetryPacket {
 
   static const int sizeBytes = 36;
 
+  /// Neutralise NaN/Infinity : le jeu peut transitoirement remonter des
+  /// valeurs non finies côté electrics (ex: juste après un spawn, un
+  /// changement ou une récupération de véhicule), avant que la physique ne
+  /// se stabilise. `double.round()` lève une [UnsupportedError] sur une
+  /// valeur non finie (pas de FormatException), donc non rattrapée par le
+  /// catch générique du client UDP : on l'évite ici, au point d'entrée
+  /// unique du paquet, plutôt que de blinder chaque écran de thème.
+  static double _finite(double v, [double fallback = 0]) =>
+      v.isFinite ? v : fallback;
+
   factory ModTelemetryPacket.fromBytes(Uint8List bytes) {
     if (bytes.length < sizeBytes) {
       throw FormatException(
@@ -62,15 +72,17 @@ class ModTelemetryPacket {
     final d = ByteData.sublistView(bytes);
     const le = Endian.little;
     return ModTelemetryPacket(
-      speed: d.getFloat32(0, le),
-      rpm: d.getFloat32(4, le),
-      redlineRpm: d.getFloat32(8, le),
-      gear: d.getFloat32(12, le).round(),
-      fuel: d.getFloat32(16, le),
-      engineTemp: d.getFloat32(20, le),
-      lights: d.getFloat32(24, le).round(),
+      speed: _finite(d.getFloat32(0, le)),
+      rpm: _finite(d.getFloat32(4, le)),
+      redlineRpm: _finite(d.getFloat32(8, le)),
+      // Fallback 1 = point mort plutôt que 0 = marche arrière, moins trompeur
+      // pour une lecture aberrante ponctuelle.
+      gear: _finite(d.getFloat32(12, le), 1).round(),
+      fuel: _finite(d.getFloat32(16, le)),
+      engineTemp: _finite(d.getFloat32(20, le)),
+      lights: _finite(d.getFloat32(24, le)).round(),
       shiftLight: d.getFloat32(28, le) >= 0.5,
-      oilTemp: d.getFloat32(32, le),
+      oilTemp: _finite(d.getFloat32(32, le)),
     );
   }
 

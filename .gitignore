@@ -1,3 +1,4 @@
-# Cache persistant du debug keystore Android utilisé par les builds Podman
-# (voir scripts/build_apk.sh) : généré localement, ne doit jamais être commité.
+# Caches persistants des builds Podman (voir scripts/build_apk.sh) : générés
+# localement, ne doivent jamais être commités.
 docker/.android-home-cache/
+docker/.gradle-cache/

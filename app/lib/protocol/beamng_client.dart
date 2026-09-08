@@ -284,8 +284,14 @@ class BeamngClient {
         _latencyController.add(DateTime.now().difference(sentAt));
       }
       _telemetryController.add(packet);
-    } on FormatException {
-      // paquet non conforme, ignoré (ex: bruit réseau)
+    } catch (e) {
+      // Paquet non conforme ou champ inexploitable (bruit réseau, valeur
+      // non finie côté jeu...) : on l'ignore plutôt que de planter tout le
+      // pipeline de télémétrie pour une seule trame perdue. Volontairement
+      // large (pas juste FormatException) : un paquet malformé peut aussi
+      // léver d'autres erreurs selon son contenu (ex: RangeError, ou
+      // UnsupportedError sur un .round() de NaN/Infinity côté parsing).
+      AppDebug.log('_onTelemetryDatagram: paquet ignoré ($e)');
     }
   }
 
@@ -296,8 +302,12 @@ class BeamngClient {
     }
     try {
       _modTelemetryController.add(ModTelemetryPacket.fromBytes(dg.data));
-    } on FormatException {
-      // paquet non conforme, ignoré
+    } catch (e) {
+      // Voir commentaire de _onTelemetryDatagram : même logique, catch large
+      // volontaire pour qu'une trame perdue/aberrante ne fasse jamais planter
+      // le dashboard, elle est simplement ignorée (la précédente valeur
+      // affichée reste à l'écran jusqu'à la prochaine trame valide).
+      AppDebug.log('_onModTelemetryDatagram: paquet ignoré ($e)');
     }
   }
 

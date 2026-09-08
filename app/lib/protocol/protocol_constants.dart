@@ -40,6 +40,18 @@ class ModProtocol {
   static const String pingPrefix = 'beamngremoteplus|ping|';
   static const String pongPrefix = 'beamngremoteplus|pong|';
 
+  /// Découverte sans code : l'app diffuse [discoverMessage] sur [hostPort],
+  /// le mod répond `${helloPrefix}<code>|<label>` sur [clientPort].
+  /// Remplace le scan du QR code natif de BeamNG, cassé depuis la 0.39.
+  static const String discoverMessage = 'beamngremoteplus|discover';
+  static const String helloPrefix = 'beamngremoteplus|hello|';
+
+  /// Durée d'une passe de découverte automatique avant abandon.
+  static const int discoverTimeoutMs = 4000;
+
+  /// Intervalle entre deux diffusions de la sonde de découverte.
+  static const int discoverRetryMs = 400;
+
   static const int pingTimeoutMs = 600;
   static const int controlIntervalMs = 16; // ~60Hz
 

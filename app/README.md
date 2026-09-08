@@ -1,16 +1,23 @@
-# app
+# app/ — module Flutter de BeamNG RemotePlus
 
-A new Flutter project.
+Le code source de l'application Android. La documentation d'usage et
+d'installation est dans le [README du dépôt](../README.md).
 
-## Getting Started
+```bash
+# depuis la racine du dépôt
+bash scripts/build_apk.sh
 
-This project is a starting point for a Flutter application.
+# analyse + tests (conteneur Podman, rien à installer sur l'hôte)
+podman run --rm -v "$PWD/app:/workspace:Z" -w /workspace \
+  localhost/beamng-remoteplus-flutter:latest \
+  -c "flutter pub get && flutter analyze && flutter test"
+```
 
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+| Dossier | Rôle |
+|---|---|
+| `lib/protocol/` | Protocoles UDP (natif BeamNG + canal mod), découverte, parsing du code. |
+| `lib/screens/` | Écrans : appairage, conduite. |
+| `lib/widgets/` | Volant, pédales, boutons, tableau de bord. |
+| `lib/themes/` | Thèmes du tableau de bord. |
+| `lib/platform/` | Ponts natifs Android (infos réseau hotspot, exclusion de gestes). |
+| `test/` | Tests unitaires du protocole et de l'UI. |

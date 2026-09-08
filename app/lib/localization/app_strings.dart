@@ -38,13 +38,57 @@ class Strings {
     },
     'scan_hint': {
       AppLanguage.fr:
-          'Dans BeamNG.drive : Options > Contrôles > Matériel > Application de contrôle à distance',
+          'Ou scannez le QR code : BeamNG.drive > Options > Contrôles > Matériel',
       AppLanguage.en:
-          'In BeamNG.drive: Options > Controls > Hardware > Remote control app',
+          'Or scan the QR code: BeamNG.drive > Options > Controls > Hardware',
     },
     'invalid_qr': {
-      AppLanguage.fr: 'QR code invalide.',
-      AppLanguage.en: 'Invalid QR code.',
+      AppLanguage.fr: 'QR code non reconnu. Essayez la connexion automatique.',
+      AppLanguage.en: 'QR code not recognized. Try auto-connect instead.',
+    },
+    'auto_connect_button': {
+      AppLanguage.fr: 'Connexion automatique',
+      AppLanguage.en: 'Auto-connect',
+    },
+    'auto_connect_searching': {
+      AppLanguage.fr: 'Recherche de BeamNG.drive sur le réseau…',
+      AppLanguage.en: 'Looking for BeamNG.drive on the network…',
+    },
+    'auto_connect_failed': {
+      AppLanguage.fr:
+          'BeamNG.drive introuvable. Vérifiez que le jeu tourne, que le mod '
+          'Beam-RemotePlus est actif et que le téléphone est sur le même '
+          'réseau Wi-Fi. Sinon, saisissez le code manuellement.',
+      AppLanguage.en:
+          'Could not find BeamNG.drive. Check that the game is running, the '
+          'Beam-RemotePlus mod is active and the phone is on the same Wi-Fi. '
+          'Otherwise, enter the code manually.',
+    },
+    'pairing_connecting': {
+      AppLanguage.fr: 'Connexion…',
+      AppLanguage.en: 'Connecting…',
+    },
+    'pairing_timeout': {
+      AppLanguage.fr:
+          'Aucune réponse de BeamNG.drive. Vérifiez le réseau et le code.',
+      AppLanguage.en:
+          'No response from BeamNG.drive. Check the network and the code.',
+    },
+    'manual_code_label': {
+      AppLanguage.fr: 'Code d\'appairage',
+      AppLanguage.en: 'Pairing code',
+    },
+    'manual_code_hint': {
+      AppLanguage.fr: '5 chiffres',
+      AppLanguage.en: '5 digits',
+    },
+    'manual_code_connect': {
+      AppLanguage.fr: 'Connexion',
+      AppLanguage.en: 'Connect',
+    },
+    'manual_code_invalid': {
+      AppLanguage.fr: 'Code invalide : 4 à 6 chiffres attendus.',
+      AppLanguage.en: 'Invalid code: 4 to 6 digits expected.',
     },
     'settings_title': {
       AppLanguage.fr: 'Paramètres',
