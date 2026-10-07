@@ -1,0 +1,7 @@
+# Copy to key.properties (git-ignored) to sign release builds with your key.
+# Create a keystore once with:
+#   keytool -genkey -v -keystore upload-keystore.jks -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+storeFile=/absolute/path/to/upload-keystore.jks
+storePassword=change-me
+keyAlias=upload
+keyPassword=change-me

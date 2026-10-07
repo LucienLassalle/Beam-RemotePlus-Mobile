@@ -1,5 +1,6 @@
-# Image de build rootless (Podman) : Flutter SDK + Android SDK
-# Aucune installation nécessaire sur l'hôte Fedora/Nobara, tout est ici.
+# Rootless (Podman) build image: Flutter SDK + Android SDK.
+# Nothing to install on the host. Keep FLUTTER_VERSION in sync with CI
+# (.github/workflows/*.yml).
 FROM docker.io/eclipse-temurin:17-jdk-jammy
 
 ARG FLUTTER_VERSION=3.27.1
