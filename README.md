@@ -48,7 +48,7 @@ with sample data.
   horn, headlight flash, lights, parking brake, ignition, drive mode, cruise
   control. Camera, vehicle switching and hold-to-reset on every theme.
 - **Volume buttons**: volume up = horn, volume down = headlight flash.
-- **Warning lights** like a real car: check engine, oil pressure,
+- **Warning lights**: check engine, oil pressure,
   overheating, engine stopped, low fuel, flat tyre, low tyre pressure, hot
   brakes, parking brake while moving.
 - **Road-feel vibrations**: impacts, wheelspin and locked wheels, kerbs.
