@@ -10,8 +10,17 @@ class ConnectPanel extends StatefulWidget {
   final PairingController controller;
   final VoidCallback onAutoConnect;
   final ValueChanged<String> onSubmitCode;
+  final bool secondScreen;
+  final ValueChanged<bool> onSecondScreenChanged;
 
-  const ConnectPanel({super.key, required this.controller, required this.onAutoConnect, required this.onSubmitCode});
+  const ConnectPanel({
+    super.key,
+    required this.controller,
+    required this.onAutoConnect,
+    required this.onSubmitCode,
+    required this.secondScreen,
+    required this.onSecondScreenChanged,
+  });
 
   @override
   State<ConnectPanel> createState() => _ConnectPanelState();
@@ -72,6 +81,15 @@ class _ConnectPanelState extends State<ConnectPanel> {
               padding: const EdgeInsets.only(bottom: 10),
               child: Text(error, textAlign: TextAlign.center, style: const TextStyle(color: Colors.redAccent)),
             ),
+          SwitchListTile(
+            dense: true,
+            contentPadding: EdgeInsets.zero,
+            secondary: const Icon(Icons.tv),
+            title: Text(l10n.secondScreenTitle),
+            subtitle: Text(l10n.secondScreenSubtitle),
+            value: widget.secondScreen,
+            onChanged: c.busy ? null : widget.onSecondScreenChanged,
+          ),
           FilledButton.icon(
             onPressed: c.busy ? null : widget.onAutoConnect,
             icon: const Icon(Icons.wifi_find),

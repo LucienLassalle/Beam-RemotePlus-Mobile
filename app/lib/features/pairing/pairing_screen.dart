@@ -52,6 +52,7 @@ class _PairingScreenState extends State<PairingScreen> {
   }
 
   Future<void> _run(Future<BeamngConnection?> Function() attempt) async {
+    _controller.secondScreen = SettingsScope.read(context).settings.secondScreen;
     if (_cameraAllowed) await _scanner.stop();
     final connection = await attempt();
     if (connection != null && mounted) {
@@ -95,6 +96,9 @@ class _PairingScreenState extends State<PairingScreen> {
             listenable: _controller,
             builder: (context, _) => ConnectPanel(
               controller: _controller,
+              secondScreen: SettingsScope.of(context).settings.secondScreen,
+              onSecondScreenChanged: (v) =>
+                  unawaited(SettingsScope.read(context).update((s) => s.copyWith(secondScreen: v))),
               onAutoConnect: () => _run(_controller.autoConnect),
               onSubmitCode: (code) => _run(() => _controller.submitCode(code)),
             ),

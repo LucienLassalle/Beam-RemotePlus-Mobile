@@ -17,6 +17,9 @@ class PairingController extends ChangeNotifier {
   final Future<DiscoveredHost?> Function() _discover;
   final BeamngConnection Function() _newConnection;
 
+  /// Connect as a display-only second screen (see AppSettings.secondScreen).
+  bool secondScreen = false;
+
   PairingStatus _status = PairingStatus.idle;
   PairingError? _error;
   String? _errorDetail;
@@ -74,7 +77,7 @@ class PairingController extends ChangeNotifier {
     _set(PairingStatus.connecting);
     final connection = _newConnection();
     try {
-      await connection.connect(code, knownHost: knownHost);
+      await connection.connect(code, knownHost: knownHost, display: secondScreen);
       _set(PairingStatus.idle);
       return connection;
     } on TimeoutException {

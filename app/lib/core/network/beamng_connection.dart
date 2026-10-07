@@ -32,6 +32,9 @@ class BeamngConnection implements RemoteLink {
   int _protocolVersion = 0;
   bool debugAcks = false;
 
+  /// Second-screen phone: telemetry only, no inputs sent to the game.
+  bool _display = false;
+
   RawDatagramSocket? _nativeSocket; // handshake answer
   RawDatagramSocket? _controlSocket; // native control packets
   RawDatagramSocket? _modSocket; // mod: pong, telemetry, events + sending
@@ -67,14 +70,18 @@ class BeamngConnection implements RemoteLink {
   }
 
   /// Pairs with the game. [knownHost] (from automatic discovery) is tried
-  /// first, broadcasts cover the manual-code / QR cases.
-  Future<void> connect(String code, {String? knownHost}) async {
+  /// first, broadcasts cover the manual-code / QR cases. With [display]
+  /// the phone is a second screen: it only talks to the mod (the native
+  /// handshake would create a game controller) and never sends inputs.
+  Future<void> connect(String code, {String? knownHost, bool display = false}) async {
     await disconnect();
+    _display = display;
     _setState(LinkState.connecting);
 
     final deviceName = await resolveDeviceName();
     final targets = [if (knownHost != null) knownHost, ...await broadcastTargets()];
-    DebugLog.log('connect: targets=$targets device=$deviceName');
+    DebugLog.log('connect: targets=$targets device=$deviceName display=$display');
+    if (display) return _connectDisplay(code, deviceName, targets);
 
     final InternetAddress host;
     try {
@@ -89,6 +96,43 @@ class BeamngConnection implements RemoteLink {
     _restartControlTimer();
     _setState(LinkState.connected);
     unawaited(_probeMod(code, deviceName));
+  }
+
+  Future<void> _connectDisplay(String code, String deviceName, List<String> targets) async {
+    final socket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, ModProtocol.clientPort, reuseAddress: true);
+    socket.broadcastEnabled = true;
+    _modSocket = socket;
+    final found = Completer<InternetAddress>();
+    socket.listen((event) {
+      if (event != RawSocketEvent.read) return;
+      final dg = socket.receive();
+      if (dg == null) return;
+      if (!found.isCompleted) {
+        if (ModProtocol.parsePong(utf8.decode(dg.data, allowMalformed: true), code) != null) found.complete(dg.address);
+        return;
+      }
+      _onModDatagram(dg, code);
+    });
+    final ping = utf8.encode(ModProtocol.ping(code, deviceName, display: true));
+    final retry = Timer.periodic(const Duration(milliseconds: NativeProtocol.discoveryRetryMs), (_) {
+      for (final target in targets) {
+        try {
+          socket.send(ping, InternetAddress(target), ModProtocol.hostPort);
+        } catch (_) {}
+      }
+    });
+    try {
+      _host = await found.future.timeout(const Duration(seconds: 6));
+    } on TimeoutException {
+      _setState(LinkState.timeout);
+      rethrow;
+    } finally {
+      retry.cancel();
+    }
+    _setState(LinkState.connected);
+    // The first pong is consumed above: hand the session to the normal
+    // keep-alive/telemetry logic.
+    _startModPings(socket, code, deviceName);
   }
 
   Future<InternetAddress> _nativeHandshake(String code, String deviceName, List<String> targets) async {
@@ -151,10 +195,15 @@ class BeamngConnection implements RemoteLink {
       if (dg != null) _onModDatagram(dg, code);
     });
 
-    // Never stops pinging: fast while the mod is not found (it may be
-    // enabled after the phone connected), slowly once paired so the session
-    // is restored if the mod restarts (reload, switched off and on...).
-    final ping = utf8.encode(ModProtocol.ping(code, deviceName));
+    _startModPings(socket, code, deviceName);
+  }
+
+  // Never stops pinging: fast while the mod is not found (it may be enabled
+  // after the phone connected), slowly once paired so the session is
+  // restored if the mod restarts (reload, switched off and on...).
+  void _startModPings(RawDatagramSocket socket, String code, String deviceName) {
+    final host = _host!;
+    final ping = utf8.encode(ModProtocol.ping(code, deviceName, display: _display));
     socket.send(ping, host, ModProtocol.hostPort);
     var ticks = 0;
     _modPingTimer = Timer.periodic(const Duration(milliseconds: ModProtocol.pingRetryMs), (_) {
@@ -226,6 +275,7 @@ class BeamngConnection implements RemoteLink {
 
   void _restartControlTimer() {
     _controlTimer?.cancel();
+    if (_display) return; // a second screen never drives
     final interval = _modActive ? ModProtocol.controlIntervalMs : NativeProtocol.controlIntervalMs;
     _controlTimer = Timer.periodic(Duration(milliseconds: interval), (_) => _sendControls());
   }

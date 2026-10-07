@@ -33,8 +33,9 @@ class ModProtocol {
   static const Duration modSilenceTimeout = Duration(seconds: 6);
   static const int controlIntervalMs = 16; // ~60 Hz
 
-  static String ping(String code, String deviceName) =>
-      '$pingPrefix$code|$version|${deviceName.replaceAll('|', ' ')}';
+  /// [display]: second-screen phone, telemetry only (no virtual device).
+  static String ping(String code, String deviceName, {bool display = false}) =>
+      '$pingPrefix$code|$version|${deviceName.replaceAll('|', ' ')}${display ? '|display' : ''}';
 
   /// Returns the negotiated protocol version if [message] is the pong for
   /// [code], null otherwise. A pong without version comes from a v1 mod.
