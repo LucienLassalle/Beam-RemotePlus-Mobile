@@ -83,14 +83,15 @@ class _WarningOverlayState extends State<WarningOverlay> {
     final popping = _popping;
     return IgnorePointer(
       child: Stack(children: [
+        // Active warnings stack on the right edge, under the connection
+        // status, where no theme draws (the dashboard is centred).
         Positioned(
-          top: 0,
-          left: 0,
-          right: 0,
-          child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+          top: 28,
+          right: 14,
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
             for (final w in _active)
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
+                padding: const EdgeInsets.symmetric(vertical: 3),
                 child: Icon(warningIcon(w), color: _color(w), size: 24),
               ),
           ]),
