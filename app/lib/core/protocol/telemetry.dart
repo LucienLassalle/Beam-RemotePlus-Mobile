@@ -1,5 +1,9 @@
 import 'dart:typed_data';
 
+import 'vehicle_state.dart';
+
+export 'vehicle_state.dart';
+
 /// One telemetry snapshot of the vehicle followed by this phone.
 ///
 /// Every field is nullable: null means "this vehicle (or an older mod) does
@@ -46,11 +50,29 @@ class Telemetry {
   final double? trip; // m
   final double? gx; // m/s²
   final double? gy;
+  final double? gz;
   final bool? shiftLight;
   final Map<String, double>? tirePressures; // kPa by wheel name
   final String? driveMode;
   final int? player;
   final String? vehicle;
+
+  /// Largest wheel slip velocity (m/s): wheelspin, locked wheels, drifts.
+  final double? wheelSlip;
+
+  /// Cars around (empty list = none nearby, null = not sent by the mod).
+  final List<RadarTarget>? radar;
+
+  /// Body damage per zone (FL, FR, ML, MR, RL, RR), 0..1; null = intact.
+  final Map<String, double>? bodyDamage;
+
+  /// Engine failures reported by the game (radiatorLeak, oilpanLeak...).
+  final List<String> engineDamage;
+  final List<String> flatTires;
+  final List<String> hotBrakes;
+
+  /// Per-wheel tyre data, only with the "Tyre Thermals and Wear" mod.
+  final Map<String, TyreState>? tyres;
 
   /// Names of the fields actually received (for the debug overlay).
   final Set<String> receivedFields;
@@ -96,11 +118,19 @@ class Telemetry {
     this.trip,
     this.gx,
     this.gy,
+    this.gz,
     this.shiftLight,
     this.tirePressures,
     this.driveMode,
     this.player,
     this.vehicle,
+    this.wheelSlip,
+    this.radar,
+    this.bodyDamage,
+    this.engineDamage = const [],
+    this.flatTires = const [],
+    this.hotBrakes = const [],
+    this.tyres,
     this.receivedFields = const {},
   });
 
@@ -171,6 +201,25 @@ class Telemetry {
     return result.isEmpty ? null : result;
   }
 
+  static Map<String, double>? _numbers(Object? v) => _pressures(v);
+
+  static List<String> _strings(Object? v) =>
+      v is List ? [for (final e in v) if (e is String) e] : const [];
+
+  static List<RadarTarget>? _radar(Object? v) {
+    if (v is Map && v.isEmpty) return const []; // empty Lua table
+    if (v is! List) return null;
+    return [for (final e in v) if (e is Map) RadarTarget.fromJson(e)];
+  }
+
+  static Map<String, TyreState>? _tyres(Object? v) {
+    if (v is! Map || v.isEmpty) return null;
+    return {
+      for (final e in v.entries)
+        if (e.key is String && e.value is Map) e.key as String: TyreState.fromJson(e.value as Map<Object?, Object?>),
+    };
+  }
+
   static String? _driveMode(Object? v) {
     if (v is Map) return _str(v['name']) ?? _str(v['key']);
     return _str(v);
@@ -220,11 +269,19 @@ class Telemetry {
       trip: _num(j['trip']),
       gx: _num(j['gx']),
       gy: _num(j['gy']),
+      gz: _num(j['gz']),
       shiftLight: _bool(j['shiftLight']),
       tirePressures: _pressures(j['tirePressures']),
       driveMode: _driveMode(j['driveMode']),
       player: _int(j['player']),
       vehicle: _str(j['vehicle']),
+      wheelSlip: _num(j['wheelSlip']),
+      radar: _radar(j['radar']),
+      bodyDamage: _numbers(j['bodyDamage']),
+      engineDamage: _strings(j['engineDamage']),
+      flatTires: _strings(j['flatTires']),
+      hotBrakes: _strings(j['hotBrakes']),
+      tyres: _tyres(j['tyres']),
       receivedFields: {
         for (final e in j.entries)
           if (e.value != null && e.key != 'type') e.key,
