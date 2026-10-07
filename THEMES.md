@@ -85,15 +85,26 @@ Ready-made blocks in `lib/themes/kit/`:
 | `WarningLamp` | telltale icon, bright when on, dim when off |
 | `ValueBox` | framed label + value cell (race displays) |
 | `DashFormat` | consistent number formatting (speed, fuel %, distance...) |
+| `RadarView` | top-down radar of the cars around |
+| `DamageView` | body damage zones, flat tyres and tyre temperatures |
 
-## Colors of the controls
+## Colors of the controls and vehicle buttons
 
-Override `style` to match the pedal and button colors with your design:
+Override `style` to match the pedal and button colors with your design, and
+to choose which vehicle buttons your theme offers at the bottom of the screen
+(none by default; users can still hide each one in the settings):
 
 ```dart
 @override
-ThemeStyle get style => const ThemeStyle(brakeColor: Colors.red, throttleColor: Colors.cyan, visiblePedals: false);
+ThemeStyle get style => const ThemeStyle(
+      brakeColor: Colors.red,
+      throttleColor: Colors.cyan,
+      actions: {VehicleAction.signals, VehicleAction.hazard, VehicleAction.lights},
+    );
 ```
+
+The app always adds the vehicle switch (top left), hold-to-reset (top
+centre), camera buttons (bottom centre), settings and warning lights.
 
 ## Rules for a theme pull request
 
