@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:app/main.dart';
+import 'package:beam_remoteplus/main.dart';
 
 void main() {
   testWidgets('App démarre sur l\'écran de pairing', (

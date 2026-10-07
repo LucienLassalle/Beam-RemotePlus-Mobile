@@ -1,8 +1,8 @@
 import 'dart:typed_data';
 
-import 'package:app/protocol/control_packet.dart';
-import 'package:app/protocol/pairing_code.dart';
-import 'package:app/protocol/telemetry_packet.dart';
+import 'package:beam_remoteplus/protocol/control_packet.dart';
+import 'package:beam_remoteplus/protocol/pairing_code.dart';
+import 'package:beam_remoteplus/protocol/telemetry_packet.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

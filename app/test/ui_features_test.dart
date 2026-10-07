@@ -1,4 +1,4 @@
-import 'package:app/localization/app_strings.dart';
+import 'package:beam_remoteplus/localization/app_strings.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Tests des nouvelles fonctionnalités UI :

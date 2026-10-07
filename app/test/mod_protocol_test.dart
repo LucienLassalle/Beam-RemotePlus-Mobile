@@ -1,8 +1,8 @@
 import 'dart:typed_data';
 
-import 'package:app/protocol/mod_discovery.dart';
-import 'package:app/protocol/mod_packets.dart';
-import 'package:app/protocol/protocol_constants.dart';
+import 'package:beam_remoteplus/protocol/mod_discovery.dart';
+import 'package:beam_remoteplus/protocol/mod_packets.dart';
+import 'package:beam_remoteplus/protocol/protocol_constants.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

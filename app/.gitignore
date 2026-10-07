@@ -47,3 +47,8 @@ app.*.map.json
 # Clé de signature du projet (générée localement, ne doit jamais être commitée)
 /android/key.properties
 /android/keystore/
+
+# Generated from lib/l10n/*.arb by `flutter gen-l10n` / `flutter pub get`
+/lib/l10n/generated/
+# Theme previews rendered by `scripts/flutter.sh screenshots`
+/test/screenshots/goldens/
