@@ -47,6 +47,14 @@ android {
         }
     }
 
+    // Compress native libraries inside the APK: about half the download
+    // size for APKs distributed on GitHub (Play Store bundles are not affected).
+    packaging {
+        jniLibs {
+            useLegacyPackaging = true
+        }
+    }
+
     buildTypes {
         release {
             // Signed with key.properties when present (stable signature, required
