@@ -20,6 +20,21 @@ class AppSettings {
   final bool showActionsBar;
   final bool debugMode;
 
+  /// Road-feel vibrations (wheel slip, impacts, kerbs).
+  final bool roadHaptics;
+
+  /// Real-car style warning lights popping on screen.
+  final bool warningPopups;
+
+  /// Radar + damage panel over the driving screen.
+  final bool showVehiclePanel;
+
+  /// Display-only phone: dashboard, radar and damage, no controls.
+  final bool secondScreen;
+
+  /// Vehicle buttons (VehicleAction names) hidden by the user.
+  final Set<String> hiddenActions;
+
   static const List<double> rotationRanges = [360, 540, 720, 900];
 
   const AppSettings({
@@ -35,6 +50,11 @@ class AppSettings {
     this.volumeKeys = true,
     this.showActionsBar = true,
     this.debugMode = false,
+    this.roadHaptics = true,
+    this.warningPopups = true,
+    this.showVehiclePanel = false,
+    this.secondScreen = false,
+    this.hiddenActions = const {},
   });
 
   // Sentinel so copyWith can set localeCode back to null (system language).
@@ -53,6 +73,11 @@ class AppSettings {
     bool? volumeKeys,
     bool? showActionsBar,
     bool? debugMode,
+    bool? roadHaptics,
+    bool? warningPopups,
+    bool? showVehiclePanel,
+    bool? secondScreen,
+    Set<String>? hiddenActions,
   }) {
     return AppSettings(
       themeName: themeName ?? this.themeName,
@@ -67,6 +92,11 @@ class AppSettings {
       volumeKeys: volumeKeys ?? this.volumeKeys,
       showActionsBar: showActionsBar ?? this.showActionsBar,
       debugMode: debugMode ?? this.debugMode,
+      roadHaptics: roadHaptics ?? this.roadHaptics,
+      warningPopups: warningPopups ?? this.warningPopups,
+      showVehiclePanel: showVehiclePanel ?? this.showVehiclePanel,
+      secondScreen: secondScreen ?? this.secondScreen,
+      hiddenActions: hiddenActions ?? this.hiddenActions,
     );
   }
 
@@ -83,6 +113,11 @@ class AppSettings {
         'volumeKeys': volumeKeys,
         'showActionsBar': showActionsBar,
         'debugMode': debugMode,
+        'roadHaptics': roadHaptics,
+        'warningPopups': warningPopups,
+        'showVehiclePanel': showVehiclePanel,
+        'secondScreen': secondScreen,
+        'hiddenActions': hiddenActions.toList()..sort(),
       };
 
   /// Missing or wrongly typed values fall back to the defaults, so settings
@@ -109,6 +144,13 @@ class AppSettings {
       volumeKeys: pick('volumeKeys', d.volumeKeys),
       showActionsBar: pick('showActionsBar', d.showActionsBar),
       debugMode: pick('debugMode', d.debugMode),
+      roadHaptics: pick('roadHaptics', d.roadHaptics),
+      warningPopups: pick('warningPopups', d.warningPopups),
+      showVehiclePanel: pick('showVehiclePanel', d.showVehiclePanel),
+      secondScreen: pick('secondScreen', d.secondScreen),
+      hiddenActions: json['hiddenActions'] is List
+          ? {for (final a in json['hiddenActions']! as List<Object?>) if (a is String) a}
+          : d.hiddenActions,
     );
   }
 }

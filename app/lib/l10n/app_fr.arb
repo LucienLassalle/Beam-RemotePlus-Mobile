@@ -1,8 +1,6 @@
 {
   "@@locale": "fr",
-
   "appTitle": "BeamNG RemotePlus",
-
   "cameraPermissionMessage": "L'autorisation caméra est nécessaire pour scanner le QR code affiché par BeamNG.drive.",
   "cameraPermissionButton": "Autoriser la caméra",
   "scanHint": "Ou scannez le QR code : BeamNG.drive > Options > Contrôles > Matériel",
@@ -16,14 +14,12 @@
   "manualCodeHint": "5 chiffres",
   "manualCodeConnect": "Connexion",
   "manualCodeInvalid": "Code invalide : 4 à 6 chiffres attendus.",
-
   "statusConnected": "Connecté",
   "statusConnecting": "Connexion…",
   "statusTimeout": "Expiré",
   "statusError": "Erreur",
   "statusIdle": "Déconnecté",
   "modMissingBanner": "Installez le mod Beam-RemotePlus dans BeamNG.drive pour avoir les pédales progressives, le tableau de bord et les boutons du véhicule.",
-
   "settingsTitle": "Paramètres",
   "settingsSectionDisplay": "Affichage",
   "settingsSectionSteering": "Direction",
@@ -58,17 +54,14 @@
   "settingsRecalibrateDone": "Calibration en cours…",
   "settingsDebugTitle": "Mode debug",
   "settingsDebugSubtitle": "Affiche à l'écran les valeurs manquantes et les commandes en échec",
-
   "pedalBrake": "FREIN",
   "pedalThrottle": "GAZ",
-
   "vehiclePrev": "Véhicule précédent",
   "vehicleNext": "Véhicule suivant",
   "camPrev": "Caméra précédente",
   "camNext": "Caméra suivante",
   "resetVehicleTooltip": "Maintenir pour réinitialiser le véhicule",
   "resetVehicleDone": "Véhicule réinitialisé",
-
   "actionHorn": "Klaxon",
   "actionHighBeam": "Appel de phares",
   "actionHazard": "Warnings",
@@ -79,12 +72,11 @@
   "actionStarter": "Contact",
   "actionEscMode": "Mode de conduite / ESC",
   "actionCruise": "Régulateur de vitesse",
-
   "helpTitle": "Aide — Commandes",
   "helpBrake": "Frein",
-  "helpBrakeDesc": "Moitié gauche de l'écran : glisser vers le haut pour freiner plus fort",
+  "helpBrakeDesc": "Côté gauche de l'écran : glisser vers le haut pour freiner plus fort",
   "helpThrottle": "Accélérateur",
-  "helpThrottleDesc": "Moitié droite de l'écran : glisser vers le haut pour accélérer plus fort",
+  "helpThrottleDesc": "Côté droit de l'écran : glisser vers le haut pour accélérer plus fort",
   "helpSteeringTilt": "Direction (inclinaison)",
   "helpSteeringTiltDesc": "Incliner le téléphone à gauche / à droite comme un volant",
   "helpSteeringTouch": "Direction (tactile)",
@@ -100,7 +92,6 @@
   "helpVolumeKeys": "Boutons de volume",
   "helpVolumeKeysDesc": "Volume + = klaxon · volume − = appel de phares",
   "helpModRequired": "Mod requis",
-
   "debugTitle": "Debug",
   "debugProtocol": "Mod {version} · protocole v{protocol}",
   "debugNoMod": "Mod non détecté : contrôle natif uniquement",
@@ -112,5 +103,25 @@
   "debugCommandOk": "{command} OK",
   "debugModeTooltip": "Mode debug",
   "debugModeOn": "Mode debug activé",
-  "debugModeOff": "Mode debug désactivé"
+  "debugModeOff": "Mode debug désactivé",
+  "actionSignals": "Clignotants",
+  "vehiclePanelTooltip": "Radar et dégâts",
+  "secondScreenTitle": "Second écran",
+  "secondScreenSubtitle": "Tableau de bord, radar et dégâts uniquement : conduisez avec votre volant ou votre manette",
+  "settingsSecondScreenSubtitle": "S'applique à la prochaine connexion",
+  "settingsRoadHapticsTitle": "Vibrations de la route",
+  "settingsRoadHapticsSubtitle": "Vibre au patinage, au blocage des roues, aux chocs et sur les vibreurs",
+  "settingsWarningsTitle": "Voyants d'alerte",
+  "settingsWarningsSubtitle": "Affiche les voyants moteur, huile, température, carburant, pneus… comme dans une vraie voiture",
+  "settingsVehiclePanelTitle": "Panneau radar et dégâts",
+  "settingsVehiclePanelSubtitle": "Véhicules proches, dégâts de carrosserie et températures des pneus (températures : mod Tyre Thermals and Wear requis)",
+  "warningCheckEngine": "Défaut moteur",
+  "warningOilPressure": "Pression d'huile",
+  "warningOverheating": "Surchauffe moteur",
+  "warningEngineStopped": "Moteur arrêté",
+  "warningLowFuel": "Réserve de carburant",
+  "warningFlatTire": "Pneu crevé",
+  "warningLowTirePressure": "Pression des pneus basse",
+  "warningBrakesOverheating": "Freins en surchauffe",
+  "warningParkingBrake": "Frein à main serré"
 }

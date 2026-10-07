@@ -1,7 +1,10 @@
 package com.beamngremoteplus.app
 
 import android.graphics.Rect
+import android.content.Context
 import android.os.Build
+import android.os.VibrationEffect
+import android.os.VibratorManager
 import android.util.Log
 import android.view.KeyEvent
 import io.flutter.embedding.android.FlutterActivity
@@ -16,6 +19,7 @@ import java.util.Collections
  *  - gesture_exclusion: keeps Android edge/back gestures away from the pedals
  *  - network_info: finds the hotspot interface address (phone as access point)
  *  - hardware_keys: captures the volume buttons while driving (horn / flash)
+ *  - vibrator: variable-strength pulses for the road-feel haptics
  */
 class MainActivity : FlutterActivity() {
     private val logTag = "BeamRemotePlus"
@@ -92,12 +96,36 @@ class MainActivity : FlutterActivity() {
             result.success(found?.let { mapOf("address" to it.first, "prefixLength" to it.second) })
         }
 
+        MethodChannel(messenger, "com.beamngremoteplus.app/vibrator").setMethodCallHandler { call, result ->
+            if (call.method != "vibrate") return@setMethodCallHandler result.notImplemented()
+            val ms = toInt(call.argument<Any>("ms")).toLong().coerceIn(1, 1000)
+            val amplitude = toInt(call.argument<Any>("amplitude")).coerceIn(1, 255)
+            vibrate(ms, amplitude)
+            result.success(null)
+        }
+
         hardwareKeysChannel = MethodChannel(messenger, "com.beamngremoteplus.app/hardware_keys").apply {
             setMethodCallHandler { call, result ->
                 if (call.method != "setVolumeKeysCaptured") return@setMethodCallHandler result.notImplemented()
                 volumeKeysCaptured = call.arguments == true
                 result.success(null)
             }
+        }
+    }
+
+    @Suppress("DEPRECATION")
+    private fun vibrate(ms: Long, amplitude: Int) {
+        val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            (getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager).defaultVibrator
+        } else {
+            getSystemService(Context.VIBRATOR_SERVICE) as android.os.Vibrator
+        }
+        if (!vibrator.hasVibrator()) return
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val strength = if (vibrator.hasAmplitudeControl()) amplitude else VibrationEffect.DEFAULT_AMPLITUDE
+            vibrator.vibrate(VibrationEffect.createOneShot(ms, strength))
+        } else {
+            vibrator.vibrate(ms)
         }
     }
 

@@ -1,8 +1,6 @@
 {
   "@@locale": "en",
-
   "appTitle": "BeamNG RemotePlus",
-
   "cameraPermissionMessage": "Camera permission is required to scan the QR code shown by BeamNG.drive.",
   "cameraPermissionButton": "Allow camera",
   "scanHint": "Or scan the QR code: BeamNG.drive > Options > Controls > Hardware",
@@ -16,14 +14,12 @@
   "manualCodeHint": "5 digits",
   "manualCodeConnect": "Connect",
   "manualCodeInvalid": "Invalid code: 4 to 6 digits expected.",
-
   "statusConnected": "Connected",
   "statusConnecting": "Connecting…",
   "statusTimeout": "Timed out",
   "statusError": "Error",
   "statusIdle": "Disconnected",
   "modMissingBanner": "Install the Beam-RemotePlus mod in BeamNG.drive for analog pedals, the dashboard and the vehicle buttons.",
-
   "settingsTitle": "Settings",
   "settingsSectionDisplay": "Display",
   "settingsSectionSteering": "Steering",
@@ -42,7 +38,12 @@
   "settingsRotationRangeHint": "Tilt about {deg}° to reach full lock.",
   "@settingsRotationRangeHint": {
     "description": "Shown under the rotation range chips.",
-    "placeholders": { "deg": { "type": "int", "example": "75" } }
+    "placeholders": {
+      "deg": {
+        "type": "int",
+        "example": "75"
+      }
+    }
   },
   "settingsInvertTitle": "Invert steering",
   "settingsSmoothingTitle": "Stabilize steering",
@@ -62,17 +63,14 @@
   "settingsRecalibrateDone": "Recalibrating…",
   "settingsDebugTitle": "Debug mode",
   "settingsDebugSubtitle": "Shows missing values and failed commands on screen",
-
   "pedalBrake": "BRAKE",
   "pedalThrottle": "GAS",
-
   "vehiclePrev": "Previous vehicle",
   "vehicleNext": "Next vehicle",
   "camPrev": "Previous camera",
   "camNext": "Next camera",
   "resetVehicleTooltip": "Hold to reset the vehicle",
   "resetVehicleDone": "Vehicle reset",
-
   "actionHorn": "Horn",
   "actionHighBeam": "Headlight flash",
   "actionHazard": "Hazard lights",
@@ -83,12 +81,11 @@
   "actionStarter": "Ignition",
   "actionEscMode": "Drive mode / ESC",
   "actionCruise": "Cruise control",
-
   "helpTitle": "Help — Controls",
   "helpBrake": "Brake",
-  "helpBrakeDesc": "Left half of the screen: slide up to brake harder",
+  "helpBrakeDesc": "Left side of the screen: slide up to brake harder",
   "helpThrottle": "Throttle",
-  "helpThrottleDesc": "Right half of the screen: slide up to accelerate harder",
+  "helpThrottleDesc": "Right side of the screen: slide up to accelerate harder",
   "helpSteeringTilt": "Steering (tilt)",
   "helpSteeringTiltDesc": "Tilt the phone left / right like a wheel",
   "helpSteeringTouch": "Steering (touch)",
@@ -104,40 +101,86 @@
   "helpVolumeKeys": "Volume buttons",
   "helpVolumeKeysDesc": "Volume up = horn · volume down = headlight flash",
   "helpModRequired": "Mod required",
-
   "debugTitle": "Debug",
   "debugProtocol": "Mod {version} · protocol v{protocol}",
   "@debugProtocol": {
     "placeholders": {
-      "version": { "type": "String", "example": "2.0.0" },
-      "protocol": { "type": "int", "example": "2" }
+      "version": {
+        "type": "String",
+        "example": "2.0.0"
+      },
+      "protocol": {
+        "type": "int",
+        "example": "2"
+      }
     }
   },
   "debugNoMod": "Mod not detected: native remote control only",
   "debugTelemetryRate": "Telemetry: {rate} packets/s",
   "@debugTelemetryRate": {
-    "placeholders": { "rate": { "type": "int", "example": "30" } }
+    "placeholders": {
+      "rate": {
+        "type": "int",
+        "example": "30"
+      }
+    }
   },
   "debugNoTelemetry": "No telemetry received",
   "debugNoValue": "{field} returned nothing.",
   "@debugNoValue": {
     "description": "A telemetry value the current vehicle/mod did not send.",
-    "placeholders": { "field": { "type": "String", "example": "oilTemp" } }
+    "placeholders": {
+      "field": {
+        "type": "String",
+        "example": "oilTemp"
+      }
+    }
   },
   "debugAllValues": "All telemetry values received",
   "debugCommandFailed": "{command} impossible: {reason}",
   "@debugCommandFailed": {
     "description": "A command refused by the mod. reason is a technical code such as no_vehicle.",
     "placeholders": {
-      "command": { "type": "String", "example": "horn|1" },
-      "reason": { "type": "String", "example": "no_vehicle" }
+      "command": {
+        "type": "String",
+        "example": "horn|1"
+      },
+      "reason": {
+        "type": "String",
+        "example": "no_vehicle"
+      }
     }
   },
   "debugCommandOk": "{command} OK",
   "@debugCommandOk": {
-    "placeholders": { "command": { "type": "String", "example": "hazard" } }
+    "placeholders": {
+      "command": {
+        "type": "String",
+        "example": "hazard"
+      }
+    }
   },
   "debugModeTooltip": "Debug mode",
   "debugModeOn": "Debug mode on",
-  "debugModeOff": "Debug mode off"
+  "debugModeOff": "Debug mode off",
+  "actionSignals": "Indicators",
+  "vehiclePanelTooltip": "Radar and damage",
+  "secondScreenTitle": "Second screen",
+  "secondScreenSubtitle": "Dashboard, radar and damage only: drive with your wheel or gamepad",
+  "settingsSecondScreenSubtitle": "Applies at the next connection",
+  "settingsRoadHapticsTitle": "Road feel vibrations",
+  "settingsRoadHapticsSubtitle": "Vibrates on wheelspin, locked wheels, impacts and kerbs",
+  "settingsWarningsTitle": "Warning lights",
+  "settingsWarningsSubtitle": "Shows engine, oil, temperature, fuel, tyre… warnings like a real car",
+  "settingsVehiclePanelTitle": "Radar and damage panel",
+  "settingsVehiclePanelSubtitle": "Nearby cars, body damage and tyre temperatures (tyre temperatures need the Tyre Thermals and Wear mod)",
+  "warningCheckEngine": "Check engine",
+  "warningOilPressure": "Oil pressure",
+  "warningOverheating": "Engine overheating",
+  "warningEngineStopped": "Engine stopped",
+  "warningLowFuel": "Low fuel",
+  "warningFlatTire": "Flat tyre",
+  "warningLowTirePressure": "Low tyre pressure",
+  "warningBrakesOverheating": "Brakes overheating",
+  "warningParkingBrake": "Parking brake on"
 }
