@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../kit/kit.dart';
 
-/// F4: single-seater steering wheel display (Carbonworks F4 style): shift
-/// LEDs on top, huge gear in the middle, speed/RPM on the left, temperatures
-/// and fuel on the right, driver aids at the bottom. The gear cell turns blue
-/// at the shift point, like race displays do.
+/// F4: recreation of the Carbonworks F4 (fr04, by LucasBE) steering wheel
+/// screen: 320x220 display with RPM on top, fuel and speed on the sides,
+/// oil and water temperatures below, a big gear in a blue box, and a red
+/// blinking banner for "WATER TEMP HI", "OIL TEMP HI" and "FUEL LEVEL LOW".
+/// Laid out in the original 320x220 pixel space and scaled to the phone.
 class F4Theme extends ControlTheme {
   const F4Theme();
 
@@ -18,94 +19,85 @@ class F4Theme extends ControlTheme {
   @override
   ThemeStyle get style => const ThemeStyle(brakeColor: Color(0xFFFF3D00), throttleColor: Color(0xFF00E676));
 
-  static const _panel = Color(0xFF111317);
-  static const _cell = Color(0xFF050608);
-  static const _border = Color(0x33FFFFFF);
+  static const Size design = Size(320, 220);
+  static const background = Color(0xFF050505);
+  static const textColor = Color(0xFFBBBAAE);
+
+  /// Same thresholds as the car's own screen script.
+  static String? infoMessage(Telemetry t) {
+    if ((t.fuelVolume ?? double.infinity) <= 5) return 'FUEL LEVEL LOW';
+    if ((t.oilTemp ?? 0) >= 120) return 'OIL TEMP HI';
+    if ((t.waterTemp ?? 0) >= 120) return 'WATER TEMP HI';
+    return null;
+  }
 
   @override
   Widget buildDashboard(BuildContext context, DashboardData data) {
     final t = data.telemetry;
-    final shift = t.shiftLight ?? false;
+    final info = infoMessage(t);
+    // Blinks at 1 Hz like the original (redrawn with every telemetry frame).
+    final blinkOn = DateTime.now().millisecond < 500;
     return Center(
       child: FittedBox(
         child: Container(
-          width: 640,
-          padding: const EdgeInsets.fromLTRB(18, 12, 18, 14),
-          decoration: BoxDecoration(
-            color: _panel,
-            borderRadius: BorderRadius.circular(36),
-            border: Border.all(color: _border, width: 2),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ShiftLights(rpm: t.rpm, maxRpm: t.maxRpm, shiftNow: shift, count: 15, size: 22, startRatio: 0.55),
-              const SizedBox(height: 10),
-              _RpmBar(ratio: t.rpmRatio, shift: shift),
-              const SizedBox(height: 10),
-              SizedBox(
-                height: 200,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Expanded(
-                      child: _Column(children: [
-                        ValueBox(label: data.useKmh ? 'KM/H' : 'MPH', value: DashFormat.speed(t, kmh: data.useKmh), valueSize: 30),
-                        ValueBox(label: 'RPM', value: DashFormat.integer(t.rpm), valueSize: 30),
-                      ]),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 80),
-                        decoration: BoxDecoration(
-                          color: shift ? Colors.lightBlueAccent : _cell,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: _border),
-                        ),
-                        alignment: Alignment.center,
-                        child: FittedBox(
-                          child: Text(
-                            t.gearLabel,
-                            style: TextStyle(
-                              fontSize: 150,
-                              fontWeight: FontWeight.w900,
-                              height: 1,
-                              color: shift ? Colors.black : (data.gearFlash == null ? Colors.white : Colors.amberAccent),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _Column(children: [
-                        ValueBox(
-                          label: 'WATER',
-                          value: DashFormat.integer(t.waterTemp),
-                          valueSize: 22,
-                          valueColor: (t.waterTemp ?? 0) > 115 ? Colors.redAccent : Colors.white,
-                        ),
-                        ValueBox(
-                          label: 'OIL',
-                          value: DashFormat.integer(t.oilTemp),
-                          valueSize: 22,
-                          valueColor: t.lowPressure == true ? Colors.redAccent : Colors.white,
-                        ),
-                        ValueBox(
-                          label: 'FUEL %',
-                          value: DashFormat.fuelPercent(t),
-                          valueSize: 22,
-                          valueColor: t.lowFuel == true ? Colors.orangeAccent : Colors.white,
-                        ),
-                      ]),
-                    ),
-                  ],
+          width: design.width,
+          height: design.height,
+          color: background,
+          child: DefaultTextStyle(
+            style: const TextStyle(color: textColor, fontFamily: 'Roboto'),
+            child: Stack(children: [
+              Positioned(top: 15, left: 113, child: _Field(label: 'RPM', value: DashFormat.integer(t.rpm))),
+              Positioned(
+                top: 80,
+                left: 16,
+                child: _Field(
+                  label: 'FUEL',
+                  value: t.fuelVolume == null ? DashFormat.missing : '${(t.fuelVolume! * 10).floor() / 10} L',
+                  alert: (t.fuelVolume ?? double.infinity) <= 5,
                 ),
               ),
-              const SizedBox(height: 10),
-              _AidsRow(t: t),
-            ],
+              Positioned(
+                top: 80,
+                left: 210,
+                child: _Field(label: data.useKmh ? 'KM/H' : 'MPH', value: DashFormat.speed(t, kmh: data.useKmh)),
+              ),
+              Positioned(
+                bottom: 15,
+                left: 16,
+                child: _Field(label: 'OIL T', value: '${DashFormat.integer(t.oilTemp)} C', alert: (t.oilTemp ?? 0) >= 120),
+              ),
+              Positioned(
+                bottom: 15,
+                left: 210,
+                child: _Field(label: 'WAT T', value: '${DashFormat.integer(t.waterTemp)} C', alert: (t.waterTemp ?? 0) >= 120),
+              ),
+              Positioned(
+                bottom: 40,
+                left: 113,
+                child: _Field(
+                  label: 'Gear',
+                  value: t.gearLabel,
+                  big: true,
+                  highlight: data.gearFlash != null || (t.shiftLight ?? false),
+                ),
+              ),
+              if (info != null)
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: 75,
+                  child: ColoredBox(
+                    color: Colors.red,
+                    child: Center(
+                      child: Opacity(
+                        opacity: blinkOn ? 1 : 0,
+                        child: Text(info, style: const TextStyle(fontSize: 30)),
+                      ),
+                    ),
+                  ),
+                ),
+            ]),
           ),
         ),
       ),
@@ -113,68 +105,58 @@ class F4Theme extends ControlTheme {
   }
 }
 
-class _Column extends StatelessWidget {
-  final List<Widget> children;
-  const _Column({required this.children});
+/// HTML <fieldset> look of the original screen: rounded box, dark gradient,
+/// legend sitting on the top border.
+class _Field extends StatelessWidget {
+  final String label;
+  final String value;
+  final bool big;
+  final bool alert;
+  final bool highlight;
+
+  const _Field({required this.label, required this.value, this.big = false, this.alert = false, this.highlight = false});
 
   @override
-  Widget build(BuildContext context) => Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          for (var i = 0; i < children.length; i++) ...[
-            if (i > 0) const SizedBox(height: 6),
-            Expanded(child: children[i]),
-          ],
-        ],
-      );
-}
-
-class _RpmBar extends StatelessWidget {
-  final double? ratio;
-  final bool shift;
-  const _RpmBar({required this.ratio, required this.shift});
-
-  @override
-  Widget build(BuildContext context) => ClipRRect(
-        borderRadius: BorderRadius.circular(4),
-        child: LinearProgressIndicator(
-          value: ratio ?? 0,
-          minHeight: 10,
-          backgroundColor: Colors.white10,
-          color: shift ? Colors.lightBlueAccent : ((ratio ?? 0) > 0.85 ? Colors.redAccent : Colors.greenAccent),
-        ),
-      );
-}
-
-class _AidsRow extends StatelessWidget {
-  final Telemetry t;
-  const _AidsRow({required this.t});
-
-  Widget _flag(String text, bool? on, Color color) => Expanded(
-        child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 3),
-          padding: const EdgeInsets.symmetric(vertical: 4),
-          decoration: BoxDecoration(
-            color: on == true ? color : Colors.transparent,
-            borderRadius: BorderRadius.circular(4),
-            border: Border.all(color: on == null ? Colors.white10 : color.withValues(alpha: 0.6)),
+  Widget build(BuildContext context) {
+    final top = big ? const Color(0xFF0F2970) : const Color(0xFF12141A);
+    return SizedBox(
+      width: 94,
+      height: big ? 104 : 52,
+      child: Stack(clipBehavior: Clip.none, children: [
+        Positioned.fill(
+          top: 7,
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(5),
+              border: Border.all(color: big ? const Color(0xFF0F2970) : const Color(0xFF1C1F29)),
+              color: alert ? Colors.red : null,
+              gradient: alert
+                  ? null
+                  : LinearGradient(
+                      begin: Alignment.bottomCenter,
+                      end: Alignment.topCenter,
+                      colors: [highlight ? Colors.lightBlueAccent : top, F4Theme.background],
+                    ),
+            ),
+            alignment: Alignment.center,
+            child: FittedBox(
+              child: Text(value, style: TextStyle(fontSize: big ? 80 : 20, height: 1)),
+            ),
           ),
-          alignment: Alignment.center,
-          child: Text(text,
-              style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
-                  color: on == true ? Colors.black : (on == null ? Colors.white10 : color))),
         ),
-      );
-
-  @override
-  Widget build(BuildContext context) => Row(children: [
-        _flag('ABS', t.hasAbs == false ? null : t.absActive, Colors.amberAccent),
-        _flag('TC', t.hasTcs == false ? null : t.tcsActive, Colors.amberAccent),
-        _flag('CRUISE', t.cruiseActive, Colors.lightBlueAccent),
-        _flag('LIGHT', t.lowBeam == null && t.highBeam == null ? null : (t.lowBeam ?? false) || (t.highBeam ?? false), Colors.greenAccent),
-        _flag('BRAKE', t.parkingBrake, Colors.redAccent),
-        _flag('ENG', t.checkEngine, Colors.redAccent),
-      ]);
+        Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          child: Center(
+            child: Container(
+              color: F4Theme.background,
+              padding: const EdgeInsets.symmetric(horizontal: 3),
+              child: Text(label, style: const TextStyle(fontSize: 11)),
+            ),
+          ),
+        ),
+      ]),
+    );
+  }
 }
