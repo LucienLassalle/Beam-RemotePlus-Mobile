@@ -147,9 +147,6 @@ class _PedalPainter extends CustomPainter {
             ).createShader(fill),
         );
       }
-      final line = Paint()..color = color.withValues(alpha: 0.18);
-      final x = leftEdge ? zone.right : zone.left;
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), line);
     }
     // Edge bar: always drawn, it is how invisible pedals show their position.
     final barX = leftEdge ? 0.0 : size.width - edgeBarWidth;
