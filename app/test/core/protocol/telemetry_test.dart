@@ -1,0 +1,95 @@
+import 'dart:typed_data';
+
+import 'package:beam_remoteplus/core/protocol/telemetry.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+void main() {
+  group('Telemetry.fromJson (protocol v2)', () {
+    test('reads every kind of field', () {
+      final t = Telemetry.fromJson({
+        'type': 'telemetry',
+        'speed': 10,
+        'gear': 'S5',
+        'fuel': 0.5,
+        'lowBeam': true,
+        'escActive': 1,
+        'tirePressures': {'FL': 210, 'FR': 'bad'},
+        'driveMode': {'key': 'sport', 'name': 'Sport'},
+        'player': 1,
+      });
+      expect(t.speed, 10);
+      expect(t.gearLabel, 'S5');
+      expect(t.lowBeam, isTrue);
+      expect(t.escActive, isTrue);
+      expect(t.tirePressures, {'FL': 210.0});
+      expect(t.driveMode, 'Sport');
+      expect(t.player, 1);
+      expect(t.receivedFields, containsAll(['speed', 'gear', 'player']));
+      expect(t.receivedFields, isNot(contains('type')));
+    });
+
+    test('wrong types become null instead of throwing', () {
+      final t = Telemetry.fromJson({'rpm': 'fast', 'lowBeam': 'yes', 'gear': 3});
+      expect(t.rpm, isNull);
+      expect(t.lowBeam, isNull);
+      expect(t.gear, isNull);
+    });
+  });
+
+  group('derived values', () {
+    test('speed conversions', () {
+      const t = Telemetry(speed: 10);
+      expect(t.speedKmh, closeTo(36, 1e-9));
+      expect(t.speedIn(kmh: false), closeTo(22.3694, 1e-4));
+      expect(Telemetry.empty.speedKmh, isNull);
+    });
+
+    test('gear label falls back on the index', () {
+      expect(const Telemetry(gearIndex: -1).gearLabel, 'R');
+      expect(const Telemetry(gearIndex: 0).gearLabel, 'N');
+      expect(const Telemetry(gearIndex: 3).gearLabel, '3');
+      expect(Telemetry.empty.gearLabel, 'N');
+    });
+
+    test('rpm ratio and low tyre pressure', () {
+      expect(const Telemetry(rpm: 3500, maxRpm: 7000).rpmRatio, 0.5);
+      expect(const Telemetry(rpm: 3500).rpmRatio, isNull);
+      expect(const Telemetry(tirePressures: {'FL': 90}).lowTirePressure(), isTrue);
+      expect(const Telemetry(tirePressures: {'FL': 200}).lowTirePressure(), isFalse);
+    });
+  });
+
+  group('Telemetry.fromLegacyBytes (protocol v1)', () {
+    Uint8List packet(List<double> values) {
+      final d = ByteData(36);
+      for (var i = 0; i < values.length; i++) {
+        d.setFloat32(i * 4, values[i], Endian.little);
+      }
+      return d.buffer.asUint8List();
+    }
+
+    test('maps the 9 floats', () {
+      final t = Telemetry.fromLegacyBytes(packet([20, 3000, 7000, 3, 0.4, 90, 1 + 8 + 128, 1, 101]));
+      expect(t.speed, 20);
+      expect(t.gearIndex, 2);
+      expect(t.gearLabel, '2');
+      expect(t.lowBeam, isTrue);
+      expect(t.signalLeft, isTrue);
+      expect(t.tcsActive, isTrue);
+      expect(t.highBeam, isFalse);
+      expect(t.shiftLight, isTrue);
+      expect(t.oilTemp, closeTo(101, 1e-3));
+    });
+
+    test('neutralises NaN and treats oil temperature 0 as unknown', () {
+      final t = Telemetry.fromLegacyBytes(packet([double.nan, double.infinity, 0, 1, 0, 0, 0, 0, 0]));
+      expect(t.speed, 0);
+      expect(t.rpm, 0);
+      expect(t.oilTemp, isNull);
+    });
+
+    test('rejects short packets', () {
+      expect(() => Telemetry.fromLegacyBytes(Uint8List(10)), throwsFormatException);
+    });
+  });
+}
