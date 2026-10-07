@@ -23,6 +23,14 @@ class ModProtocol {
   static const int discoverTimeoutMs = 4000;
   static const int discoverRetryMs = 400;
   static const int pingRetryMs = 500;
+
+  /// Once paired, a ping every [keepAlivePingEvery] x [pingRetryMs] (2 s)
+  /// re-pairs the phone if the mod restarted and forgot it.
+  static const int keepAlivePingEvery = 4;
+
+  /// Nothing received from the mod for this long: it is considered gone and
+  /// the app falls back to the native channel until it answers again.
+  static const Duration modSilenceTimeout = Duration(seconds: 6);
   static const int controlIntervalMs = 16; // ~60 Hz
 
   static String ping(String code, String deviceName) =>

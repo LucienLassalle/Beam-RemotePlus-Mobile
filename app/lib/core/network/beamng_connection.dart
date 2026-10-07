@@ -39,6 +39,8 @@ class BeamngConnection implements RemoteLink {
   Timer? _modPingTimer;
   InternetAddress? _host;
 
+  DateTime _lastModMessage = DateTime.fromMillisecondsSinceEpoch(0);
+
   double _steering = 0.5;
   double _throttle = 0;
   double _brake = 0;
@@ -149,29 +151,45 @@ class BeamngConnection implements RemoteLink {
       if (dg != null) _onModDatagram(dg, code);
     });
 
-    // Keeps probing: the mod may be enabled after the phone connected.
+    // Never stops pinging: fast while the mod is not found (it may be
+    // enabled after the phone connected), slowly once paired so the session
+    // is restored if the mod restarts (reload, switched off and on...).
     final ping = utf8.encode(ModProtocol.ping(code, deviceName));
     socket.send(ping, host, ModProtocol.hostPort);
-    _modPingTimer = Timer.periodic(
-      const Duration(milliseconds: ModProtocol.pingRetryMs),
-      (_) => socket.send(ping, host, ModProtocol.hostPort),
-    );
+    var ticks = 0;
+    _modPingTimer = Timer.periodic(const Duration(milliseconds: ModProtocol.pingRetryMs), (_) {
+      ticks++;
+      if (_modActive && DateTime.now().difference(_lastModMessage) > ModProtocol.modSilenceTimeout) {
+        DebugLog.log('mod silent, back to the native channel until it answers again');
+        _setModActive(false);
+      }
+      if (!_modActive || ticks % ModProtocol.keepAlivePingEvery == 0) socket.send(ping, host, ModProtocol.hostPort);
+    });
+  }
+
+  void _setModActive(bool active) {
+    if (_modActive == active) return;
+    _modActive = active;
+    if (!active) _protocolVersion = 0;
+    if (!_modActiveChanges.isClosed) _modActiveChanges.add(active);
+    _restartControlTimer();
   }
 
   void _onModDatagram(Datagram dg, String code) {
-    if (!_modActive) {
+    // Pongs are plain text, every other v2 message is JSON.
+    if (dg.data.isNotEmpty && dg.data.first != 0x7B /* { */ && dg.data.length != 36) {
       final version = ModProtocol.parsePong(utf8.decode(dg.data, allowMalformed: true), code);
       if (version == null) return;
-      _modPingTimer?.cancel();
-      _modPingTimer = null;
+      _lastModMessage = DateTime.now();
+      if (_modActive) return;
       _protocolVersion = version;
-      _modActive = true;
       DebugLog.log('mod detected, protocol v$version');
-      if (!_modActiveChanges.isClosed) _modActiveChanges.add(true);
-      _restartControlTimer();
+      _setModActive(true);
       if (debugAcks) sendCommand(ModCommand.debug, '1');
       return;
     }
+    if (!_modActive) return;
+    _lastModMessage = DateTime.now();
     try {
       final message = ModMessage.decode(dg.data, _protocolVersion);
       if (message is TelemetryMessage) {
