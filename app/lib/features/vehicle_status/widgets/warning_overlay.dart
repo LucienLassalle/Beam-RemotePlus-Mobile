@@ -30,12 +30,18 @@ String warningLabel(AppLocalizations l10n, VehicleWarning w) => switch (w) {
       VehicleWarning.parkingBrakeWhileMoving => l10n.warningParkingBrake,
     };
 
-/// Real-car style warning lights: a big icon with its name pops in the
-/// middle of the screen when a warning turns on, then stays as a small
-/// icon in a row while it is active. Never takes touches.
+/// Warning lights: a big icon with its name pops in the middle of the
+/// screen when a warning turns on, then stays as a small icon while it is
+/// active. Never takes touches.
+///
+/// When [resetCount] changes (the vehicle was reset from the phone), the
+/// warnings active at that moment are acknowledged and hidden: the game does
+/// not always clear its damage flags on a recovery although the car is
+/// repaired. They show again only after turning off and on.
 class WarningOverlay extends StatefulWidget {
   final Telemetry telemetry;
-  const WarningOverlay({super.key, required this.telemetry});
+  final int resetCount;
+  const WarningOverlay({super.key, required this.telemetry, this.resetCount = 0});
 
   static const popDuration = Duration(milliseconds: 2500);
 
@@ -45,6 +51,7 @@ class WarningOverlay extends StatefulWidget {
 
 class _WarningOverlayState extends State<WarningOverlay> {
   List<VehicleWarning> _active = const [];
+  final Set<VehicleWarning> _acknowledged = {};
   VehicleWarning? _popping;
   Timer? _popTimer;
 
@@ -57,7 +64,13 @@ class _WarningOverlayState extends State<WarningOverlay> {
   @override
   void didUpdateWidget(covariant WarningOverlay oldWidget) {
     super.didUpdateWidget(oldWidget);
-    final next = activeWarnings(widget.telemetry);
+    if (widget.resetCount != oldWidget.resetCount) {
+      _acknowledged.addAll(activeWarnings(widget.telemetry));
+      _popping = null;
+    }
+    final raw = activeWarnings(widget.telemetry);
+    _acknowledged.removeWhere((w) => !raw.contains(w)); // turned off: armed again
+    final next = raw.where((w) => !_acknowledged.contains(w)).toList();
     final appeared = next.where((w) => !_active.contains(w)).toList();
     _active = next;
     if (appeared.isNotEmpty) {

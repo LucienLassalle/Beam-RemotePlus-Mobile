@@ -1,6 +1,6 @@
 import '../../core/protocol/telemetry.dart';
 
-/// Warning lights shown over the driving screen like on a real dashboard.
+/// Warning lights shown over the driving screen.
 enum VehicleWarning {
   checkEngine,
   oilPressure,

@@ -24,6 +24,7 @@ class DrivingController extends ChangeNotifier {
   final List<StreamSubscription<Object?>> _subs = [];
   Timer? _flashTimer;
   bool _readOnly = false;
+  int _resetCount = 0;
   bool _wasShiftLight = false;
   GearFlash? _gearFlash;
   Telemetry _telemetry = Telemetry.empty;
@@ -45,6 +46,9 @@ class DrivingController extends ChangeNotifier {
   bool get modActive => link.modActive;
   LinkState get linkState => link.state;
   bool get readOnly => _readOnly;
+
+  /// Incremented each time a recovery started from the phone ends.
+  int get resetCount => _resetCount;
   GearFlash? get gearFlash => _gearFlash;
   Telemetry get telemetry => _telemetry;
   AppSettings get settings => _settings;
@@ -100,6 +104,10 @@ class DrivingController extends ChangeNotifier {
       link.sendCommand(command, '1');
     } else if (_heldCommands.remove(command)) {
       link.sendCommand(command, '0');
+      if (command == ModCommand.recover) {
+        _resetCount++;
+        notifyListeners();
+      }
     }
   }
 

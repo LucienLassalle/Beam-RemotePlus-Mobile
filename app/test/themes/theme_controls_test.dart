@@ -111,6 +111,28 @@ void main() {
     await gesture.up();
   });
 
+  testWidgets('reset needs a 1 s hold, then recovers until released', (tester) async {
+    final link = FakeLink();
+    addTearDown(link.dispose);
+    await pumpDrivingView(tester, theme: availableThemes.first, link: link);
+    final reset = tester.getCenter(find.byIcon(Icons.restart_alt));
+    var gesture = await tester.startGesture(reset);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    await gesture.up();
+    await tester.pump();
+    expect(link.commands, isEmpty); // short tap: nothing
+    gesture = await tester.startGesture(reset);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 1100));
+    expect(link.commands, ['recover|1']);
+    await tester.pump(const Duration(seconds: 2)); // still rewinding
+    expect(link.commands, ['recover|1']);
+    await gesture.up();
+    await tester.pump();
+    expect(link.commands, ['recover|1', 'recover|0']);
+  });
+
   testWidgets('read-only mode ignores the pedals', (tester) async {
     final link = FakeLink();
     addTearDown(link.dispose);
