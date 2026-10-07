@@ -1,0 +1,103 @@
+name: Release
+
+# Runs when a GitHub release is published (tag vX.Y.Z): builds the APKs,
+# generates the SBOMs and attaches everything to the release.
+#
+# Optional signing secrets (recommended, so updates install over the
+# previous version): ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD,
+# ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD. Without them the APKs are signed
+# with a throw-away debug key.
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+env:
+  FLUTTER_VERSION: 3.27.1
+
+jobs:
+  assets:
+    name: Release assets
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write # upload release assets
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - name: Version from the tag
+        id: version
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          IFS='.' read -r major minor patch <<< "${version%%-*}"
+          echo "name=$version" >> "$GITHUB_OUTPUT"
+          echo "code=$(( major * 10000 + minor * 100 + patch ))" >> "$GITHUB_OUTPUT"
+      - name: Signing key
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::warning::No signing secrets: APKs are signed with a debug key"
+            exit 0
+          fi
+          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/upload.jks"
+          {
+            echo "storeFile=$RUNNER_TEMP/upload.jks"
+            echo "storePassword=$KEYSTORE_PASSWORD"
+            echo "keyAlias=$KEY_ALIAS"
+            echo "keyPassword=$KEY_PASSWORD"
+          } > app/android/key.properties
+      - name: Tests
+        working-directory: app
+        run: flutter pub get && flutter gen-l10n && flutter test
+      - name: Build APKs
+        working-directory: app
+        env:
+          NAME: ${{ steps.version.outputs.name }}
+          CODE: ${{ steps.version.outputs.code }}
+        run: |
+          flags="--release --obfuscate --split-debug-info=build/symbols --build-name=$NAME --build-number=$CODE"
+          flutter build apk $flags --split-per-abi
+          flutter build apk $flags
+          mkdir -p ../dist
+          out=build/app/outputs/flutter-apk
+          for abi in arm64-v8a armeabi-v7a x86_64; do
+            cp "$out/app-$abi-release.apk" "../dist/BeamNG-RemotePlus-$NAME-$abi.apk"
+          done
+          cp "$out/app-release.apk" "../dist/BeamNG-RemotePlus-$NAME-universal.apk"
+      - name: SBOM (SPDX)
+        uses: anchore/sbom-action@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c # v0.24.3
+        with:
+          path: app
+          format: spdx-json
+          output-file: dist/Beam-RemotePlus-Mobile.spdx.json
+          upload-artifact: false
+          upload-release-assets: false
+      - name: SBOM (CycloneDX)
+        uses: anchore/sbom-action@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c # v0.24.3
+        with:
+          path: app
+          format: cyclonedx-json
+          output-file: dist/Beam-RemotePlus-Mobile.cdx.json
+          upload-artifact: false
+          upload-release-assets: false
+      - name: Checksums
+        working-directory: dist
+        run: sha256sum * > SHA256SUMS.txt
+      - name: Upload to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${GITHUB_REF_NAME}" --clobber dist/*

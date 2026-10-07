@@ -2,3 +2,7 @@
 # localement, ne doivent jamais être commités.
 docker/.android-home-cache/
 docker/.gradle-cache/
+docker/.pub-cache/
+# Release/build output (attached to GitHub releases by CI, never committed)
+out/
+dist/
