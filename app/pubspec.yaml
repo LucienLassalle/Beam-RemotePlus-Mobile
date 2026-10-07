@@ -13,7 +13,7 @@ dependencies:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
-  intl: any # version pinned by flutter_localizations
+  intl: 0.20.3 # version pinned by flutter_localizations
   # Pairing QR code shown by BeamNG.drive
   mobile_scanner: ^6.0.2
   # Accelerometer for tilt steering
