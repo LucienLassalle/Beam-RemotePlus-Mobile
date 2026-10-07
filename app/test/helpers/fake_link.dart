@@ -63,6 +63,7 @@ const sampleTelemetry = Telemetry(
   gearIndex: 4,
   maxGearIndex: 6,
   fuel: 0.62,
+  fuelVolume: 31.4,
   waterTemp: 92,
   oilTemp: 104,
   envTemp: 21,
@@ -83,5 +84,18 @@ const sampleTelemetry = Telemetry(
   shiftLight: false,
   driveMode: 'Sport',
   tirePressures: {'FL': 210, 'FR': 212, 'RL': 205, 'RR': 95},
+  radar: [
+    RadarTarget(x: -3.5, y: 6, heading: 0),
+    RadarTarget(x: 3.4, y: -12, heading: 180, length: 5.2),
+    RadarTarget(x: 0.5, y: 18, heading: 10, length: 12, width: 2.5),
+  ],
+  bodyDamage: {'FL': 0.35, 'ML': 0.08},
+  engineDamage: ['radiatorLeak'],
+  tyres: {
+    'FL': TyreState(temp: 92, working: 85, condition: 96),
+    'FR': TyreState(temp: 84, working: 85, condition: 97),
+    'RL': TyreState(temp: 62, working: 85, condition: 98),
+    'RR': TyreState(temp: 118, working: 85, condition: 91),
+  },
   receivedFields: {'speed', 'rpm'},
 );

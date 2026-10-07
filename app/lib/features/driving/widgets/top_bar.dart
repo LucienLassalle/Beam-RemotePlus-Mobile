@@ -7,54 +7,57 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../driving_controller.dart';
 import 'hold_button.dart';
 
-/// Vehicle switching (left) and hold-to-reset (centre). The settings / help
-/// / debug buttons are added by the screen on the right.
-class VehicleTopBar extends StatelessWidget {
+/// Previous / next vehicle, small, top left.
+class VehicleSwitchButtons extends StatelessWidget {
   final DrivingController controller;
   final Color color;
-  final VoidCallback onRecovered;
-
-  const VehicleTopBar({super.key, required this.controller, required this.color, required this.onRecovered});
+  const VehicleSwitchButtons({super.key, required this.controller, required this.color});
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final enabled = controller.commandsEnabled;
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        HoldButton(
-          icon: Icons.skip_previous,
-          tooltip: l10n.vehiclePrev,
-          color: color,
-          enabled: enabled,
-          onPressed: () => controller.press(ModCommand.prevVehicle),
-        ),
-        HoldButton(
-          icon: Icons.skip_next,
-          tooltip: l10n.vehicleNext,
-          color: color,
-          enabled: enabled,
-          onPressed: () => controller.press(ModCommand.nextVehicle),
-        ),
-        const SizedBox(width: 12),
-        HoldButton(
-          icon: Icons.restart_alt,
-          tooltip: l10n.resetVehicleTooltip,
-          color: Colors.orangeAccent,
-          enabled: enabled,
-          active: controller.heldCommands.contains(ModCommand.recover),
-          // Same as the Insert key: short hold = small reset, long hold =
-          // rewind further back in the position history.
-          onHold: (pressed) {
-            if (pressed) HapticFeedback.mediumImpact();
-            controller.hold(ModCommand.recover, pressed: pressed);
-            if (!pressed) onRecovered();
-          },
-        ),
-      ],
-    );
+    return Row(mainAxisSize: MainAxisSize.min, children: [
+      HoldButton(
+        icon: Icons.skip_previous,
+        tooltip: l10n.vehiclePrev,
+        color: color,
+        enabled: enabled,
+        size: 34,
+        onPressed: () => controller.press(ModCommand.prevVehicle),
+      ),
+      HoldButton(
+        icon: Icons.skip_next,
+        tooltip: l10n.vehicleNext,
+        color: color,
+        enabled: enabled,
+        size: 34,
+        onPressed: () => controller.press(ModCommand.nextVehicle),
+      ),
+    ]);
   }
+}
+
+/// Hold-to-reset, top centre. Same as the Insert key: short hold = small
+/// reset, long hold = rewind further back in the position history.
+class RecoverButton extends StatelessWidget {
+  final DrivingController controller;
+  final VoidCallback onRecovered;
+  const RecoverButton({super.key, required this.controller, required this.onRecovered});
+
+  @override
+  Widget build(BuildContext context) => HoldButton(
+        icon: Icons.restart_alt,
+        tooltip: AppLocalizations.of(context).resetVehicleTooltip,
+        color: Colors.orangeAccent,
+        enabled: controller.commandsEnabled,
+        active: controller.heldCommands.contains(ModCommand.recover),
+        onHold: (pressed) {
+          if (pressed) HapticFeedback.mediumImpact();
+          controller.hold(ModCommand.recover, pressed: pressed);
+          if (!pressed) onRecovered();
+        },
+      );
 }
 
 class CameraButtons extends StatelessWidget {

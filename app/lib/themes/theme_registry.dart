@@ -2,6 +2,7 @@ import 'civetta/civetta_theme.dart';
 import 'control_theme.dart';
 import 'default/default_theme.dart';
 import 'f4/f4_theme.dart';
+import 'road/road_theme.dart';
 
 /// Themes shipped with the app, in the order shown in the settings.
 ///
@@ -11,6 +12,7 @@ const List<ControlTheme> availableThemes = [
   DefaultTheme(),
   CivettaTheme(),
   F4Theme(),
+  RoadTheme(),
 ];
 
 /// Theme by name, falling back to the first one (e.g. a theme removed in a

@@ -49,6 +49,11 @@ class DashboardData {
 
 enum GearFlash { up, down }
 
+/// Vehicle buttons a theme may show at the bottom of the screen (the user
+/// can still hide each one in the settings). The horn and headlight flash
+/// are also on the volume buttons.
+enum VehicleAction { signals, hazard, horn, highBeam, lights, parkingBrake, starter, driveMode, cruise }
+
 /// Look of the app-drawn controls over a theme.
 class ThemeStyle {
   final Color background;
@@ -61,11 +66,16 @@ class ThemeStyle {
   /// Visible pedal zones (gradient fill + label) instead of thin edge bars.
   final bool visiblePedals;
 
+  /// Vehicle buttons shown by this theme (none by default: a dashboard
+  /// theme stays clean, a "road" theme can offer them all).
+  final Set<VehicleAction> actions;
+
   const ThemeStyle({
     this.background = Colors.black,
     this.brakeColor = Colors.redAccent,
     this.throttleColor = Colors.greenAccent,
     this.buttonColor = Colors.white70,
     this.visiblePedals = false,
+    this.actions = const {},
   });
 }

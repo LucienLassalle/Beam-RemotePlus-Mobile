@@ -19,12 +19,30 @@ import '../helpers/pump_driving_view.dart';
 void main() {
   setUpAll(_loadFonts);
 
+  testWidgets('second screen and vehicle panel previews', (tester) async {
+    for (final (name, settings) in [
+      ('Second screen', const AppSettings(themeName: 'Road', secondScreen: true)),
+      ('Vehicle panel', const AppSettings(showVehiclePanel: true)),
+    ]) {
+      final link = FakeLink();
+      await pumpDrivingView(tester, theme: themeByName(settings.themeName), link: link, settings: settings);
+      link.telemetry_.add(sampleTelemetry);
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 3)); // let the warning pop fade
+      await tester.pump();
+      await expectLater(find.byType(MaterialApp), matchesGoldenFile('goldens/$name.png'));
+      link.dispose();
+    }
+  });
+
   for (final theme in availableThemes) {
     testWidgets('${theme.name} preview', (tester) async {
       final link = FakeLink();
       addTearDown(link.dispose);
       await pumpDrivingView(tester, theme: theme, link: link, settings: const AppSettings(debugMode: false));
       link.telemetry_.add(sampleTelemetry);
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 3)); // let the warning pop fade
       await tester.pump();
       final pressed = await tester.startGesture(const Offset(700, 140)); // show the throttle feedback
       await tester.pump();

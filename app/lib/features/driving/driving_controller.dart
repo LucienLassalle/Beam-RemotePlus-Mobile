@@ -8,6 +8,7 @@ import '../../core/protocol/mod_protocol.dart';
 import '../../core/protocol/telemetry.dart';
 import '../../core/settings/app_settings.dart';
 import '../../themes/control_theme.dart';
+import '../vehicle_status/haptics_engine.dart';
 
 /// Logic of the driving screen (the view is driving_screen.dart): routes the
 /// inputs to the game, tracks held commands, gear-change flashes, read-only
@@ -15,6 +16,8 @@ import '../../themes/control_theme.dart';
 class DrivingController extends ChangeNotifier {
   final RemoteLink link;
   final VoidCallback onShiftPoint;
+  final void Function(Pulse pulse) onPulse;
+  final HapticsEngine _haptics = HapticsEngine();
   AppSettings _settings;
 
   final Set<String> _heldCommands = {};
@@ -27,8 +30,13 @@ class DrivingController extends ChangeNotifier {
 
   static const flashDuration = Duration(milliseconds: 300);
 
-  DrivingController({required this.link, required AppSettings settings, required this.onShiftPoint})
-      : _settings = settings {
+  DrivingController({
+    required this.link,
+    required AppSettings settings,
+    required this.onShiftPoint,
+    void Function(Pulse pulse)? onPulse,
+  })  : onPulse = onPulse ?? _noPulse,
+        _settings = settings {
     _subs.add(link.modActiveChanges.listen((_) => notifyListeners()));
     _subs.add(link.states.listen((_) => notifyListeners()));
     _subs.add(link.telemetry.listen(_onTelemetry));
@@ -50,8 +58,14 @@ class DrivingController extends ChangeNotifier {
     notifyListeners();
   }
 
+  static void _noPulse(Pulse _) {}
+
   void _onTelemetry(Telemetry t) {
     _telemetry = t;
+    if (_settings.roadHaptics && !_settings.secondScreen) {
+      final pulse = _haptics.update(t, DateTime.now());
+      if (pulse != null) onPulse(pulse);
+    }
     final shift = t.shiftLight ?? false;
     if (_settings.shiftHaptics && shift && !_wasShiftLight) onShiftPoint();
     _wasShiftLight = shift;

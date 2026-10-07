@@ -129,7 +129,7 @@ class CivettaPainter extends CustomPainter {
       final dir = Offset(math.sin(a), -math.cos(a));
       canvas.drawLine(center + dir * (radius - 38), center + dir * (radius - 22), tick);
       final label = TextPainter(
-        text: TextSpan(text: '$k', style: const TextStyle(color: Colors.white70, fontSize: 20)),
+        text: TextSpan(text: '$k', style: const TextStyle(color: Colors.white70, fontSize: 20, fontFamily: 'Roboto')),
         textDirection: TextDirection.ltr,
       )..layout();
       final pos = center + dir * (radius - 58);

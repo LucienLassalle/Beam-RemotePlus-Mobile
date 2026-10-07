@@ -10,6 +10,7 @@ class HoldButton extends StatelessWidget {
   final Color color;
   final ValueChanged<bool>? onHold;
   final VoidCallback? onPressed;
+  final double size;
 
   const HoldButton({
     super.key,
@@ -20,6 +21,7 @@ class HoldButton extends StatelessWidget {
     this.active = false,
     this.onHold,
     this.onPressed,
+    this.size = 42,
   });
 
   @override
@@ -34,15 +36,15 @@ class HoldButton extends StatelessWidget {
         child: GestureDetector(
           onTap: enabled ? onPressed : null,
           child: Container(
-            width: 42,
-            height: 42,
+            width: size,
+            height: size,
             margin: const EdgeInsets.symmetric(horizontal: 3),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: active ? color : Colors.black.withValues(alpha: 0.45),
               border: Border.all(color: color.withValues(alpha: enabled ? 0.35 : 0.1)),
             ),
-            child: Icon(icon, size: 20, color: fg),
+            child: Icon(icon, size: size * 0.48, color: fg),
           ),
         ),
       ),

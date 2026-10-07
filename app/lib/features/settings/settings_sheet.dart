@@ -7,6 +7,7 @@ import '../../core/settings/settings_scope.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../themes/theme_registry.dart';
 import '../driving/tilt_steering.dart';
+import '../driving/widgets/vehicle_actions_bar.dart';
 
 /// Opens the settings bottom sheet of the driving screen. Settings are saved
 /// as soon as they change; read-only mode lives only for this session.
@@ -83,8 +84,28 @@ class _SettingsSheetState extends State<_SettingsSheet> {
             onSelected: (code) => set((s) => s.copyWith(localeCode: code.isEmpty ? null : code)),
           ),
           _switch(l10n.settingsUnitTitle, l10n.settingsUnitSubtitle, s.useKmh, (v) => set((s) => s.copyWith(useKmh: v))),
-          _switch(l10n.settingsActionsBarTitle, l10n.settingsActionsBarSubtitle, s.showActionsBar,
-              (v) => set((s) => s.copyWith(showActionsBar: v))),
+          _switch(l10n.settingsWarningsTitle, l10n.settingsWarningsSubtitle, s.warningPopups,
+              (v) => set((s) => s.copyWith(warningPopups: v))),
+          _switch(l10n.settingsVehiclePanelTitle, l10n.settingsVehiclePanelSubtitle, s.showVehiclePanel,
+              (v) => set((s) => s.copyWith(showVehiclePanel: v))),
+          if (themeByName(s.themeName).style.actions.isNotEmpty) ...[
+            _switch(l10n.settingsActionsBarTitle, l10n.settingsActionsBarSubtitle, s.showActionsBar,
+                (v) => set((s) => s.copyWith(showActionsBar: v))),
+            if (s.showActionsBar)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Wrap(spacing: 6, runSpacing: 4, children: [
+                  for (final a in themeByName(s.themeName).style.actions)
+                    FilterChip(
+                      label: Text(vehicleActionLabel(l10n, a)),
+                      selected: !s.hiddenActions.contains(a.name),
+                      onSelected: (visible) => set((s) => s.copyWith(
+                            hiddenActions: visible ? (s.hiddenActions.toSet()..remove(a.name)) : {...s.hiddenActions, a.name},
+                          )),
+                    ),
+                ]),
+              ),
+          ],
           _Section(l10n.settingsSectionSteering),
           _switch(l10n.settingsTiltTitle, l10n.settingsTiltSubtitle, s.tiltSteering, (v) => set((s) => s.copyWith(tiltSteering: v))),
           _ChoiceTile(
@@ -113,9 +134,13 @@ class _SettingsSheetState extends State<_SettingsSheet> {
               (v) => set((s) => s.copyWith(volumeKeys: v))),
           _switch(l10n.settingsPitchGearTitle, l10n.settingsPitchGearSubtitle, s.pitchGearShift,
               s.tiltSteering ? (v) => set((s) => s.copyWith(pitchGearShift: v)) : null),
+          _switch(l10n.settingsRoadHapticsTitle, l10n.settingsRoadHapticsSubtitle, s.roadHaptics,
+              (v) => set((s) => s.copyWith(roadHaptics: v))),
           _switch(l10n.settingsHapticsTitle, l10n.settingsHapticsSubtitle, s.shiftHaptics,
               (v) => set((s) => s.copyWith(shiftHaptics: v))),
           _Section(l10n.settingsSectionAdvanced),
+          _switch(l10n.secondScreenTitle, l10n.settingsSecondScreenSubtitle, s.secondScreen,
+              (v) => set((s) => s.copyWith(secondScreen: v))),
           _switch(l10n.settingsDebugTitle, l10n.settingsDebugSubtitle, s.debugMode, (v) => set((s) => s.copyWith(debugMode: v))),
         ],
       ),

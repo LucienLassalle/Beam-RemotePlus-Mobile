@@ -3,23 +3,22 @@
 enum Pedal { brake, throttle }
 
 class PedalMapping {
-  /// Fraction of the screen width given to each pedal from its edge. 0.5
-  /// means the whole screen: left half brakes, right half accelerates.
+  /// Fraction of the screen width given to each pedal from its edge.
   final double zoneFraction;
 
   /// Top part of a zone that always means 100% (easy full throttle).
   final double topDeadZone;
 
   /// Bottom part of a zone that always means 0% (resting thumb).
+  /// With the defaults the pedal travel uses 80% of the screen height.
   final double bottomDeadZone;
 
-  const PedalMapping({this.zoneFraction = 0.5, this.topDeadZone = 0.10, this.bottomDeadZone = 0.06});
+  const PedalMapping({this.zoneFraction = 0.4, this.topDeadZone = 0.15, this.bottomDeadZone = 0.05});
 
-  /// Whole screen split in two halves (tilt steering: nothing else needs
-  /// the middle of the screen).
-  static const halves = PedalMapping();
+  /// Tilt steering: 40% of the width on each side, the middle 20% is free.
+  static const wide = PedalMapping();
 
-  /// Side strips leaving the middle free for the touch steering bar.
+  /// Touch steering: narrower strips leave room for the steering bar.
   static const sides = PedalMapping(zoneFraction: 0.32);
 
   Pedal? pedalAt(double x, double width) {

@@ -8,6 +8,7 @@ import '../../core/debug/debug_monitor.dart';
 import '../../core/network/beamng_connection.dart';
 import '../../core/platform/gesture_exclusion.dart';
 import '../../core/platform/hardware_keys.dart';
+import '../../core/platform/vibrator.dart';
 import '../../core/settings/settings_scope.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../themes/theme_registry.dart';
@@ -42,6 +43,7 @@ class _DrivingScreenState extends State<DrivingScreen> with WidgetsBindingObserv
       link: widget.connection,
       settings: settings,
       onShiftPoint: HapticFeedback.mediumImpact,
+      onPulse: (p) => unawaited(Vibrator.pulse(p.durationMs, p.amplitude)),
     );
     _debug = DebugMonitor(widget.connection);
     widget.connection.setDebugAcks(settings.debugMode);
@@ -52,7 +54,7 @@ class _DrivingScreenState extends State<DrivingScreen> with WidgetsBindingObserv
     // Some phones leave immersive mode on their own (notification shade...).
     _immersiveTimer = Timer.periodic(const Duration(seconds: 3), (_) => _enterImmersive());
     WidgetsBinding.instance.addPostFrameCallback((_) => _excludeSystemGestures());
-    unawaited(HardwareKeys.capture(_controller.onHardwareKey));
+    if (!settings.secondScreen) unawaited(HardwareKeys.capture(_controller.onHardwareKey));
   }
 
   @override
@@ -124,8 +126,15 @@ class _DrivingScreenState extends State<DrivingScreen> with WidgetsBindingObserv
 
   Widget _hostButtons(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final settings = SettingsScope.of(context);
     // Always on top of every theme: the guaranteed way out of read-only mode.
     return Row(mainAxisSize: MainAxisSize.min, children: [
+      if (!settings.settings.secondScreen)
+        IconButton(
+          icon: Icon(Icons.radar, color: settings.settings.showVehiclePanel ? Colors.lightBlueAccent : Colors.white54),
+          tooltip: l10n.vehiclePanelTooltip,
+          onPressed: () => unawaited(settings.update((s) => s.copyWith(showVehiclePanel: !s.showVehiclePanel))),
+        ),
       IconButton(
         icon: const Icon(Icons.help_outline, color: Colors.white54),
         tooltip: l10n.helpTitle,

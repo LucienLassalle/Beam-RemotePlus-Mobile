@@ -12,7 +12,7 @@ class _FakeConnection extends BeamngConnection {
   _FakeConnection([this.failure]);
 
   @override
-  Future<void> connect(String code, {String? knownHost}) async {
+  Future<void> connect(String code, {String? knownHost, bool display = false}) async {
     this.code = code;
     host = knownHost;
     if (failure != null) throw failure!;

@@ -2,14 +2,21 @@ import 'package:beam_remoteplus/features/driving/pedal_mapping.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  group('PedalMapping.halves (tilt steering)', () {
-    const m = PedalMapping.halves;
-    test('every point of the screen is a pedal', () {
-      for (var x = 0.0; x < 1000; x += 50) {
-        expect(m.pedalAt(x, 1000), isNotNull, reason: 'x=$x');
-      }
-      expect(m.pedalAt(499, 1000), Pedal.brake);
-      expect(m.pedalAt(500, 1000), Pedal.throttle);
+  group('PedalMapping.wide (tilt steering)', () {
+    const m = PedalMapping.wide;
+    test('40% of the width on each side, the middle 20% is free', () {
+      expect(m.pedalAt(0, 1000), Pedal.brake);
+      expect(m.pedalAt(399, 1000), Pedal.brake);
+      expect(m.pedalAt(450, 1000), isNull);
+      expect(m.pedalAt(550, 1000), isNull);
+      expect(m.pedalAt(600, 1000), Pedal.throttle);
+      expect(m.pedalAt(999, 1000), Pedal.throttle);
+    });
+    test('the travel uses 80% of the height and still reaches 100%', () {
+      expect(m.valueAt(100, 1000), 1); // top 15%
+      expect(m.valueAt(160, 1000), closeTo(0.9875, 1e-3));
+      expect(m.valueAt(960, 1000), 0); // bottom 5%
+      expect(1 - m.topDeadZone - m.bottomDeadZone, closeTo(0.8, 1e-9));
     });
   });
 

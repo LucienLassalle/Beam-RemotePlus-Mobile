@@ -4,6 +4,8 @@ import 'package:sensors_plus/sensors_plus.dart';
 import '../../core/settings/app_settings.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../themes/control_theme.dart';
+import '../vehicle_status/widgets/vehicle_panel.dart';
+import '../vehicle_status/widgets/warning_overlay.dart';
 import 'driving_controller.dart';
 import 'pedal_mapping.dart';
 import 'widgets/pedal_zones.dart';
@@ -17,6 +19,8 @@ import 'widgets/vehicle_actions_bar.dart';
 ///   1. theme dashboard: visual only, ignores touches
 ///   2. pedal zones: every touch not taken by a control below
 ///   3. steering bar, buttons and overlays: only the area they cover
+/// In second-screen mode only the dashboard, warnings and the vehicle
+/// panel are shown: no controls at all.
 class DrivingView extends StatelessWidget {
   final DrivingController controller;
   final AppSettings settings;
@@ -43,44 +47,56 @@ class DrivingView extends StatelessWidget {
     this.accelerometer,
   });
 
+  bool get _display => settings.secondScreen;
+
   @override
   Widget build(BuildContext context) {
     final style = theme.style;
     return ListenableBuilder(
       listenable: controller,
       builder: (context, _) {
+        final t = controller.telemetry;
         final data = DashboardData(
-          telemetry: controller.telemetry,
+          telemetry: t,
           modActive: controller.modActive,
           useKmh: settings.useKmh,
           readOnly: controller.readOnly,
           gearFlash: controller.gearFlash,
         );
+        final actions = settings.showActionsBar && !_display
+            ? style.actions.where((a) => !settings.hiddenActions.contains(a.name)).toSet()
+            : const <VehicleAction>{};
+        final bottom = _display ? 8.0 : (settings.tiltSteering ? bottomBarHeight : bottomBarHeight + touchSteeringHeight);
         return ColoredBox(
           color: style.background,
           child: Stack(
             children: [
-              // The dashboard gets the space between the top and bottom
-              // button rows, so buttons never hide a gauge.
-              Positioned.fill(
+              // The dashboard gets the space between the button rows, so
+              // buttons never hide a gauge. In second-screen mode the vehicle
+              // panel takes the right third.
+              Positioned(
                 top: topBarHeight,
-                bottom: settings.tiltSteering ? bottomBarHeight : bottomBarHeight + touchSteeringHeight,
+                bottom: bottom,
+                left: 0,
+                right: _display ? MediaQuery.of(context).size.width * 0.34 : 0,
                 child: IgnorePointer(child: theme.buildDashboard(context, data)),
               ),
-              Positioned.fill(
-                child: IgnorePointer(
-                  ignoring: controller.readOnly,
-                  child: PedalZones(
-                    mapping: settings.tiltSteering ? PedalMapping.halves : PedalMapping.sides,
-                    onBrake: controller.brake,
-                    onThrottle: controller.throttle,
-                    visible: style.visiblePedals,
-                    brakeColor: style.brakeColor,
-                    throttleColor: style.throttleColor,
+              if (!_display) ...[
+                Positioned.fill(
+                  child: IgnorePointer(
+                    ignoring: controller.readOnly,
+                    child: PedalZones(
+                      mapping: settings.tiltSteering ? PedalMapping.wide : PedalMapping.sides,
+                      onBrake: controller.brake,
+                      onThrottle: controller.throttle,
+                      visible: style.visiblePedals,
+                      brakeColor: style.brakeColor,
+                      throttleColor: style.throttleColor,
+                    ),
                   ),
                 ),
-              ),
-              _steering(context),
+                _steering(context),
+              ],
               if (controller.gearFlash != null)
                 Positioned.fill(
                   child: IgnorePointer(
@@ -89,12 +105,32 @@ class DrivingView extends StatelessWidget {
                     ),
                   ),
                 ),
-              Positioned(top: 6, left: 12, child: VehicleTopBar(controller: controller, color: style.buttonColor, onRecovered: onRecovered)),
-              Positioned(top: 6, right: 8, child: hostButtons),
+              if (!_display) ...[
+                Positioned(top: 8, left: 12, child: VehicleSwitchButtons(controller: controller, color: style.buttonColor)),
+                Positioned(
+                  top: 4,
+                  left: 0,
+                  right: 0,
+                  child: Center(child: RecoverButton(controller: controller, onRecovered: onRecovered)),
+                ),
+              ],
+              Positioned(top: 4, right: 8, child: hostButtons),
               Positioned(top: 54, right: 16, child: IgnorePointer(child: StatusChip(state: controller.linkState))),
+              if (settings.warningPopups)
+                Positioned(top: topBarHeight, left: 0, right: 0, bottom: bottom, child: WarningOverlay(telemetry: t)),
+              if (_display)
+                Positioned(
+                  top: topBarHeight + 24,
+                  right: 28,
+                  bottom: 12,
+                  width: MediaQuery.of(context).size.width * 0.3,
+                  child: FittedBox(child: VehiclePanel(telemetry: t)),
+                )
+              else if (settings.showVehiclePanel)
+                Positioned(top: 48, left: 12, child: VehiclePanel(telemetry: t, height: 130)),
               if (!controller.modActive)
                 Positioned(
-                  top: 54,
+                  top: 80,
                   left: 16,
                   right: 140,
                   child: IgnorePointer(
@@ -102,22 +138,25 @@ class DrivingView extends StatelessWidget {
                         style: const TextStyle(color: Colors.white38, fontSize: 11)),
                   ),
                 ),
-              if (debugOverlay != null) Positioned(top: 54, left: 12, child: IgnorePointer(child: debugOverlay)),
-              Positioned(
-                bottom: settings.tiltSteering ? 8 : 76,
-                left: 0,
-                right: 0,
-                child: Center(
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Row(mainAxisSize: MainAxisSize.min, children: [
-                      if (settings.showActionsBar) VehicleActionsBar(controller: controller, color: style.buttonColor),
-                      const SizedBox(width: 12),
-                      CameraButtons(controller: controller, color: style.buttonColor),
-                    ]),
+              if (debugOverlay != null) Positioned(top: 78, right: 12, child: IgnorePointer(child: debugOverlay)),
+              if (!_display)
+                Positioned(
+                  bottom: settings.tiltSteering ? 6 : 76,
+                  left: 0,
+                  right: 0,
+                  child: Center(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Row(mainAxisSize: MainAxisSize.min, children: [
+                        if (actions.isNotEmpty) ...[
+                          VehicleActionsBar(controller: controller, actions: actions, color: style.buttonColor),
+                          const SizedBox(width: 12),
+                        ],
+                        CameraButtons(controller: controller, color: style.buttonColor),
+                      ]),
+                    ),
                   ),
                 ),
-              ),
             ],
           ),
         );

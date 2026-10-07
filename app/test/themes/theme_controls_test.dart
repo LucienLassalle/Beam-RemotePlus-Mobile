@@ -20,7 +20,7 @@ void main() {
         await tester.pump();
 
         // Points spread over the dashboard area (away from the button rows).
-        for (final fx in [0.05, 0.2, 0.35, 0.45]) {
+        for (final fx in [0.05, 0.2, 0.3, 0.38]) {
           for (final fy in [0.3, 0.5, 0.7]) {
             final gesture = await tester.startGesture(Offset(phoneSize.width * fx, phoneSize.height * fy));
             await tester.pump();
@@ -31,7 +31,7 @@ void main() {
             expect(link.brake, 0);
           }
         }
-        for (final fx in [0.55, 0.65, 0.8, 0.95]) {
+        for (final fx in [0.62, 0.7, 0.8, 0.95]) {
           for (final fy in [0.3, 0.5, 0.7]) {
             final gesture = await tester.startGesture(Offset(phoneSize.width * fx, phoneSize.height * fy));
             await tester.pump();
@@ -59,9 +59,9 @@ void main() {
         final link = FakeLink();
         addTearDown(link.dispose);
         await pumpDrivingView(tester, theme: theme, link: link);
-        await tester.tap(find.byIcon(Icons.warning_amber).last);
+        await tester.tap(find.byIcon(Icons.flip_camera_android));
         await tester.pump();
-        expect(link.commands, ['hazard']);
+        expect(link.commands, ['cam_next']);
         expect(link.brake, 0);
         expect(link.throttle, 0);
       });
@@ -77,6 +77,38 @@ void main() {
     expect(link.brake + link.throttle, 0);
     await gesture.up();
     await tester.tap(find.byType(GestureDetector).first, warnIfMissed: false);
+  });
+
+  testWidgets('the Default theme stays clean, Road offers every vehicle button', (tester) async {
+    final link = FakeLink();
+    addTearDown(link.dispose);
+    await pumpDrivingView(tester, theme: themeByName('Default'), link: link);
+    expect(find.byIcon(Icons.campaign), findsNothing); // horn button
+    expect(find.byIcon(Icons.tune), findsNothing); // drive mode button
+    await pumpDrivingView(tester, theme: themeByName('Road'), link: link);
+    await tester.tap(find.byIcon(Icons.warning_amber).last);
+    expect(link.commands, ['hazard']);
+  });
+
+  testWidgets('vehicle buttons hidden in the settings disappear', (tester) async {
+    final link = FakeLink();
+    addTearDown(link.dispose);
+    await pumpDrivingView(tester,
+        theme: themeByName('Road'), link: link, settings: const AppSettings(hiddenActions: {'hazard', 'cruise'}));
+    expect(find.byIcon(Icons.warning_amber), findsNothing);
+    expect(find.byIcon(Icons.campaign), findsOneWidget);
+  });
+
+  testWidgets('second-screen mode shows no controls', (tester) async {
+    final link = FakeLink();
+    addTearDown(link.dispose);
+    await pumpDrivingView(tester, theme: themeByName('Road'), link: link, settings: const AppSettings(secondScreen: true));
+    expect(find.byIcon(Icons.restart_alt), findsNothing);
+    expect(find.byIcon(Icons.flip_camera_android), findsNothing);
+    final gesture = await tester.startGesture(const Offset(100, 200));
+    await tester.pump();
+    expect(link.brake, 0);
+    await gesture.up();
   });
 
   testWidgets('read-only mode ignores the pedals', (tester) async {

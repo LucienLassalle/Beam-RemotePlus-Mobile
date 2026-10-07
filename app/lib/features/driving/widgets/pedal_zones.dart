@@ -165,6 +165,7 @@ class _PedalPainter extends CustomPainter {
           fontSize: 11,
           fontWeight: FontWeight.bold,
           letterSpacing: 2,
+          fontFamily: 'Roboto',
         ),
       ),
       textDirection: TextDirection.ltr,
