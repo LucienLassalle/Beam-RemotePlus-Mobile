@@ -1,27 +1,14 @@
 import 'package:flutter/material.dart';
 
-import 'screens/pairing_screen.dart';
+import 'app.dart';
+import 'core/debug/debug_log.dart';
+import 'core/settings/settings_controller.dart';
+import 'core/settings/settings_store.dart';
 
-void main() {
-  runApp(const BeamngRemotePlusApp());
-}
-
-class BeamngRemotePlusApp extends StatelessWidget {
-  const BeamngRemotePlusApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'BeamNG RemotePlus',
-      theme: ThemeData(
-        brightness: Brightness.dark,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.orangeAccent,
-          brightness: Brightness.dark,
-        ),
-        useMaterial3: true,
-      ),
-      home: const PairingScreen(),
-    );
-  }
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final settings = SettingsController(SharedPreferencesSettingsStore());
+  await settings.load();
+  DebugLog.enabled = settings.settings.debugMode;
+  runApp(BeamRemotePlusApp(settings: settings));
 }
