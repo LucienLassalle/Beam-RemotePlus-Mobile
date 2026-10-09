@@ -47,15 +47,21 @@ with sample data.
 - **Vehicle buttons** (Road theme, each can be hidden): indicators, hazards,
   horn, headlight flash, lights, parking brake, ignition, drive mode, cruise
   control. Camera, vehicle switching and hold-to-reset on every theme.
-- **Volume buttons**: volume up = horn, volume down = headlight flash.
-- **Warning lights**: check engine, oil pressure,
-  overheating, engine stopped, low fuel, flat tyre, low tyre pressure, hot
-  brakes, parking brake while moving.
-- **Road-feel vibrations**: impacts, wheelspin and locked wheels, kerbs.
-- **Radar and damage panel**: nearby cars, body damage, flat tyres, and tyre
+- **Volume buttons**: volume up = horn, volume down = headlight flash (each
+  one can be disabled).
+- **Warning lights**: check engine, oil pressure, overheating, engine
+  stopped, low fuel, fuel leak, flat tyre, low tyre pressure (compared to
+  the pressure the car is set to), hot brakes, clutch overheating or
+  damaged, broken drivetrain, parking brake while moving.
+- **Vibrations**, each one can be switched off: wheelspin, locked wheels,
+  impacts, kerbs, rev limiter.
+- **Radar and damage panel**: nearby cars, body damage, radiator, engine,
+  driveshafts and axles, fuel tank, brake temperatures, flat tyres, and tyre
   temperatures when the
   [Tyre Thermals and Wear](https://www.beamng.com/resources/) mod is
   installed in the game.
+- **Settings saved on the phone**, in tabs: Display, Gameplay, Controls,
+  Advanced.
 - **Second screen**: a phone or tablet showing only the dashboard, radar and
   damage while you drive with a real wheel or a gamepad.
 - **Local multiplayer**: one phone per player, each phone shows up under its

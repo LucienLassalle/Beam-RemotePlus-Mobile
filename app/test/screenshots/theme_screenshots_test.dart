@@ -4,6 +4,11 @@ library;
 import 'dart:io';
 
 import 'package:beam_remoteplus/core/settings/app_settings.dart';
+import 'package:beam_remoteplus/core/settings/settings_controller.dart';
+import 'package:beam_remoteplus/core/settings/settings_scope.dart';
+import 'package:beam_remoteplus/core/settings/settings_store.dart';
+import 'package:beam_remoteplus/features/settings/settings_sheet.dart';
+import 'package:beam_remoteplus/l10n/generated/app_localizations.dart';
 import 'package:beam_remoteplus/themes/theme_registry.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -33,6 +38,45 @@ void main() {
       await expectLater(find.byType(MaterialApp), matchesGoldenFile('goldens/$name.png'));
       link.dispose();
     }
+  });
+
+  testWidgets('settings previews', (tester) async {
+    tester.view.physicalSize = phoneSize * 2;
+    tester.view.devicePixelRatio = 2;
+    addTearDown(tester.view.reset);
+    final settings = SettingsController(MemorySettingsStore());
+    await tester.pumpWidget(SettingsScope(
+      controller: settings,
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        locale: const Locale('fr'),
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        theme: ThemeData(
+          brightness: Brightness.dark,
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.orangeAccent, brightness: Brightness.dark),
+        ),
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => TextButton(
+              onPressed: () => showSettingsSheet(context, readOnly: false, onReadOnlyChanged: (_) {}, onRecalibrate: () {}),
+              child: const Text('open'),
+            ),
+          ),
+        ),
+      ),
+    ));
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+    await expectLater(find.byType(MaterialApp), matchesGoldenFile('goldens/Settings - display.png'));
+    await tester.tap(find.byType(DropdownButton<String>).last);
+    await tester.pumpAndSettle();
+    await expectLater(find.byType(MaterialApp), matchesGoldenFile('goldens/Settings - themes.png'));
+    await tester.tapAt(const Offset(5, 5));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Jouabilité'));
+    await tester.pumpAndSettle();
+    await expectLater(find.byType(MaterialApp), matchesGoldenFile('goldens/Settings - gameplay.png'));
   });
 
   for (final theme in availableThemes) {

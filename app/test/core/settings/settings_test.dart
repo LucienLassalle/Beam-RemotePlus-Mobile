@@ -6,16 +6,26 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   group('AppSettings', () {
     test('round-trips through JSON', () {
-      const s = AppSettings(themeName: 'Civetta', localeCode: 'fr', rotationRangeDeg: 540, volumeKeys: false);
+      const s = AppSettings(
+        themeName: 'Civetta',
+        localeCode: 'fr',
+        rotationRangeDeg: 1080,
+        hornOnVolume: false,
+        hapticKerbs: false,
+        hapticLimiter: true,
+      );
       final back = AppSettings.fromJson(s.toJson());
       expect(back.themeName, 'Civetta');
       expect(back.localeCode, 'fr');
-      expect(back.rotationRangeDeg, 540);
-      expect(back.volumeKeys, isFalse);
+      expect(back.rotationRangeDeg, 1080);
+      expect(back.hornOnVolume, isFalse);
+      expect(back.flashOnVolume, isTrue);
+      expect(back.hapticKerbs, isFalse);
+      expect(back.hapticLimiter, isTrue);
     });
 
     test('falls back to defaults for missing or invalid values', () {
-      final s = AppSettings.fromJson({'useKmh': 'yes', 'rotationRangeDeg': 123, 'themeName': 4});
+      final s = AppSettings.fromJson({'useKmh': 'yes', 'rotationRangeDeg': 10, 'themeName': 4});
       expect(s.useKmh, isTrue);
       expect(s.rotationRangeDeg, 900);
       expect(s.themeName, 'Default');
@@ -28,9 +38,25 @@ void main() {
       expect(s.copyWith(useKmh: false).localeCode, 'fr');
     });
 
-    test('volume buttons and vehicle buttons are on by default', () {
-      expect(const AppSettings().volumeKeys, isTrue);
-      expect(const AppSettings().showActionsBar, isTrue);
+    test('defaults asked for', () {
+      const s = AppSettings();
+      expect(s.tiltSteering, isTrue);
+      expect(s.useKmh, isTrue);
+      expect(s.secondScreen, isFalse);
+      expect(s.steeringSmoothing, isTrue);
+      expect(s.pitchGearShift, isFalse);
+      expect([s.hapticSpin, s.hapticLock, s.hapticImpacts, s.hapticKerbs], everyElement(isTrue));
+      expect(s.hapticLimiter, isFalse);
+      expect(s.hornOnVolume && s.flashOnVolume, isTrue);
+      expect(s.debugMode, isFalse);
+      expect(s.showActionsBar, isTrue);
+    });
+
+    test('settings saved by version 2.0 carry over', () {
+      final s = AppSettings.fromJson({'volumeKeys': false, 'roadHaptics': false, 'shiftHaptics': true});
+      expect(s.hornOnVolume || s.flashOnVolume, isFalse);
+      expect(s.anyRoadHaptics, isFalse);
+      expect(s.hapticLimiter, isTrue);
     });
   });
 

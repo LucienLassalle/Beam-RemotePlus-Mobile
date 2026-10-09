@@ -10,12 +10,12 @@ import '../../helpers/fake_link.dart';
 void main() {
   late FakeLink link;
   late DrivingController controller;
-  var shiftPoints = 0;
+  var limiterHits = 0;
 
   setUp(() {
     link = FakeLink();
-    shiftPoints = 0;
-    controller = DrivingController(link: link, settings: const AppSettings(shiftHaptics: true), onShiftPoint: () => shiftPoints++);
+    limiterHits = 0;
+    controller = DrivingController(link: link, settings: const AppSettings(hapticLimiter: true), onLimiter: () => limiterHits++);
   });
 
   tearDown(() {
@@ -39,10 +39,16 @@ void main() {
     expect(link.commands, ['horn|1', 'horn|0', 'highbeam|1', 'highbeam|0']);
   });
 
-  test('volume buttons do nothing when disabled in the settings', () {
-    controller.settings = const AppSettings(volumeKeys: false);
+  test('horn and headlight flash on the volume buttons can be disabled separately', () {
+    controller.settings = const AppSettings(hornOnVolume: false);
     controller.onHardwareKey(HardwareKey.volumeUp, true);
     expect(link.commands, isEmpty);
+    controller.onHardwareKey(HardwareKey.volumeDown, true);
+    expect(link.commands, ['highbeam|1']);
+    controller.onHardwareKey(HardwareKey.volumeDown, false);
+    controller.settings = const AppSettings(flashOnVolume: false);
+    controller.onHardwareKey(HardwareKey.volumeDown, true);
+    expect(link.commands, ['highbeam|1', 'highbeam|0']);
   });
 
   test('read-only releases holds, centres the controls and blocks inputs', () {
@@ -79,13 +85,20 @@ void main() {
     expect(controller.gearFlash, isNull);
   });
 
-  test('vibrates once on the rising edge of the shift light', () async {
-    link.telemetry_.add(const Telemetry(shiftLight: true));
-    link.telemetry_.add(const Telemetry(shiftLight: true));
-    link.telemetry_.add(const Telemetry(shiftLight: false));
-    link.telemetry_.add(const Telemetry(shiftLight: true));
+  test('vibrates once per hit of the rev limiter', () async {
+    for (final rpm in const <double>[7000, 7900, 7950, 7600, 7900, 7300, 7900]) {
+      link.telemetry_.add(Telemetry(rpm: rpm, maxRpm: 8000));
+    }
     await Future<void>.delayed(Duration.zero);
-    expect(shiftPoints, 2);
-    expect(controller.telemetry.shiftLight, isTrue);
+    // 7900 hits, 7950 stays on it, 7600 is not low enough to re-arm,
+    // 7300 re-arms, 7900 hits again.
+    expect(limiterHits, 2);
+  });
+
+  test('the limiter vibration is off by default', () async {
+    controller.settings = const AppSettings();
+    link.telemetry_.add(const Telemetry(rpm: 8000, maxRpm: 8000));
+    await Future<void>.delayed(Duration.zero);
+    expect(limiterHits, 0);
   });
 }

@@ -1,27 +1,14 @@
 /// User preferences, persisted between launches (see [SettingsController]).
 /// Immutable: change it with [copyWith].
 class AppSettings {
+  // Display ---------------------------------------------------------------------
+
   /// Name of the driving screen theme (also its id), see themes/theme_registry.dart.
   final String themeName;
 
   /// 'en', 'fr'... or null to follow the phone language.
   final String? localeCode;
-
-  final bool tiltSteering;
-  final double rotationRangeDeg;
-  final bool invertSteering;
-  final bool steeringSmoothing;
   final bool useKmh;
-  final bool shiftHaptics;
-  final bool pitchGearShift;
-
-  /// Volume up = horn, volume down = headlight flash.
-  final bool volumeKeys;
-  final bool showActionsBar;
-  final bool debugMode;
-
-  /// Road-feel vibrations (wheel slip, impacts, kerbs).
-  final bool roadHaptics;
 
   /// Real-car style warning lights popping on screen.
   final bool warningPopups;
@@ -32,30 +19,69 @@ class AppSettings {
   /// Display-only phone: dashboard, radar and damage, no controls.
   final bool secondScreen;
 
+  // Gameplay --------------------------------------------------------------------
+
+  /// Tilt the phone to steer, otherwise slide a finger on a bar.
+  final bool tiltSteering;
+  final double rotationRangeDeg;
+  final bool invertSteering;
+
+  /// Filters the accelerometer jitter ("shake reduction").
+  final bool steeringSmoothing;
+  final bool pitchGearShift;
+
+  /// Vibrations: wheelspin, locked wheels, impacts, kerbs, rev limiter.
+  final bool hapticSpin;
+  final bool hapticLock;
+  final bool hapticImpacts;
+  final bool hapticKerbs;
+  final bool hapticLimiter;
+
+  // Controls --------------------------------------------------------------------
+
+  /// Volume up = horn, volume down = headlight flash (while held).
+  final bool hornOnVolume;
+  final bool flashOnVolume;
+  final bool showActionsBar;
+
   /// Vehicle buttons (VehicleAction names) hidden by the user.
   final Set<String> hiddenActions;
 
+  // Advanced --------------------------------------------------------------------
+
+  final bool debugMode;
+
+  /// Presets offered next to a custom value.
   static const List<double> rotationRanges = [360, 540, 720, 900];
+  static const double minRotationRange = 90;
+  static const double maxRotationRange = 2520;
 
   const AppSettings({
     this.themeName = 'Default',
     this.localeCode,
+    this.useKmh = true,
+    this.warningPopups = true,
+    this.showVehiclePanel = false,
+    this.secondScreen = false,
     this.tiltSteering = true,
     this.rotationRangeDeg = 900,
     this.invertSteering = true,
     this.steeringSmoothing = true,
-    this.useKmh = true,
-    this.shiftHaptics = false,
     this.pitchGearShift = false,
-    this.volumeKeys = true,
+    this.hapticSpin = true,
+    this.hapticLock = true,
+    this.hapticImpacts = true,
+    this.hapticKerbs = true,
+    this.hapticLimiter = false,
+    this.hornOnVolume = true,
+    this.flashOnVolume = true,
     this.showActionsBar = true,
-    this.debugMode = false,
-    this.roadHaptics = true,
-    this.warningPopups = true,
-    this.showVehiclePanel = false,
-    this.secondScreen = false,
     this.hiddenActions = const {},
+    this.debugMode = false,
   });
+
+  /// Some road-feel vibration is enabled.
+  bool get anyRoadHaptics => hapticSpin || hapticLock || hapticImpacts || hapticKerbs;
 
   // Sentinel so copyWith can set localeCode back to null (system language).
   static const Object _keep = Object();
@@ -63,65 +89,79 @@ class AppSettings {
   AppSettings copyWith({
     String? themeName,
     Object? localeCode = _keep,
+    bool? useKmh,
+    bool? warningPopups,
+    bool? showVehiclePanel,
+    bool? secondScreen,
     bool? tiltSteering,
     double? rotationRangeDeg,
     bool? invertSteering,
     bool? steeringSmoothing,
-    bool? useKmh,
-    bool? shiftHaptics,
     bool? pitchGearShift,
-    bool? volumeKeys,
+    bool? hapticSpin,
+    bool? hapticLock,
+    bool? hapticImpacts,
+    bool? hapticKerbs,
+    bool? hapticLimiter,
+    bool? hornOnVolume,
+    bool? flashOnVolume,
     bool? showActionsBar,
-    bool? debugMode,
-    bool? roadHaptics,
-    bool? warningPopups,
-    bool? showVehiclePanel,
-    bool? secondScreen,
     Set<String>? hiddenActions,
+    bool? debugMode,
   }) {
     return AppSettings(
       themeName: themeName ?? this.themeName,
       localeCode: identical(localeCode, _keep) ? this.localeCode : localeCode as String?,
+      useKmh: useKmh ?? this.useKmh,
+      warningPopups: warningPopups ?? this.warningPopups,
+      showVehiclePanel: showVehiclePanel ?? this.showVehiclePanel,
+      secondScreen: secondScreen ?? this.secondScreen,
       tiltSteering: tiltSteering ?? this.tiltSteering,
       rotationRangeDeg: rotationRangeDeg ?? this.rotationRangeDeg,
       invertSteering: invertSteering ?? this.invertSteering,
       steeringSmoothing: steeringSmoothing ?? this.steeringSmoothing,
-      useKmh: useKmh ?? this.useKmh,
-      shiftHaptics: shiftHaptics ?? this.shiftHaptics,
       pitchGearShift: pitchGearShift ?? this.pitchGearShift,
-      volumeKeys: volumeKeys ?? this.volumeKeys,
+      hapticSpin: hapticSpin ?? this.hapticSpin,
+      hapticLock: hapticLock ?? this.hapticLock,
+      hapticImpacts: hapticImpacts ?? this.hapticImpacts,
+      hapticKerbs: hapticKerbs ?? this.hapticKerbs,
+      hapticLimiter: hapticLimiter ?? this.hapticLimiter,
+      hornOnVolume: hornOnVolume ?? this.hornOnVolume,
+      flashOnVolume: flashOnVolume ?? this.flashOnVolume,
       showActionsBar: showActionsBar ?? this.showActionsBar,
-      debugMode: debugMode ?? this.debugMode,
-      roadHaptics: roadHaptics ?? this.roadHaptics,
-      warningPopups: warningPopups ?? this.warningPopups,
-      showVehiclePanel: showVehiclePanel ?? this.showVehiclePanel,
-      secondScreen: secondScreen ?? this.secondScreen,
       hiddenActions: hiddenActions ?? this.hiddenActions,
+      debugMode: debugMode ?? this.debugMode,
     );
   }
 
   Map<String, Object?> toJson() => {
         'themeName': themeName,
         'localeCode': localeCode,
+        'useKmh': useKmh,
+        'warningPopups': warningPopups,
+        'showVehiclePanel': showVehiclePanel,
+        'secondScreen': secondScreen,
         'tiltSteering': tiltSteering,
         'rotationRangeDeg': rotationRangeDeg,
         'invertSteering': invertSteering,
         'steeringSmoothing': steeringSmoothing,
-        'useKmh': useKmh,
-        'shiftHaptics': shiftHaptics,
         'pitchGearShift': pitchGearShift,
-        'volumeKeys': volumeKeys,
+        'hapticSpin': hapticSpin,
+        'hapticLock': hapticLock,
+        'hapticImpacts': hapticImpacts,
+        'hapticKerbs': hapticKerbs,
+        'hapticLimiter': hapticLimiter,
+        'hornOnVolume': hornOnVolume,
+        'flashOnVolume': flashOnVolume,
         'showActionsBar': showActionsBar,
-        'debugMode': debugMode,
-        'roadHaptics': roadHaptics,
-        'warningPopups': warningPopups,
-        'showVehiclePanel': showVehiclePanel,
-        'secondScreen': secondScreen,
         'hiddenActions': hiddenActions.toList()..sort(),
+        'debugMode': debugMode,
       };
 
   /// Missing or wrongly typed values fall back to the defaults, so settings
-  /// saved by an older app version always load.
+  /// saved by an older app version always load. Settings of version 2.0
+  /// (one switch for the volume buttons, one for every road vibration, a
+  /// shift-point vibration) carry over to their replacements.
   factory AppSettings.fromJson(Map<String, Object?> json) {
     const d = AppSettings();
     T pick<T>(String key, T fallback) {
@@ -130,27 +170,33 @@ class AppSettings {
     }
 
     final range = json['rotationRangeDeg'];
-    final rotation = range is num && rotationRanges.contains(range.toDouble()) ? range.toDouble() : d.rotationRangeDeg;
+    final rotation = range is num && range >= minRotationRange && range <= maxRotationRange ? range.toDouble() : d.rotationRangeDeg;
+    final volumeKeys = pick('volumeKeys', true);
+    final roadHaptics = pick('roadHaptics', true);
     return AppSettings(
       themeName: pick('themeName', d.themeName),
       localeCode: json['localeCode'] is String ? json['localeCode'] as String : null,
+      useKmh: pick('useKmh', d.useKmh),
+      warningPopups: pick('warningPopups', d.warningPopups),
+      showVehiclePanel: pick('showVehiclePanel', d.showVehiclePanel),
+      secondScreen: pick('secondScreen', d.secondScreen),
       tiltSteering: pick('tiltSteering', d.tiltSteering),
       rotationRangeDeg: rotation,
       invertSteering: pick('invertSteering', d.invertSteering),
       steeringSmoothing: pick('steeringSmoothing', d.steeringSmoothing),
-      useKmh: pick('useKmh', d.useKmh),
-      shiftHaptics: pick('shiftHaptics', d.shiftHaptics),
       pitchGearShift: pick('pitchGearShift', d.pitchGearShift),
-      volumeKeys: pick('volumeKeys', d.volumeKeys),
+      hapticSpin: pick('hapticSpin', roadHaptics),
+      hapticLock: pick('hapticLock', roadHaptics),
+      hapticImpacts: pick('hapticImpacts', roadHaptics),
+      hapticKerbs: pick('hapticKerbs', roadHaptics),
+      hapticLimiter: pick('hapticLimiter', pick('shiftHaptics', d.hapticLimiter)),
+      hornOnVolume: pick('hornOnVolume', volumeKeys),
+      flashOnVolume: pick('flashOnVolume', volumeKeys),
       showActionsBar: pick('showActionsBar', d.showActionsBar),
-      debugMode: pick('debugMode', d.debugMode),
-      roadHaptics: pick('roadHaptics', d.roadHaptics),
-      warningPopups: pick('warningPopups', d.warningPopups),
-      showVehiclePanel: pick('showVehiclePanel', d.showVehiclePanel),
-      secondScreen: pick('secondScreen', d.secondScreen),
       hiddenActions: json['hiddenActions'] is List
           ? {for (final a in json['hiddenActions']! as List<Object?>) if (a is String) a}
           : d.hiddenActions,
+      debugMode: pick('debugMode', d.debugMode),
     );
   }
 }
