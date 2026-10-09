@@ -28,6 +28,32 @@ void main() {
       expect(t.receivedFields, isNot(contains('type')));
     });
 
+    test('reads the drivetrain, brakes and clutch fields', () {
+      final t = Telemetry.fromJson({
+        'tirePressuresNominal': {'FL': 137.9},
+        'brakeTemps': {'FL': 352, 'RR': 80},
+        'clutchTemp': 240,
+        'clutchState': 'overheating',
+        'brokenParts': ['driveshaft'],
+        'drivetrain': {'shafts': ['driveshaft', 'wheelaxleRL'], 'engineAt': 0.2},
+        'brokenBrakes': ['FL'],
+        'brokenWheels': ['RR'],
+        'fuelLeak': true,
+        'wheelSpin': 3.5,
+        'wheelLock': 0,
+      });
+      expect(t.tirePressuresNominal, {'FL': 137.9});
+      expect(t.brakeTemps!['FL'], 352);
+      expect(t.clutchState, 'overheating');
+      expect(t.brokenParts, ['driveshaft']);
+      expect(t.shafts, ['driveshaft', 'wheelaxleRL']);
+      expect(t.engineAt, 0.2);
+      expect(t.brokenBrakes, ['FL']);
+      expect(t.brokenWheels, ['RR']);
+      expect(t.fuelLeak, isTrue);
+      expect(t.wheelSpin, 3.5);
+    });
+
     test('wrong types become null instead of throwing', () {
       final t = Telemetry.fromJson({'rpm': 'fast', 'lowBeam': 'yes', 'gear': 3});
       expect(t.rpm, isNull);
@@ -56,6 +82,14 @@ void main() {
       expect(const Telemetry(rpm: 3500).rpmRatio, isNull);
       expect(const Telemetry(tirePressures: {'FL': 90}).lowTirePressure(), isTrue);
       expect(const Telemetry(tirePressures: {'FL': 200}).lowTirePressure(), isFalse);
+    });
+
+    test('low tyre pressure is judged against the pressure the car is set to', () {
+      // A formula car running 110 kPa is fine, a road car at 110 kPa is not.
+      const race = Telemetry(tirePressures: {'FL': 110, 'FR': 112}, tirePressuresNominal: {'FL': 117, 'FR': 117});
+      expect(race.lowTirePressure(), isFalse);
+      const road = Telemetry(tirePressures: {'FL': 110, 'FR': 230}, tirePressuresNominal: {'FL': 230, 'FR': 230});
+      expect(road.lowPressureTires(), ['FL']);
     });
   });
 
