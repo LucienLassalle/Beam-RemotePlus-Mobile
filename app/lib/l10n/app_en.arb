@@ -66,6 +66,8 @@
   "settingsSmoothingTitle": "Shake reduction",
   "settingsSmoothingSubtitle": "Reduces sensor jitter (adds a small delay)",
   "settingsUnitTitle": "Speed unit",
+  "settingsTemperatureUnitTitle": "Temperature",
+  "settingsPressureUnitTitle": "Tyre pressure",
   "settingsPitchGearTitle": "Shift gears by tilting",
   "settingsPitchGearSubtitle": "Tilt forward = up · backward = down (manual gearbox)",
   "settingsVibrationsTitle": "Vibrations",

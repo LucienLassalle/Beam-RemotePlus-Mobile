@@ -60,6 +60,8 @@ class DrivingView extends StatelessWidget {
           telemetry: t,
           modActive: controller.modActive,
           useKmh: settings.useKmh,
+          temperatureUnit: settings.temperatureUnit,
+          pressureUnit: settings.pressureUnit,
           readOnly: controller.readOnly,
           gearFlash: controller.gearFlash,
         );
@@ -124,10 +126,17 @@ class DrivingView extends StatelessWidget {
                   right: 28,
                   bottom: 12,
                   width: MediaQuery.of(context).size.width * 0.3,
-                  child: FittedBox(child: VehiclePanel(telemetry: t)),
+                  child: FittedBox(
+                    child: VehiclePanel(telemetry: t, temperatureUnit: settings.temperatureUnit, pressureUnit: settings.pressureUnit),
+                  ),
                 )
               else if (settings.showVehiclePanel)
-                Positioned(top: 48, left: 12, child: VehiclePanel(telemetry: t, height: 130)),
+                Positioned(top: 48, left: 12, child: VehiclePanel(
+                    telemetry: t,
+                    height: 130,
+                    temperatureUnit: settings.temperatureUnit,
+                    pressureUnit: settings.pressureUnit,
+                  )),
               if (!controller.modActive)
                 Positioned(
                   top: 80,

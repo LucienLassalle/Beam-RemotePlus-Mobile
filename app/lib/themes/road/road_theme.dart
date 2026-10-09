@@ -55,7 +55,7 @@ class RoadTheme extends ControlTheme {
             Row(mainAxisSize: MainAxisSize.min, children: [
               _Info(label: t.driveMode ?? '', value: t.gearLabel, big: true),
               _Info(label: l10n.dashFuel, value: '${DashFormat.fuelPercent(t)}%'),
-              _Info(label: l10n.dashCoolant, value: '${DashFormat.integer(t.waterTemp)}°'),
+              _Info(label: l10n.dashCoolant, value: '${DashFormat.temperature(t.waterTemp, data.temperatureUnit)}°'),
               _Info(label: data.useKmh ? 'KM' : 'MI', value: DashFormat.distance(t.odometer, kmh: data.useKmh)),
             ]),
           ]),

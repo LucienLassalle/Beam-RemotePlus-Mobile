@@ -1,3 +1,7 @@
+import 'units.dart';
+
+export 'units.dart';
+
 /// User preferences, persisted between launches (see [SettingsController]).
 /// Immutable: change it with [copyWith].
 class AppSettings {
@@ -9,6 +13,8 @@ class AppSettings {
   /// 'en', 'fr'... or null to follow the phone language.
   final String? localeCode;
   final bool useKmh;
+  final TemperatureUnit temperatureUnit;
+  final PressureUnit pressureUnit;
 
   /// Real-car style warning lights popping on screen.
   final bool warningPopups;
@@ -60,6 +66,8 @@ class AppSettings {
     this.themeName = 'Default',
     this.localeCode,
     this.useKmh = true,
+    this.temperatureUnit = TemperatureUnit.celsius,
+    this.pressureUnit = PressureUnit.bar,
     this.warningPopups = true,
     this.showVehiclePanel = false,
     this.secondScreen = false,
@@ -90,6 +98,8 @@ class AppSettings {
     String? themeName,
     Object? localeCode = _keep,
     bool? useKmh,
+    TemperatureUnit? temperatureUnit,
+    PressureUnit? pressureUnit,
     bool? warningPopups,
     bool? showVehiclePanel,
     bool? secondScreen,
@@ -113,6 +123,8 @@ class AppSettings {
       themeName: themeName ?? this.themeName,
       localeCode: identical(localeCode, _keep) ? this.localeCode : localeCode as String?,
       useKmh: useKmh ?? this.useKmh,
+      temperatureUnit: temperatureUnit ?? this.temperatureUnit,
+      pressureUnit: pressureUnit ?? this.pressureUnit,
       warningPopups: warningPopups ?? this.warningPopups,
       showVehiclePanel: showVehiclePanel ?? this.showVehiclePanel,
       secondScreen: secondScreen ?? this.secondScreen,
@@ -138,6 +150,8 @@ class AppSettings {
         'themeName': themeName,
         'localeCode': localeCode,
         'useKmh': useKmh,
+        'temperatureUnit': temperatureUnit.name,
+        'pressureUnit': pressureUnit.name,
         'warningPopups': warningPopups,
         'showVehiclePanel': showVehiclePanel,
         'secondScreen': secondScreen,
@@ -159,7 +173,7 @@ class AppSettings {
       };
 
   /// Missing or wrongly typed values fall back to the defaults, so settings
-  /// saved by an older app version always load. Settings of version 2.0
+  /// saved by an older app version always load. Settings of version 0.0.3
   /// (one switch for the volume buttons, one for every road vibration, a
   /// shift-point vibration) carry over to their replacements.
   factory AppSettings.fromJson(Map<String, Object?> json) {
@@ -177,6 +191,8 @@ class AppSettings {
       themeName: pick('themeName', d.themeName),
       localeCode: json['localeCode'] is String ? json['localeCode'] as String : null,
       useKmh: pick('useKmh', d.useKmh),
+      temperatureUnit: enumByName(TemperatureUnit.values, json['temperatureUnit'], d.temperatureUnit),
+      pressureUnit: enumByName(PressureUnit.values, json['pressureUnit'], d.pressureUnit),
       warningPopups: pick('warningPopups', d.warningPopups),
       showVehiclePanel: pick('showVehiclePanel', d.showVehiclePanel),
       secondScreen: pick('secondScreen', d.secondScreen),

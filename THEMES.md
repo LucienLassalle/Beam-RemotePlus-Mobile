@@ -76,6 +76,11 @@ does not have it: show `DashFormat.missing` ("–") or hide the gauge, never
 pretend it is 0. `data.modActive` is false without the mod (no telemetry at
 all).
 
+Temperatures are sent in °C and tyre pressures in kPa: show them in the
+units the user picked with `DashFormat.temperature(value,
+data.temperatureUnit)` and `DashFormat.pressure(value, data.pressureUnit)`
+(and `data.useKmh` for speeds and distances).
+
 Text shown by a theme is translated like the rest of the app: add the
 string to `app/lib/l10n/app_en.arb` and `app_fr.arb` and read it with
 `AppLocalizations.of(context)` (see the Road theme). Only replicas of an

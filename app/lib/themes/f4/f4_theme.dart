@@ -64,12 +64,12 @@ class F4Theme extends ControlTheme {
               Positioned(
                 bottom: 15,
                 left: 16,
-                child: _Field(label: 'OIL T', value: '${DashFormat.integer(t.oilTemp)} C', alert: (t.oilTemp ?? 0) >= 120),
+                child: _Field(label: 'OIL T', value: '${DashFormat.temperature(t.oilTemp, data.temperatureUnit)} ${data.temperatureUnit.symbol.substring(1)}', alert: (t.oilTemp ?? 0) >= 120),
               ),
               Positioned(
                 bottom: 15,
                 left: 210,
-                child: _Field(label: 'WAT T', value: '${DashFormat.integer(t.waterTemp)} C', alert: (t.waterTemp ?? 0) >= 120),
+                child: _Field(label: 'WAT T', value: '${DashFormat.temperature(t.waterTemp, data.temperatureUnit)} ${data.temperatureUnit.symbol.substring(1)}', alert: (t.waterTemp ?? 0) >= 120),
               ),
               Positioned(
                 bottom: 40,

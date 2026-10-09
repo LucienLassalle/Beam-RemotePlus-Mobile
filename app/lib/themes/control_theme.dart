@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/protocol/telemetry.dart';
+import '../core/settings/units.dart';
 
 /// A driving screen theme. See THEMES.md for a step-by-step guide.
 ///
@@ -33,6 +34,12 @@ class DashboardData {
   /// False without the Beam-RemotePlus mod: there is no telemetry at all.
   final bool modActive;
   final bool useKmh;
+
+  /// Units chosen by the user for temperatures and tyre pressures (the
+  /// telemetry is in °C and kPa): format with DashFormat.temperature and
+  /// DashFormat.pressure.
+  final TemperatureUnit temperatureUnit;
+  final PressureUnit pressureUnit;
   final bool readOnly;
 
   /// Set for ~300 ms after a gear change requested from the phone.
@@ -42,6 +49,8 @@ class DashboardData {
     required this.telemetry,
     required this.modActive,
     required this.useKmh,
+    this.temperatureUnit = TemperatureUnit.celsius,
+    this.pressureUnit = PressureUnit.bar,
     this.readOnly = false,
     this.gearFlash,
   });

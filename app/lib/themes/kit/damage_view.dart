@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../core/protocol/telemetry.dart';
+import 'dash_format.dart';
 
 /// Health of one mechanical part on the schematic.
 enum PartState { ok, warning, broken }
@@ -17,7 +18,14 @@ enum PartState { ok, warning, broken }
 /// - a brake disc in each wheel coloured by its temperature, with °C
 class DamageView extends StatelessWidget {
   final Telemetry telemetry;
-  const DamageView({super.key, required this.telemetry});
+  final TemperatureUnit temperatureUnit;
+  final PressureUnit pressureUnit;
+  const DamageView({
+    super.key,
+    required this.telemetry,
+    this.temperatureUnit = TemperatureUnit.celsius,
+    this.pressureUnit = PressureUnit.bar,
+  });
 
   /// Intact = neutral grey, then yellow, orange and red as damage grows.
   static Color damageColor(double damage) {
@@ -68,14 +76,16 @@ class DamageView extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AspectRatio(
         aspectRatio: 0.6,
-        child: CustomPaint(painter: _DamagePainter(telemetry)),
+        child: CustomPaint(painter: _DamagePainter(telemetry, temperatureUnit, pressureUnit)),
       );
 }
 
 /// Top-down car drawn in a 100x200 design box (front at the top).
 class _DamagePainter extends CustomPainter {
   final Telemetry t;
-  _DamagePainter(this.t);
+  final TemperatureUnit temperatureUnit;
+  final PressureUnit pressureUnit;
+  _DamagePainter(this.t, this.temperatureUnit, this.pressureUnit);
 
   static const _zones = [
     ['FL', 'FR'],
@@ -283,8 +293,8 @@ class _DamagePainter extends CustomPainter {
         }
       }
       final lines = <(String, Color, double)>[
-        if (tyreTemp != null) ('${tyreTemp.round()}°', Colors.white, 11),
-        if (brakeTemp != null) ('${brakeTemp.round()}°', DamageView.brakeColor(brakeTemp, fading: fading), 9),
+        if (tyreTemp != null) ('${DashFormat.temperature(tyreTemp, temperatureUnit)}°', Colors.white, 11),
+        if (brakeTemp != null) ('${DashFormat.temperature(brakeTemp, temperatureUnit)}°', DamageView.brakeColor(brakeTemp, fading: fading), 9),
       ];
       var y = r.center.dy - (lines.length - 1) * 6.5;
       for (final (text, color, size) in lines) {

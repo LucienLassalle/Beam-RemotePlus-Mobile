@@ -36,8 +36,8 @@ class CivettaTheme extends ControlTheme {
               ..._header(t, data),
               ..._lamps(t),
               ..._insideDial(t, data),
-              ..._wing(left: true, t: t),
-              ..._wing(left: false, t: t),
+              ..._wing(left: true, t: t, unit: data.temperatureUnit),
+              ..._wing(left: false, t: t, unit: data.temperatureUnit),
             ],
           ),
         ),
@@ -122,7 +122,7 @@ class CivettaTheme extends ControlTheme {
 
   /// Side wings: the usable area is x 150..320 (left) and 704..874 (right),
   /// between the slanted red edge and the dial.
-  List<Widget> _wing({required bool left, required Telemetry t}) {
+  List<Widget> _wing({required bool left, required Telemetry t, required TemperatureUnit unit}) {
     final x = left ? 150.0 : 704.0;
     Widget row(String label, double? value, int segments, {Color? first, Color? last}) => SizedBox(
           width: 170,
@@ -142,7 +142,7 @@ class CivettaTheme extends ControlTheme {
     return [
       _at(x, 272, row('BOOST', _range(t.boost, 0, 6), 4, last: CivettaPainter.red)),
       _at(x, 300, row('FUEL', t.fuel, 6, first: CivettaPainter.red)),
-      _at(x + 60, 336, Text('${DashFormat.integer(t.envTemp)}°C', style: caption)),
+      _at(x + 60, 336, Text('${DashFormat.temperature(t.envTemp, unit)}${unit.symbol}', style: caption)),
     ];
   }
 

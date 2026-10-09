@@ -52,7 +52,7 @@ void main() {
       expect(s.showActionsBar, isTrue);
     });
 
-    test('settings saved by version 2.0 carry over', () {
+    test('settings saved by version 0.0.3 carry over', () {
       final s = AppSettings.fromJson({'volumeKeys': false, 'roadHaptics': false, 'shiftHaptics': true});
       expect(s.hornOnVolume || s.flashOnVolume, isFalse);
       expect(s.anyRoadHaptics, isFalse);
