@@ -238,6 +238,7 @@
   "helpContributions": "Beam-RemotePlus is open source and contributions are welcome: themes, translations, bug reports, ideas and fixes. Everything happens on GitHub.",
   "helpAppRepo": "Phone app on GitHub",
   "helpModRepo": "BeamNG.drive mod on GitHub",
+  "helpTrademark": "Beam-RemotePlus is an independent community project: it is not an official BeamNG product and is not affiliated with or endorsed by BeamNG GmbH. BeamNG.drive is a registered trademark of BeamNG GmbH.",
   "helpLinkCopied": "No browser found: link copied",
   "dashFuel": "Fuel",
   "@dashFuel": {

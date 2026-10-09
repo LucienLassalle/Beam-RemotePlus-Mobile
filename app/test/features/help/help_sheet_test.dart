@@ -7,8 +7,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  for (final (locale, contributions) in [('en', 'contributions are welcome'), ('fr', 'contributions sont les bienvenues')]) {
-    testWidgets('help links to both GitHub repositories ($locale)', (tester) async {
+  for (final (locale, contributions, notOfficial) in [
+    ('en', 'contributions are welcome', 'not an official BeamNG product'),
+    ('fr', 'contributions sont les bienvenues', 'pas un produit officiel de BeamNG'),
+  ]) {
+    testWidgets('help links to both GitHub repositories and says the app is not official ($locale)', (tester) async {
       await tester.pumpWidget(SettingsScope(
         controller: SettingsController(MemorySettingsStore()),
         child: MaterialApp(
@@ -25,6 +28,7 @@ void main() {
       await tester.tap(find.text('open'));
       await tester.pumpAndSettle();
       expect(find.textContaining(contributions), findsOneWidget);
+      expect(find.textContaining(notOfficial), findsOneWidget);
       expect(find.byType(ActionChip), findsNWidgets(2));
       final urls = tester.widgetList<ActionChip>(find.byType(ActionChip)).map((c) => c.tooltip);
       expect(urls, [appRepositoryUrl, modRepositoryUrl]);
