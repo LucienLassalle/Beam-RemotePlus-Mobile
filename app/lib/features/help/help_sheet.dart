@@ -1,7 +1,14 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/settings/settings_scope.dart';
 import '../../l10n/generated/app_localizations.dart';
+
+const appRepositoryUrl = 'https://github.com/LucienLassalle/Beam-RemotePlus-Mobile';
+const modRepositoryUrl = 'https://github.com/LucienLassalle/Beam-RemotePlus-Mod';
 
 Future<void> showHelpSheet(BuildContext context) {
   final settings = SettingsScope.read(context).settings;
@@ -29,11 +36,50 @@ Future<void> showHelpSheet(BuildContext context) {
             _HelpRow(Icons.skip_next, Colors.white54, l10n.helpVehicle, l10n.helpVehicleDesc, modRequired: true),
             _HelpRow(Icons.flip_camera_android, Colors.white54, l10n.helpCamera, l10n.helpCameraDesc, modRequired: true),
             _HelpRow(Icons.restart_alt, Colors.orangeAccent, l10n.helpResetVehicle, l10n.helpResetVehicleDesc, modRequired: true),
+            const Divider(height: 24),
+            Text(l10n.helpOpenSourceTitle, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+            const SizedBox(height: 4),
+            Text(l10n.helpContributions, style: const TextStyle(fontSize: 12, color: Colors.white54)),
+            const SizedBox(height: 8),
+            Wrap(spacing: 8, runSpacing: 4, children: [
+              _LinkChip(label: l10n.helpAppRepo, url: appRepositoryUrl),
+              _LinkChip(label: l10n.helpModRepo, url: modRepositoryUrl),
+            ]),
           ]),
         ),
       );
     },
   );
+}
+
+/// Opens a GitHub repository in the browser; copies the link when no
+/// browser can open it.
+class _LinkChip extends StatelessWidget {
+  final String label;
+  final String url;
+  const _LinkChip({required this.label, required this.url});
+
+  Future<void> _open(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final copied = AppLocalizations.of(context).helpLinkCopied;
+    var opened = false;
+    try {
+      opened = await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+    } on PlatformException {
+      opened = false;
+    }
+    if (opened) return;
+    await Clipboard.setData(ClipboardData(text: url));
+    messenger.showSnackBar(SnackBar(content: Text(copied)));
+  }
+
+  @override
+  Widget build(BuildContext context) => ActionChip(
+        avatar: const Icon(Icons.open_in_new, size: 16),
+        label: Text(label),
+        tooltip: url,
+        onPressed: () => unawaited(_open(context)),
+      );
 }
 
 class _HelpRow extends StatelessWidget {
