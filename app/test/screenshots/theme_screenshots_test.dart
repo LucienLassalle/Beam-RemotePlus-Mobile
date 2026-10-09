@@ -62,13 +62,25 @@ void main() {
       tirePressuresNominal: {'FR': 180, 'RL': 180, 'RR': 180},
       brakeTemps: {'FR': 90, 'RL': 900, 'RR': 120},
     );
+    const electric = Telemetry(
+      powertrain: 'electric',
+      rpm: 4000,
+      engineAt: 0.78,
+      fuel: 0.55,
+      shafts: ['wheelaxleRL', 'wheelaxleRR'],
+      tirePressures: {'FL': 250, 'FR': 250, 'RL': 260, 'RR': 260},
+      tirePressuresNominal: {'FL': 250, 'FR': 250, 'RL': 260, 'RR': 260},
+      brakeTemps: {'FL': 60, 'FR': 60, 'RL': 50, 'RR': 50},
+      bodyDamage: {'FR': 0.2},
+    );
     await tester.pumpWidget(const MaterialApp(
       debugShowCheckedModeBanner: false,
       home: Scaffold(
         backgroundColor: Colors.black,
         body: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-          SizedBox(height: 400, child: DamageView(telemetry: sampleTelemetry)),
-          SizedBox(height: 400, child: DamageView(telemetry: wrecked, pressureUnit: PressureUnit.psi)),
+          SizedBox(height: 300, child: DamageView(telemetry: sampleTelemetry)),
+          SizedBox(height: 300, child: DamageView(telemetry: wrecked, pressureUnit: PressureUnit.psi)),
+          SizedBox(height: 300, child: DamageView(telemetry: electric)),
         ]),
       ),
     ));

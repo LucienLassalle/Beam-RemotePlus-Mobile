@@ -54,8 +54,11 @@ class RoadTheme extends ControlTheme {
             const SizedBox(height: 8),
             Row(mainAxisSize: MainAxisSize.min, children: [
               _Info(label: t.driveMode ?? '', value: t.gearLabel, big: true),
-              _Info(label: l10n.dashFuel, value: '${DashFormat.fuelPercent(t)}%'),
-              _Info(label: l10n.dashCoolant, value: '${DashFormat.temperature(t.waterTemp, data.temperatureUnit)}°'),
+              _Info(label: t.isElectric ? l10n.dashBattery : l10n.dashFuel, value: '${DashFormat.fuelPercent(t)}%'),
+              if (t.isElectric)
+                _Info(label: l10n.dashPower, value: '${DashFormat.integer(t.motorPower)} kW')
+              else
+                _Info(label: l10n.dashCoolant, value: '${DashFormat.temperature(t.waterTemp, data.temperatureUnit)}°'),
               _Info(label: data.useKmh ? 'KM' : 'MI', value: DashFormat.distance(t.odometer, kmh: data.useKmh)),
             ]),
           ]),

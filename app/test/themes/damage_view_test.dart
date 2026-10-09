@@ -17,7 +17,14 @@ void main() {
     hotBrakes: ['FR'],
   );
 
-  for (final (name, telemetry) in [('sample', sampleTelemetry), ('wrecked', wrecked), ('no data', Telemetry.empty)]) {
+  const electric = Telemetry(powertrain: 'electric', rpm: 3000, fuel: 0.4, engineAt: 0.8, shafts: ['wheelaxleRL', 'wheelaxleRR']);
+
+  for (final (name, telemetry) in [
+    ('sample', sampleTelemetry),
+    ('wrecked', wrecked),
+    ('electric', electric),
+    ('no data', Telemetry.empty),
+  ]) {
     testWidgets('draws the $name car without error', (tester) async {
       await tester.pumpWidget(Directionality(
         textDirection: TextDirection.ltr,

@@ -65,6 +65,9 @@ with sample data.
   installed in the game.
 - **Settings saved on the phone**, in tabs: Display, Gameplay, Controls,
   Advanced.
+- **Electric cars**: battery charge instead of fuel, motor power (kW,
+  green while regenerating), electric motor and battery pack on the damage
+  schematic, low battery and damaged battery warnings.
 - **Second screen**: a phone or tablet showing only the dashboard, radar and
   damage while you drive with a real wheel or a gamepad.
 - **Local multiplayer**: one phone per player, each phone shows up under its

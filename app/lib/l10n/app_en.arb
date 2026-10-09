@@ -218,6 +218,16 @@
   "warningWaterInEngine": "Water in the engine",
   "warningGearbox": "Gearbox damage",
   "warningLowAirPressure": "Low air pressure",
+  "warningLowBattery": "Low battery",
+  "warningBatteryDamaged": "Battery damaged",
+  "dashBattery": "Battery",
+  "@dashBattery": {
+    "description": "Short gauge label of the battery charge of electric cars (shown in capitals)."
+  },
+  "dashPower": "Power",
+  "@dashPower": {
+    "description": "Short gauge label of the electric motor power (shown in capitals)."
+  },
   "helpOpenSourceTitle": "Open source",
   "helpContributions": "Beam-RemotePlus is open source and contributions are welcome: themes, translations, bug reports, ideas and fixes. Everything happens on GitHub.",
   "helpAppRepo": "Phone app on GitHub",

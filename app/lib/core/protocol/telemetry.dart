@@ -100,6 +100,15 @@ class Telemetry {
   /// Air brakes pressure low (trucks, buses).
   final bool? lowAirPressure;
 
+  /// 'combustion', 'electric' or 'hybrid' (null with an older mod).
+  final String? powertrain;
+
+  /// Electric motors power, kW; negative while regenerating.
+  final double? motorPower;
+
+  /// Traction battery damaged (electric cars).
+  final bool? batteryDamaged;
+
   /// Cars around (empty list = none nearby, null = not sent by the mod).
   final List<RadarTarget>? radar;
 
@@ -180,6 +189,9 @@ class Telemetry {
     this.gearboxWear,
     this.gearGrinding,
     this.lowAirPressure,
+    this.powertrain,
+    this.motorPower,
+    this.batteryDamaged,
     this.radar,
     this.bodyDamage,
     this.engineDamage = const [],
@@ -224,6 +236,11 @@ class Telemetry {
   bool get absOn => absActive ?? false;
   bool get tcsOn => tcsActive ?? false;
   bool get escOn => escActive ?? false;
+
+  /// Battery electric car: [fuel] is the battery charge, [fuelVolume] and
+  /// [fuelCapacity] are in kWh.
+  bool get isElectric => powertrain == 'electric';
+  bool get isHybrid => powertrain == 'hybrid';
 
   /// A tyre counts as underinflated below this share of the pressure the
   /// car is configured with.
@@ -363,6 +380,9 @@ class Telemetry {
       gearboxWear: _num(j['gearboxWear']),
       gearGrinding: _bool(j['gearGrinding']),
       lowAirPressure: _bool(j['lowAirPressure']),
+      powertrain: _str(j['powertrain']),
+      motorPower: _num(j['motorPower']),
+      batteryDamaged: _bool(j['batteryDamaged']),
       radar: _radar(j['radar']),
       bodyDamage: _numbers(j['bodyDamage']),
       engineDamage: _strings(j['engineDamage']),
