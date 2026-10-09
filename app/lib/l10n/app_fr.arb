@@ -128,6 +128,8 @@
   "settingsWarningsSubtitle": "Affiche les voyants moteur, huile, température, carburant, pneus… à l'écran",
   "settingsVehiclePanelTitle": "Panneau radar et dégâts",
   "settingsVehiclePanelSubtitle": "Véhicules proches, dégâts de carrosserie et mécaniques, températures des freins et des pneus (pneus : mod Tyre Thermals and Wear requis)",
+  "settingsSimpleDamageTitle": "Dégâts simplifiés",
+  "settingsSimpleDamageSubtitle": "Le schéma de la version 0.0.3 (carrosserie en six zones et pneus) au lieu de la structure réelle du véhicule",
   "settingsDamageCarPartsTitle": "Pictogrammes moteur, radiateur et réservoir",
   "settingsDamageCarPartsSubtitle": "Sur la structure réelle du véhicule (batterie pour les électriques)",
   "settingsDamageWheelPartsTitle": "Pictogrammes freins, pneus et essieux",

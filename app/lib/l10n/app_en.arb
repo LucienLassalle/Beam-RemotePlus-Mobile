@@ -200,6 +200,8 @@
   "settingsWarningsSubtitle": "Shows engine, oil, temperature, fuel, tyre… warnings on screen",
   "settingsVehiclePanelTitle": "Radar and damage panel",
   "settingsVehiclePanelSubtitle": "Nearby cars, body and mechanical damage, brake temperatures and tyre temperatures (tyre temperatures need the Tyre Thermals and Wear mod)",
+  "settingsSimpleDamageTitle": "Simplified damage",
+  "settingsSimpleDamageSubtitle": "The schematic of version 0.0.3 (six body zones and the tyres) instead of the real structure of the vehicle",
   "settingsDamageCarPartsTitle": "Engine, radiator and fuel tank icons",
   "settingsDamageCarPartsSubtitle": "On the real structure of the vehicle (battery for electric cars)",
   "settingsDamageWheelPartsTitle": "Brake, tyre and axle icons",

@@ -19,6 +19,7 @@ class VehiclePanel extends StatelessWidget {
   final Uint8List? skeletonLevels;
   final bool showCarParts;
   final bool showWheelParts;
+  final bool simpleDamage;
 
   const VehiclePanel({
     super.key,
@@ -30,6 +31,7 @@ class VehiclePanel extends StatelessWidget {
     this.skeletonLevels,
     this.showCarParts = true,
     this.showWheelParts = true,
+    this.simpleDamage = false,
   });
 
   @override
@@ -49,6 +51,7 @@ class VehiclePanel extends StatelessWidget {
               skeletonLevels: skeletonLevels,
               showCarParts: showCarParts,
               showWheelParts: showWheelParts,
+              simplified: simpleDamage,
             ),
           ]),
         ),

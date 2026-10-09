@@ -135,6 +135,7 @@ class DrivingView extends StatelessWidget {
                       skeletonLevels: controller.skeletonLevels,
                       showCarParts: settings.damageCarParts,
                       showWheelParts: settings.showsDamageWheelParts,
+                      simpleDamage: settings.simpleDamage,
                     ),
                   ),
                 )
@@ -148,6 +149,7 @@ class DrivingView extends StatelessWidget {
                     skeletonLevels: controller.skeletonLevels,
                     showCarParts: settings.damageCarParts,
                     showWheelParts: settings.showsDamageWheelParts,
+                    simpleDamage: settings.simpleDamage,
                   )),
               if (!controller.modActive)
                 Positioned(

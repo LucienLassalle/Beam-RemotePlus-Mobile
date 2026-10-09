@@ -58,6 +58,7 @@ void main() {
       expect(s.hornOnVolume && s.flashOnVolume, isTrue);
       expect(s.debugMode, isFalse);
       expect(s.showActionsBar, isTrue);
+      expect(s.simpleDamage, isFalse);
       expect(s.damageCarParts, isFalse);
       expect(s.damageWheelParts, isTrue);
       expect(s.copyWith(damageWheelParts: false).showsDamageWheelParts, isFalse);

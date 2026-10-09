@@ -88,6 +88,20 @@ void main() {
     expect(tile('Brake, tyre and axle icons').onChanged, isNull);
   });
 
+  testWidgets('display tab: simplified damage greys out the pictograms', (tester) async {
+    await open(tester);
+    final list = find.byWidgetPredicate((w) => w is Scrollable && w.axisDirection == AxisDirection.down).first;
+    await tester.scrollUntilVisible(find.text('Simplified damage'), 100, scrollable: list);
+    await tester.pumpAndSettle();
+    SwitchListTile tile(String title) => tester.widget(find.widgetWithText(SwitchListTile, title));
+    expect(tile('Simplified damage').value, isFalse);
+    await tester.tap(find.text('Simplified damage'));
+    await tester.pumpAndSettle();
+    expect(store.values['simpleDamage'], isTrue);
+    expect(tile('Engine, radiator and fuel tank icons').onChanged, isNull);
+    expect(tile('Brake, tyre and axle icons').onChanged, isNull);
+  });
+
   testWidgets('gameplay tab: vibrations sub-menu and custom rotation range', (tester) async {
     await open(tester);
     await tester.tap(find.text('Gameplay'));

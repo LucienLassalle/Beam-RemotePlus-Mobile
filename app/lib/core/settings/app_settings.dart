@@ -26,6 +26,9 @@ class AppSettings {
   /// skeleton): engine, radiator and fuel tank / battery pictograms, and
   /// brakes, tyres and axles ones. Hiding the first lets the user hide the
   /// second too, for the bare structure like the game's detailed app.
+  /// The 0.0.3 damage schematic (six body zones, four tyres) even when
+  /// the real vehicle structure is known.
+  final bool simpleDamage;
   final bool damageCarParts;
   final bool damageWheelParts;
 
@@ -81,6 +84,7 @@ class AppSettings {
     this.pressureUnit = PressureUnit.bar,
     this.warningPopups = true,
     this.showVehiclePanel = false,
+    this.simpleDamage = false,
     this.damageCarParts = false,
     this.damageWheelParts = true,
     this.secondScreen = false,
@@ -122,6 +126,7 @@ class AppSettings {
     PressureUnit? pressureUnit,
     bool? warningPopups,
     bool? showVehiclePanel,
+    bool? simpleDamage,
     bool? damageCarParts,
     bool? damageWheelParts,
     bool? secondScreen,
@@ -151,6 +156,7 @@ class AppSettings {
       pressureUnit: pressureUnit ?? this.pressureUnit,
       warningPopups: warningPopups ?? this.warningPopups,
       showVehiclePanel: showVehiclePanel ?? this.showVehiclePanel,
+      simpleDamage: simpleDamage ?? this.simpleDamage,
       damageCarParts: damageCarParts ?? this.damageCarParts,
       damageWheelParts: damageWheelParts ?? this.damageWheelParts,
       secondScreen: secondScreen ?? this.secondScreen,
@@ -182,6 +188,7 @@ class AppSettings {
         'pressureUnit': pressureUnit.name,
         'warningPopups': warningPopups,
         'showVehiclePanel': showVehiclePanel,
+        'simpleDamage': simpleDamage,
         'damageCarParts': damageCarParts,
         'damageWheelParts': damageWheelParts,
         'secondScreen': secondScreen,
@@ -228,6 +235,7 @@ class AppSettings {
       pressureUnit: enumByName(PressureUnit.values, json['pressureUnit'], d.pressureUnit),
       warningPopups: pick('warningPopups', d.warningPopups),
       showVehiclePanel: pick('showVehiclePanel', d.showVehiclePanel),
+      simpleDamage: pick('simpleDamage', d.simpleDamage),
       damageCarParts: pick('damageCarParts', d.damageCarParts),
       damageWheelParts: pick('damageWheelParts', d.damageWheelParts),
       secondScreen: pick('secondScreen', d.secondScreen),
