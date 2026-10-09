@@ -109,6 +109,14 @@ class Telemetry {
   /// Traction battery damaged (electric cars).
   final bool? batteryDamaged;
 
+  /// Id of the vehicle skeleton (see vehicle_skeleton.dart): ask for its
+  /// geometry when it is not the one already received.
+  final String? skeletonId;
+
+  /// Damage digit of each skeleton segment, sent a few times a second
+  /// only ("" = intact): keep the last one.
+  final String? skeletonDamage;
+
   /// Cars around (empty list = none nearby, null = not sent by the mod).
   final List<RadarTarget>? radar;
 
@@ -192,6 +200,8 @@ class Telemetry {
     this.powertrain,
     this.motorPower,
     this.batteryDamaged,
+    this.skeletonId,
+    this.skeletonDamage,
     this.radar,
     this.bodyDamage,
     this.engineDamage = const [],
@@ -383,6 +393,8 @@ class Telemetry {
       powertrain: _str(j['powertrain']),
       motorPower: _num(j['motorPower']),
       batteryDamaged: _bool(j['batteryDamaged']),
+      skeletonId: _str(j['skeleton']),
+      skeletonDamage: _str(j['skeletonDamage']),
       radar: _radar(j['radar']),
       bodyDamage: _numbers(j['bodyDamage']),
       engineDamage: _strings(j['engineDamage']),
