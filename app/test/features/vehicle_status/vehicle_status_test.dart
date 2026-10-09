@@ -45,6 +45,22 @@ void main() {
       expect(isCritical(VehicleWarning.clutchOverheating), isFalse);
     });
 
+    test('the game live dangers get their own light, not check engine', () {
+      expect(activeWarnings(const Telemetry(engineDamage: ['turbochargerHot'])), [VehicleWarning.turboOverheating]);
+      expect(activeWarnings(const Telemetry(engineDamage: ['overRevDanger'])), [VehicleWarning.overRev]);
+      expect(activeWarnings(const Telemetry(engineDamage: ['engineIsHydrolocking'])), [VehicleWarning.waterInEngine]);
+      expect(activeWarnings(const Telemetry(engineDamage: ['mildOverrevDamage'])), [VehicleWarning.checkEngine]);
+      expect(isCritical(VehicleWarning.waterInEngine), isTrue);
+      expect(isCritical(VehicleWarning.turboOverheating), isFalse);
+    });
+
+    test('gearbox and air brakes', () {
+      expect(activeWarnings(const Telemetry(gearGrinding: true)), [VehicleWarning.gearbox]);
+      expect(activeWarnings(const Telemetry(gearboxWear: 0.5)), [VehicleWarning.gearbox]);
+      expect(activeWarnings(const Telemetry(gearboxWear: 0.1)), isEmpty);
+      expect(activeWarnings(const Telemetry(lowAirPressure: true)), [VehicleWarning.lowAirPressure]);
+    });
+
     test('no low tyre pressure warning for a car running its normal low pressures', () {
       const f4 = Telemetry(tirePressures: {'FL': 100, 'FR': 101}, tirePressuresNominal: {'FL': 110, 'FR': 110});
       expect(activeWarnings(f4), isEmpty);

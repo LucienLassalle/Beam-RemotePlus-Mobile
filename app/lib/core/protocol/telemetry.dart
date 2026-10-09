@@ -91,6 +91,15 @@ class Telemetry {
   final List<String> brokenWheels;
   final bool? fuelLeak;
 
+  /// Worst synchronizer wear of a manual gearbox, 0..1.
+  final double? gearboxWear;
+
+  /// A shift just ground the gears.
+  final bool? gearGrinding;
+
+  /// Air brakes pressure low (trucks, buses).
+  final bool? lowAirPressure;
+
   /// Cars around (empty list = none nearby, null = not sent by the mod).
   final List<RadarTarget>? radar;
 
@@ -168,6 +177,9 @@ class Telemetry {
     this.brokenBrakes = const [],
     this.brokenWheels = const [],
     this.fuelLeak,
+    this.gearboxWear,
+    this.gearGrinding,
+    this.lowAirPressure,
     this.radar,
     this.bodyDamage,
     this.engineDamage = const [],
@@ -348,6 +360,9 @@ class Telemetry {
       brokenBrakes: _strings(j['brokenBrakes']),
       brokenWheels: _strings(j['brokenWheels']),
       fuelLeak: _bool(j['fuelLeak']),
+      gearboxWear: _num(j['gearboxWear']),
+      gearGrinding: _bool(j['gearGrinding']),
+      lowAirPressure: _bool(j['lowAirPressure']),
       radar: _radar(j['radar']),
       bodyDamage: _numbers(j['bodyDamage']),
       engineDamage: _strings(j['engineDamage']),

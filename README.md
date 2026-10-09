@@ -52,13 +52,15 @@ with sample data.
 - **Warning lights**: check engine, oil pressure, overheating, engine
   stopped, low fuel, fuel leak, flat tyre, low tyre pressure (compared to
   the pressure the car is set to), hot brakes, clutch overheating or
-  damaged, broken drivetrain, parking brake while moving.
+  damaged, broken drivetrain, turbo overheating, over-rev, water in the
+  engine, gearbox damage (grinding gears, worn synchros), low air pressure
+  (trucks, buses), parking brake while moving.
 - **Vibrations** with an adjustable strength, each one can be switched off:
   wheelspin, locked wheels, impacts, kerbs, ABS, rev limiter.
-- **Radar and damage panel**: nearby cars, damage schematic in the spirit of the game (body, radiator, engine,
-  driveshafts and axles, brakes, jerrycan with the fuel level), tyre
-  pressures and flat tyres, and tyre
-  temperatures when the
+- **Radar and damage panel**: nearby cars, and a damage schematic in the
+  spirit of the game (body, radiator, engine, driveshafts and axles,
+  brakes, jerrycan with the fuel level), tyre pressures and flat tyres,
+  and tyre temperatures when the
   [Tyre Thermals and Wear](https://www.beamng.com/resources/) mod is
   installed in the game.
 - **Settings saved on the phone**, in tabs: Display, Gameplay, Controls,
