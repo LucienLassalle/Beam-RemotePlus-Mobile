@@ -77,6 +77,8 @@
   "settingsHapticImpacts": "Impacts",
   "settingsHapticKerbs": "Kerbs",
   "settingsHapticLimiter": "Rev limiter",
+  "settingsHapticAbs": "ABS working",
+  "settingsHapticStrength": "Vibration strength",
   "settingsHornVolumeTitle": "Disable the horn on the volume button",
   "settingsHornVolumeSubtitle": "Volume up = horn while held",
   "settingsFlashVolumeTitle": "Disable the headlight flash on the volume button",

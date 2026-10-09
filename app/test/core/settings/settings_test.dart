@@ -24,6 +24,12 @@ void main() {
       expect(back.hapticLimiter, isTrue);
     });
 
+    test('keeps the vibration strength between 10 and 100 %', () {
+      expect(AppSettings.fromJson(const AppSettings(hapticStrength: 0.4).toJson()).hapticStrength, 0.4);
+      expect(AppSettings.fromJson({'hapticStrength': 0}).hapticStrength, 1);
+      expect(AppSettings.fromJson({'hapticStrength': 3}).hapticStrength, 1);
+    });
+
     test('falls back to defaults for missing or invalid values', () {
       final s = AppSettings.fromJson({'useKmh': 'yes', 'rotationRangeDeg': 10, 'themeName': 4});
       expect(s.useKmh, isTrue);
@@ -47,6 +53,8 @@ void main() {
       expect(s.pitchGearShift, isFalse);
       expect([s.hapticSpin, s.hapticLock, s.hapticImpacts, s.hapticKerbs], everyElement(isTrue));
       expect(s.hapticLimiter, isFalse);
+      expect(s.hapticAbs, isTrue);
+      expect(s.hapticStrength, 1);
       expect(s.hornOnVolume && s.flashOnVolume, isTrue);
       expect(s.debugMode, isFalse);
       expect(s.showActionsBar, isTrue);

@@ -75,11 +75,13 @@ class DrivingController extends ChangeNotifier {
     _telemetry = t;
     final s = _settings;
     if (s.anyRoadHaptics && !s.secondScreen) {
+      _haptics.strength = s.hapticStrength;
       final pulse = _haptics.update(t, DateTime.now(), enabled: {
         if (s.hapticSpin) HapticKind.spin,
         if (s.hapticLock) HapticKind.lock,
         if (s.hapticImpacts) HapticKind.impact,
         if (s.hapticKerbs) HapticKind.kerb,
+        if (s.hapticAbs) HapticKind.abs,
       });
       if (pulse != null) onPulse(pulse);
     }

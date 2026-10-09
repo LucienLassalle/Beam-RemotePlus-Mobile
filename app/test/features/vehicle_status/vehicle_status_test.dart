@@ -94,6 +94,22 @@ void main() {
       expect(h.update(spinning, t0.add(const Duration(seconds: 3)), enabled: {HapticKind.spin}), isNotNull);
     });
 
+    test('the ABS pulses about ten times a second while it works', () {
+      final h = HapticsEngine();
+      const braking = Telemetry(absActive: true, wheelLock: 6);
+      expect(h.update(braking, t0), isNotNull);
+      expect(h.update(braking, t0.add(const Duration(milliseconds: 40))), isNull);
+      final next = h.update(braking, t0.add(const Duration(milliseconds: 100)));
+      expect(next!.durationMs, HapticsEngine.absPulse.durationMs);
+      // Switched off: the locked-wheel vibration takes over.
+      expect(h.update(braking, t0.add(const Duration(seconds: 1)), enabled: {HapticKind.lock})!.durationMs, 25);
+    });
+
+    test('strength scales the ABS pulse too', () {
+      final h = HapticsEngine(strength: 0.5);
+      expect(h.update(const Telemetry(absActive: true), t0)!.amplitude, (HapticsEngine.absPulse.amplitude * 0.5).round());
+    });
+
     test('impacts and kerbs can be switched off', () {
       final h = HapticsEngine();
       h.update(const Telemetry(gx: 0, gy: 0, gz: -9.8), t0);
