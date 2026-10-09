@@ -7,24 +7,26 @@ import 'package:flutter/material.dart';
 import '../../core/protocol/telemetry.dart';
 import '../../core/protocol/vehicle_skeleton.dart';
 import 'dash_format.dart';
+import 'simple_damage_view.dart';
 
 /// Health of one part on the schematic.
 enum PartState { unknown, ok, warning, broken }
 
-/// Top-down damage schematic in the spirit of BeamNG.drive's damage apps:
-/// every part is a filled shape, green = fine, amber = check, red = broken,
-/// grey = not reported by this car, readable at a glance.
-/// - body: with the mod's [skeleton], the real structure of this vehicle,
-///   each beam coloured like the game's detailed damage app (white =
-///   intact, green to red = bent); otherwise a generic outline in six zones
+/// Top-down damage schematic of the real vehicle, like BeamNG.drive's
+/// detailed damage app, with the mod's [skeleton]; without it (or when
+/// [simplified]), the schematic of version 0.0.3 ([SimpleDamageView]).
+/// Every part is a filled shape, green = fine, amber = check, red =
+/// broken, grey = not reported by this car, readable at a glance.
+/// - body: the real structure of this vehicle, each beam coloured like the
+///   game's detailed damage app (white = intact, green to red = bent)
 /// - radiator (car radiator with its fins) at the front, the engine
 ///   (engine pictogram) where it really sits
 /// - driveshafts and wheel axles as thick bars, differentials as discs
 /// - a brake block inside each wheel, coloured by the brake temperature
 /// - the fuel tank as a jerrycan in the boot, filled to the fuel level
-/// - tyres (at their real place with the skeleton): temperature colour
-///   with the tyre mod, crossed out when flat, dashed when torn off;
-///   pressure (and tyre temperature) beside them
+/// - tyres at their real place: temperature colour with the tyre mod,
+///   crossed out when flat, dashed when torn off; pressure (and tyre
+///   temperature) beside them
 class DamageView extends StatelessWidget {
   final Telemetry telemetry;
   final TemperatureUnit temperatureUnit;
@@ -34,11 +36,13 @@ class DamageView extends StatelessWidget {
   final VehicleSkeleton? skeleton;
   final Uint8List? skeletonLevels;
 
-  /// Pictograms over the real structure (ignored without [skeleton]: the
-  /// generic car always shows them): engine, radiator and fuel tank /
+  /// Pictograms over the real structure: engine, radiator and fuel tank /
   /// battery, and brakes, tyres and axles.
   final bool showCarParts;
   final bool showWheelParts;
+
+  /// The 0.0.3 schematic even when the real structure is known.
+  final bool simplified;
 
   const DamageView({
     super.key,
@@ -49,6 +53,7 @@ class DamageView extends StatelessWidget {
     this.skeletonLevels,
     this.showCarParts = true,
     this.showWheelParts = true,
+    this.simplified = false,
   });
 
   /// Width / height of the schematic (car + labels on both sides).
@@ -65,13 +70,6 @@ class DamageView extends StatelessWidget {
         PartState.warning => warningColor,
         PartState.broken => brokenColor,
       };
-
-  /// Body zone: green when intact, then yellow, orange and red.
-  static Color damageColor(double damage) {
-    if (damage <= 0.01) return okColor;
-    final d = (damage * 3).clamp(0.0, 1.0);
-    return d < 0.5 ? Color.lerp(Colors.yellow, Colors.orange, d * 2)! : Color.lerp(Colors.orange, brokenColor, (d - 0.5) * 2)!;
-  }
 
   /// Skeleton beam, as in the game's detailed damage app: hue from green
   /// (barely bent, level 1) to red (level 9).
@@ -119,25 +117,30 @@ class DamageView extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) => AspectRatio(
-        aspectRatio: aspectRatio,
-        child: CustomPaint(
-          painter: _DamagePainter(
-            telemetry,
-            temperatureUnit,
-            pressureUnit,
-            DamageLayout.of(telemetry, skeleton),
-            skeletonLevels,
-            carParts: skeleton == null || showCarParts,
-            wheelParts: skeleton == null || showWheelParts,
-          ),
+  Widget build(BuildContext context) {
+    final skeleton = this.skeleton;
+    if (simplified || skeleton == null || !DamageLayout.canDraw(skeleton)) {
+      return SimpleDamageView(telemetry: telemetry, temperatureUnit: temperatureUnit);
+    }
+    return AspectRatio(
+      aspectRatio: aspectRatio,
+      child: CustomPaint(
+        painter: _DamagePainter(
+          telemetry,
+          temperatureUnit,
+          pressureUnit,
+          DamageLayout.of(telemetry, skeleton),
+          skeletonLevels,
+          carParts: showCarParts,
+          wheelParts: showWheelParts,
         ),
-      );
+      ),
+    );
+  }
 }
 
 /// Where each part goes in the 100 x 200 car area of the schematic (front
-/// at the top): fixed places for a generic car, or the real ones from the
-/// vehicle skeleton.
+/// at the top): the real places, from the vehicle skeleton.
 class DamageLayout {
   /// Tyres seen from above, by wheel name.
   final Map<String, Rect> tyres;
@@ -149,8 +152,8 @@ class DamageLayout {
   final double noseY;
   final double tailY;
 
-  /// Real structure, mapped on the schematic (null = generic car).
-  final VehicleSkeleton? skeleton;
+  /// Real structure, mapped on the schematic.
+  final VehicleSkeleton skeleton;
   final double scale;
   final Offset origin;
 
@@ -165,10 +168,10 @@ class DamageLayout {
     required this.engine,
     required this.noseY,
     required this.tailY,
-    this.skeleton,
-    this.scale = 1,
-    this.origin = Offset.zero,
-    this.partScale = 1,
+    required this.skeleton,
+    required this.scale,
+    required this.origin,
+    required this.partScale,
   });
 
   static const double centerX = 50;
@@ -176,28 +179,15 @@ class DamageLayout {
   /// Engine of a classic front-engined car when the mod does not say.
   static const double defaultEngineAt = 0.2;
 
-  static const _genericTyres = {
-    'FL': Rect.fromLTWH(1, 32, 13, 32),
-    'FR': Rect.fromLTWH(86, 32, 13, 32),
-    'RL': Rect.fromLTWH(1, 138, 13, 32),
-    'RR': Rect.fromLTWH(86, 138, 13, 32),
-  };
-
   static double _engineY(double? engineAt, double nose, double tail) =>
       (nose + (engineAt ?? defaultEngineAt) * (tail - nose)).clamp(nose + 33, tail - 29);
 
-  factory DamageLayout.of(Telemetry t, VehicleSkeleton? skeleton) {
-    final b = skeleton?.bounds;
-    if (skeleton == null || b == null || b.width < 0.5 || b.height < 0.5) {
-      return DamageLayout._(
-        tyres: _genericTyres,
-        frontAxleY: 48,
-        rearAxleY: 154,
-        engine: Offset(centerX, _engineY(t.engineAt, 3, 197)),
-        noseY: 3,
-        tailY: 197,
-      );
-    }
+  /// A skeleton big enough to be drawn.
+  static bool canDraw(VehicleSkeleton skeleton) => skeleton.bounds.width >= 0.5 && skeleton.bounds.height >= 0.5;
+
+  /// [skeleton] must pass [canDraw].
+  factory DamageLayout.of(Telemetry t, VehicleSkeleton skeleton) {
+    final b = skeleton.bounds;
     // Metres -> schematic, forward up, centred, as big as the area allows.
     final k = math.min(96 / b.width, 194 / b.height);
     final origin = Offset(centerX - b.center.dx * k, 100 + b.center.dy * k);
@@ -278,12 +268,6 @@ class _DamagePainter extends CustomPainter {
   static const double margin = (width - 100) / 2;
   static const double cx = DamageLayout.centerX;
 
-  static const _zones = [
-    ['FL', 'FR'],
-    ['ML', 'MR'],
-    ['RL', 'RR'],
-  ];
-
   static final Paint _outline = Paint()
     ..color = Colors.black
     ..style = PaintingStyle.stroke
@@ -300,18 +284,6 @@ class _DamagePainter extends CustomPainter {
 
   static Path _rrect(Rect r, double radius) => Path()..addRRect(RRect.fromRectAndRadius(r, Radius.circular(radius)));
 
-  static Path body() => Path()
-    ..moveTo(50, 3)
-    ..cubicTo(72, 3, 80, 9, 81, 26)
-    ..lineTo(83, 96)
-    ..lineTo(82, 176)
-    ..cubicTo(81, 192, 72, 197, 50, 197)
-    ..cubicTo(28, 197, 19, 192, 18, 176)
-    ..lineTo(17, 96)
-    ..lineTo(19, 26)
-    ..cubicTo(20, 9, 28, 3, 50, 3)
-    ..close();
-
   @override
   void paint(Canvas canvas, Size size) {
     final s = math.min(size.width / width, size.height / height);
@@ -321,13 +293,9 @@ class _DamagePainter extends CustomPainter {
     canvas.translate(margin, 0);
 
     final skeleton = layout.skeleton;
-    final beams = skeleton == null ? null : _beamPoints(skeleton);
-    if (skeleton != null) {
-      _hull(canvas, skeleton);
-      _beams(canvas, beams!, 0, 0);
-    } else {
-      _bodyZones(canvas);
-    }
+    final beams = _beamPoints(skeleton);
+    _hull(canvas, skeleton);
+    _beams(canvas, beams, 0, 0);
     if (wheelParts) _drivetrain(canvas);
     if (carParts) {
       _scaled(canvas, Offset(cx, layout.noseY + 13), () => _radiator(canvas));
@@ -335,41 +303,12 @@ class _DamagePainter extends CustomPainter {
       _fuelTank(canvas);
     }
     // Bent beams over the parts: the crash must never hide behind them.
-    if (beams != null) _beams(canvas, beams, 1, 9);
+    _beams(canvas, beams, 1, 9);
     if (wheelParts) _wheels(canvas);
     canvas.restore();
     _labels(canvas);
   }
 
-  /// The outline, thick, coloured zone by zone (thirds of the length,
-  /// halves of the width).
-  void _bodyZones(Canvas canvas) {
-    final outline = body();
-    canvas.drawPath(outline, _fill(Colors.black.withValues(alpha: 0.35)));
-    for (var row = 0; row < 3; row++) {
-      for (var col = 0; col < 2; col++) {
-        final damage = t.bodyDamage?[_zones[row][col]] ?? 0;
-        canvas.save();
-        canvas.clipRect(Rect.fromLTWH(col * 50.0, row * height / 3, 50, height / 3));
-        canvas.drawPath(
-          outline,
-          Paint()
-            ..color = DamageView.damageColor(damage)
-            ..style = PaintingStyle.stroke
-            ..strokeWidth = 5,
-        );
-        canvas.restore();
-      }
-    }
-    // Zone separators, so a red corner reads as a corner.
-    final sep = Paint()
-      ..color = Colors.black
-      ..strokeWidth = 1.2;
-    for (final y in [height / 3, height * 2 / 3]) {
-      canvas.drawLine(Offset(14, y), Offset(21, y), sep);
-      canvas.drawLine(Offset(79, y), Offset(86, y), sep);
-    }
-  }
 
   /// Pictogram drawn at full size, shrunk around [center] on a narrow
   /// vehicle.
@@ -474,7 +413,7 @@ class _DamagePainter extends CustomPainter {
     }
   }
 
-  bool get _hasEngine => t.rpm != null || t.engineAt != null || t.engineDamage.isNotEmpty || layout.skeleton?.engine != null;
+  bool get _hasEngine => t.rpm != null || t.engineAt != null || t.engineDamage.isNotEmpty || layout.skeleton.engine != null;
 
   /// Car radiator at the nose: header tanks top and bottom, fins between.
   void _radiator(Canvas canvas) {

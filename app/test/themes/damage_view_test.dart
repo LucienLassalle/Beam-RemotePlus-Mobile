@@ -27,7 +27,7 @@ void main() {
     ('electric', electric),
     ('no data', Telemetry.empty),
   ]) {
-    testWidgets('draws the $name car without error', (tester) async {
+    testWidgets('without the vehicle structure, draws the $name car with the 0.0.3 schematic', (tester) async {
       await tester.pumpWidget(Directionality(
         textDirection: TextDirection.ltr,
         child: Center(
@@ -35,7 +35,7 @@ void main() {
         ),
       ));
       expect(tester.takeException(), isNull);
-      expect(tester.getSize(find.byType(DamageView)).width, closeTo(160 * DamageView.aspectRatio, 0.5));
+      expect(find.byType(SimpleDamageView), findsOneWidget);
     });
   }
 
@@ -95,10 +95,18 @@ void main() {
       expect(l.rearEngine, isFalse);
     });
 
-    test('without skeleton, the generic car', () {
-      final l = DamageLayout.of(const Telemetry(engineAt: 0.8), null);
-      expect(l.tyres.keys, ['FL', 'FR', 'RL', 'RR']);
-      expect(l.rearEngine, isTrue);
+    testWidgets('simplified damage keeps the 0.0.3 schematic, structure known or not', (tester) async {
+      await tester.pumpWidget(Directionality(
+        textDirection: TextDirection.ltr,
+        child: Center(child: SizedBox(height: 200, child: DamageView(telemetry: wrecked, skeleton: car, simplified: true))),
+      ));
+      expect(find.byType(SimpleDamageView), findsOneWidget);
+      await tester.pumpWidget(Directionality(
+        textDirection: TextDirection.ltr,
+        child: Center(child: SizedBox(height: 200, child: DamageView(telemetry: wrecked, skeleton: car))),
+      ));
+      expect(find.byType(SimpleDamageView), findsNothing);
+      expect(tester.getSize(find.byType(DamageView)).width, closeTo(200 * DamageView.aspectRatio, 0.5));
     });
 
     test('beam colours go from green to red', () {
