@@ -15,24 +15,24 @@ dependencies:
     sdk: flutter
   intl: any # version pinned by flutter_localizations
   # Pairing QR code shown by BeamNG.drive
-  mobile_scanner: ^6.0.2
+  mobile_scanner: ^7.4.2
   # Accelerometer for tilt steering
   sensors_plus: ^7.1.1
   # Runtime camera permission (Android 6+)
   permission_handler: ^13.0.2
   # Wi-Fi broadcast address for discovery
-  network_info_plus: ^7.0.0
+  network_info_plus: ^8.2.2
   # Phone name sent during pairing (shown in game, local multiplayer)
-  device_info_plus: ^12.4.0
+  device_info_plus: ^13.3.0
   # Keeps the screen on while driving
-  wakelock_plus: ^1.2.8
+  wakelock_plus: ^1.8.1
   # Persisted user settings
-  shared_preferences: ^2.3.3
+  shared_preferences: ^2.5.6
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^5.0.0
+  flutter_lints: ^6.0.0
 
 flutter:
   uses-material-design: true
