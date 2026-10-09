@@ -3,6 +3,8 @@ import 'package:beam_remoteplus/themes/kit/sample_telemetry.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../helpers/sample_skeleton.dart';
+
 void main() {
   const wrecked = Telemetry(
     rpm: 0,
@@ -46,5 +48,49 @@ void main() {
     expect(DamageView.engineState(const Telemetry(engineDamage: ['exhaustBroken'])), PartState.warning);
     expect(DamageView.brakeColor(900), DamageView.brokenColor);
     expect(DamageView.brakeColor(100), DamageView.okColor);
+  });
+
+  group('with the vehicle skeleton', () {
+    final car = sampleSkeleton();
+    final truck = sampleSkeleton(id: 'truck', width: 2.5, length: 9, axles: const [3.2, -2.2, -3.6], engine: const Offset(0, 3.4));
+
+    for (final (name, skeleton) in [('car', car), ('truck', truck)]) {
+      testWidgets('draws the $name structure and its damage without error', (tester) async {
+        await tester.pumpWidget(Directionality(
+          textDirection: TextDirection.ltr,
+          child: Center(
+            child: SizedBox(
+              height: 200,
+              child: DamageView(telemetry: wrecked, skeleton: skeleton, skeletonLevels: skeleton.levels(sampleDamage(skeleton))),
+            ),
+          ),
+        ));
+        expect(tester.takeException(), isNull);
+      });
+    }
+
+    test('parts go where they really are, front at the top', () {
+      final l = DamageLayout.of(const Telemetry(), truck);
+      expect(l.tyres.length, 6);
+      expect(l.tyres['FL']!.center.dy, lessThan(l.tyres['R1L']!.center.dy));
+      expect(l.isLeft('FL'), isTrue);
+      expect(l.isLeft('R2R'), isFalse);
+      expect(l.engine.dy, lessThan(l.frontAxleY + 5));
+      expect(l.rearAxleY, closeTo((l.tyres['R1L']!.center.dy + l.tyres['R2L']!.center.dy) / 2, 0.01));
+      // The truck fills the height, keeping its proportions.
+      expect(l.tailY - l.noseY, closeTo(194, 1));
+      expect(l.rearEngine, isFalse);
+    });
+
+    test('without skeleton, the generic car', () {
+      final l = DamageLayout.of(const Telemetry(engineAt: 0.8), null);
+      expect(l.tyres.keys, ['FL', 'FR', 'RL', 'RR']);
+      expect(l.rearEngine, isTrue);
+    });
+
+    test('beam colours go from green to red', () {
+      expect(DamageView.beamColor(9), const Color(0xFFFF0000));
+      expect(DamageView.beamColor(1).g, greaterThan(DamageView.beamColor(1).r));
+    });
   });
 }
