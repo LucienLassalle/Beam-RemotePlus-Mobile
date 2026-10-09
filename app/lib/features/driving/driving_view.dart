@@ -133,7 +133,7 @@ class DrivingView extends StatelessWidget {
               else if (settings.showVehiclePanel)
                 Positioned(top: 48, left: 12, child: VehiclePanel(
                     telemetry: t,
-                    height: 130,
+                    height: 160,
                     temperatureUnit: settings.temperatureUnit,
                     pressureUnit: settings.pressureUnit,
                   )),
