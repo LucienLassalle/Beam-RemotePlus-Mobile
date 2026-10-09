@@ -63,8 +63,8 @@ class DefaultTheme extends ControlTheme {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   _Gauge(icon: Icons.local_gas_station, value: '${DashFormat.fuelPercent(t)}%', warn: t.lowFuel ?? false),
-                  _Gauge(icon: Icons.thermostat, value: '${DashFormat.integer(t.waterTemp)}°', warn: (t.waterTemp ?? 0) > 115),
-                  _Gauge(icon: Icons.oil_barrel, value: '${DashFormat.integer(t.oilTemp)}°', warn: t.lowPressure ?? false),
+                  _Gauge(icon: Icons.thermostat, value: '${DashFormat.temperature(t.waterTemp, data.temperatureUnit)}°', warn: (t.waterTemp ?? 0) > 115),
+                  _Gauge(icon: Icons.oil_barrel, value: '${DashFormat.temperature(t.oilTemp, data.temperatureUnit)}°', warn: t.lowPressure ?? false),
                 ],
               ),
               const SizedBox(height: 10),

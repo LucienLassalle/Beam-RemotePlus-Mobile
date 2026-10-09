@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/protocol/telemetry.dart';
+import '../../../core/settings/units.dart';
 import '../../../themes/kit/damage_view.dart';
 import '../../../themes/kit/radar_view.dart';
 
@@ -9,8 +10,16 @@ import '../../../themes/kit/radar_view.dart';
 class VehiclePanel extends StatelessWidget {
   final Telemetry telemetry;
   final double height;
+  final TemperatureUnit temperatureUnit;
+  final PressureUnit pressureUnit;
 
-  const VehiclePanel({super.key, required this.telemetry, this.height = 150});
+  const VehiclePanel({
+    super.key,
+    required this.telemetry,
+    this.height = 150,
+    this.temperatureUnit = TemperatureUnit.celsius,
+    this.pressureUnit = PressureUnit.bar,
+  });
 
   @override
   Widget build(BuildContext context) => IgnorePointer(
@@ -21,7 +30,7 @@ class VehiclePanel extends StatelessWidget {
           child: Row(mainAxisSize: MainAxisSize.min, children: [
             RadarView(targets: telemetry.radar),
             const SizedBox(width: 12),
-            DamageView(telemetry: telemetry),
+            DamageView(telemetry: telemetry, temperatureUnit: temperatureUnit, pressureUnit: pressureUnit),
           ]),
         ),
       );

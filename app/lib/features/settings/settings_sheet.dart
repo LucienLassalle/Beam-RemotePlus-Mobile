@@ -170,6 +170,22 @@ class _DisplayTab extends StatelessWidget {
         ),
       ),
       ListTile(
+        title: Text(l10n.settingsTemperatureUnitTitle),
+        trailing: SegmentedButton<TemperatureUnit>(
+          segments: [for (final u in TemperatureUnit.values) ButtonSegment(value: u, label: Text(u.symbol))],
+          selected: {s.temperatureUnit},
+          onSelectionChanged: (v) => _set(context, (s) => s.copyWith(temperatureUnit: v.first)),
+        ),
+      ),
+      ListTile(
+        title: Text(l10n.settingsPressureUnitTitle),
+        trailing: SegmentedButton<PressureUnit>(
+          segments: [for (final u in PressureUnit.values) ButtonSegment(value: u, label: Text(u.symbol))],
+          selected: {s.pressureUnit},
+          onSelectionChanged: (v) => _set(context, (s) => s.copyWith(pressureUnit: v.first)),
+        ),
+      ),
+      ListTile(
         title: Text(l10n.settingsThemeTitle),
         subtitle: DropdownButton<String>(
           isExpanded: true,

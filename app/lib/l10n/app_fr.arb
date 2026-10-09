@@ -44,6 +44,8 @@
   "settingsSmoothingTitle": "Atténuation des tremblements",
   "settingsSmoothingSubtitle": "Atténue les tremblements du capteur (léger délai en échange)",
   "settingsUnitTitle": "Unité de mesure",
+  "settingsTemperatureUnitTitle": "Température",
+  "settingsPressureUnitTitle": "Pression des pneus",
   "settingsPitchGearTitle": "Changer les rapports via inclinaison",
   "settingsPitchGearSubtitle": "Incliner vers l'avant = monter · vers l'arrière = descendre (boîte manuelle)",
   "settingsVibrationsTitle": "Vibrations",
