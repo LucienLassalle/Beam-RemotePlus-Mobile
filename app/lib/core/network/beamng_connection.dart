@@ -44,6 +44,20 @@ class BeamngConnection implements RemoteLink {
 
   DateTime _lastModMessage = DateTime.fromMillisecondsSinceEpoch(0);
 
+  /// Handshake prefixes the pings use: both until the mod answers (mods up
+  /// to 0.0.3 only know the legacy one), then the one of its answer.
+  List<String> _pingPrefixes = ModProtocol.prefixes;
+
+  List<List<int>> _pings(String code, String deviceName) => [
+        for (final p in _pingPrefixes) utf8.encode(ModProtocol.ping(code, deviceName, display: _display, withPrefix: p)),
+      ];
+
+  /// Keeps the prefix of [answer] (a pong) for the next pings.
+  void _keepPrefixOf(String answer) {
+    final p = ModProtocol.prefixOf(answer);
+    if (p != null) _pingPrefixes = [p];
+  }
+
   double _steering = 0.5;
   double _throttle = 0;
   double _brake = 0;
@@ -108,16 +122,22 @@ class BeamngConnection implements RemoteLink {
       final dg = socket.receive();
       if (dg == null) return;
       if (!found.isCompleted) {
-        if (ModProtocol.parsePong(utf8.decode(dg.data, allowMalformed: true), code) != null) found.complete(dg.address);
+        final answer = utf8.decode(dg.data, allowMalformed: true);
+        if (ModProtocol.parsePong(answer, code) != null) {
+          _keepPrefixOf(answer);
+          found.complete(dg.address);
+        }
         return;
       }
       _onModDatagram(dg, code);
     });
-    final ping = utf8.encode(ModProtocol.ping(code, deviceName, display: true));
+    final pings = _pings(code, deviceName);
     final retry = Timer.periodic(const Duration(milliseconds: NativeProtocol.discoveryRetryMs), (_) {
       for (final target in targets) {
         try {
-          socket.send(ping, InternetAddress(target), ModProtocol.hostPort);
+          for (final ping in pings) {
+            socket.send(ping, InternetAddress(target), ModProtocol.hostPort);
+          }
         } catch (_) {}
       }
     });
@@ -203,8 +223,13 @@ class BeamngConnection implements RemoteLink {
   // restored if the mod restarts (reload, switched off and on...).
   void _startModPings(RawDatagramSocket socket, String code, String deviceName) {
     final host = _host!;
-    final ping = utf8.encode(ModProtocol.ping(code, deviceName, display: _display));
-    socket.send(ping, host, ModProtocol.hostPort);
+    void ping() {
+      for (final p in _pings(code, deviceName)) {
+        socket.send(p, host, ModProtocol.hostPort);
+      }
+    }
+
+    ping();
     var ticks = 0;
     _modPingTimer = Timer.periodic(const Duration(milliseconds: ModProtocol.pingRetryMs), (_) {
       ticks++;
@@ -212,14 +237,18 @@ class BeamngConnection implements RemoteLink {
         DebugLog.log('mod silent, back to the native channel until it answers again');
         _setModActive(false);
       }
-      if (!_modActive || ticks % ModProtocol.keepAlivePingEvery == 0) socket.send(ping, host, ModProtocol.hostPort);
+      if (!_modActive || ticks % ModProtocol.keepAlivePingEvery == 0) ping();
     });
   }
 
   void _setModActive(bool active) {
     if (_modActive == active) return;
     _modActive = active;
-    if (!active) _protocolVersion = 0;
+    if (!active) {
+      _protocolVersion = 0;
+      // The mod may come back updated or downgraded: probe both again.
+      _pingPrefixes = ModProtocol.prefixes;
+    }
     if (!_modActiveChanges.isClosed) _modActiveChanges.add(active);
     _restartControlTimer();
   }
@@ -227,10 +256,12 @@ class BeamngConnection implements RemoteLink {
   void _onModDatagram(Datagram dg, String code) {
     // Pongs are plain text, every other v2 message is JSON.
     if (dg.data.isNotEmpty && dg.data.first != 0x7B /* { */ && dg.data.length != 36) {
-      final version = ModProtocol.parsePong(utf8.decode(dg.data, allowMalformed: true), code);
+      final answer = utf8.decode(dg.data, allowMalformed: true);
+      final version = ModProtocol.parsePong(answer, code);
       if (version == null) return;
       _lastModMessage = DateTime.now();
       if (_modActive) return;
+      _keepPrefixOf(answer);
       _protocolVersion = version;
       DebugLog.log('mod detected, protocol v$version');
       _setModActive(true);
@@ -305,6 +336,7 @@ class BeamngConnection implements RemoteLink {
     _host = null;
     _modActive = false;
     _protocolVersion = 0;
+    _pingPrefixes = ModProtocol.prefixes;
     if (_state != LinkState.idle) _setState(LinkState.idle);
   }
 

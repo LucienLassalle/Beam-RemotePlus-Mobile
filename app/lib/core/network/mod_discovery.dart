@@ -6,8 +6,9 @@ import '../debug/debug_log.dart';
 import '../protocol/mod_protocol.dart';
 import 'broadcast.dart';
 
-/// Automatic discovery: broadcasts `beamngremoteplus|discover` and waits for
-/// the mod's `hello|<code>|<label>`. No QR code, no camera; needs the mod.
+/// Automatic discovery: broadcasts `beamremoteplus|discover` (and the legacy
+/// `beamngremoteplus|discover`) and waits for the mod's
+/// `hello|<code>|<label>`. No QR code, no camera; needs the mod.
 class ModDiscovery {
   ModDiscovery._();
 
@@ -34,12 +35,15 @@ class ModDiscovery {
         found.complete(host);
       });
 
-      final payload = utf8.encode(ModProtocol.discoverMessage);
+      // Both prefixes: mods up to 0.0.3 only answer the legacy one.
+      final payloads = [for (final m in ModProtocol.discoverMessages) utf8.encode(m)];
       final out = sender;
       void sweep() {
         for (final target in targets) {
           try {
-            out.send(payload, InternetAddress(target), ModProtocol.hostPort);
+            for (final payload in payloads) {
+              out.send(payload, InternetAddress(target), ModProtocol.hostPort);
+            }
           } catch (e) {
             DebugLog.log('discovery: send to $target failed ($e)');
           }

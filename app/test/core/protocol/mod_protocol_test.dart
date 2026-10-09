@@ -7,10 +7,12 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   group('ModProtocol', () {
     test('ping announces version 2 and the phone name without separators', () {
-      expect(ModProtocol.ping('20367', 'Galaxy|Fold'), 'beamngremoteplus|ping|20367|2|Galaxy Fold');
+      expect(ModProtocol.ping('20367', 'Galaxy|Fold'), 'beamremoteplus|ping|20367|2|Galaxy Fold');
+      expect(ModProtocol.ping('1', 'Tab', display: true, withPrefix: ModProtocol.legacyPrefix), 'beamngremoteplus|ping|1|2|Tab|display');
     });
 
-    test('parses pongs of v1 and v2 mods', () {
+    test('parses pongs of v1 and v2 mods, with either prefix', () {
+      expect(ModProtocol.parsePong('beamremoteplus|pong|20367|2', '20367'), 2);
       expect(ModProtocol.parsePong('beamngremoteplus|pong|20367|2', '20367'), 2);
       expect(ModProtocol.parsePong('beamngremoteplus|pong|20367|1', '20367'), 1);
       expect(ModProtocol.parsePong('beamngremoteplus|pong|20367', '20367'), 1);
@@ -19,6 +21,7 @@ void main() {
     test('ignores pongs for another code', () {
       expect(ModProtocol.parsePong('beamngremoteplus|pong|11111|2', '20367'), isNull);
       expect(ModProtocol.parsePong('beamngremoteplus|pong|203670|2', '20367'), isNull);
+      expect(ModProtocol.parsePong('beamremote|pong|20367|2', '20367'), isNull);
     });
 
     test('builds commands with and without argument', () {
@@ -40,14 +43,15 @@ void main() {
 
   group('DiscoveredHost.parseHello', () {
     test('parses code and label', () {
-      final host = DiscoveredHost.parseHello("beamngremoteplus|hello|20367|Loka's PC", '192.168.1.10')!;
+      final host = DiscoveredHost.parseHello("beamremoteplus|hello|20367|Loka's PC", '192.168.1.10')!;
       expect(host.securityCode, '20367');
       expect(host.label, "Loka's PC");
       expect(host.hostAddress, '192.168.1.10');
     });
 
-    test('defaults the label', () {
+    test('defaults the label, accepts the legacy prefix', () {
       expect(DiscoveredHost.parseHello('beamngremoteplus|hello|1', 'x')!.label, DiscoveredHost.defaultLabel);
+      expect(DiscoveredHost.parseHello('beamngremoteplus|hello|7|PC', 'x')!.securityCode, '7');
     });
 
     test('rejects other messages', () {
