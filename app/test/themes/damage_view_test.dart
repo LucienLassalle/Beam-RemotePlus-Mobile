@@ -69,6 +69,19 @@ void main() {
       });
     }
 
+    testWidgets('draws the bare structure, without any pictogram', (tester) async {
+      await tester.pumpWidget(Directionality(
+        textDirection: TextDirection.ltr,
+        child: Center(
+          child: SizedBox(
+            height: 200,
+            child: DamageView(telemetry: wrecked, skeleton: car, showCarParts: false, showWheelParts: false),
+          ),
+        ),
+      ));
+      expect(tester.takeException(), isNull);
+    });
+
     test('parts go where they really are, front at the top', () {
       final l = DamageLayout.of(const Telemetry(), truck);
       expect(l.tyres.length, 6);

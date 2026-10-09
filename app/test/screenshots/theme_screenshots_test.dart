@@ -94,7 +94,7 @@ void main() {
       home: Scaffold(
         backgroundColor: Colors.black,
         body: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-          SizedBox(height: 300, child: DamageView(telemetry: sampleTelemetry, skeleton: car, skeletonLevels: car.levels(''))),
+          SizedBox(height: 300, child: DamageView(telemetry: sampleTelemetry, skeleton: car, skeletonLevels: car.levels(''), showCarParts: false)),
           SizedBox(
             height: 300,
             child: DamageView(telemetry: wrecked, skeleton: car, skeletonLevels: car.levels(sampleDamage(car))),
@@ -105,6 +105,8 @@ void main() {
               telemetry: const Telemetry(rpm: 1200, fuel: 0.6, waterTemp: 90, shafts: ['driveshaft', 'wheelaxleR1L', 'wheelaxleR1R']),
               skeleton: truck,
               skeletonLevels: truck.levels(sampleDamage(truck, y: 3.5, x: 2)),
+              showCarParts: false,
+              showWheelParts: false,
             ),
           ),
         ]),

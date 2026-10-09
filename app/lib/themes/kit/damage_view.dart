@@ -34,6 +34,12 @@ class DamageView extends StatelessWidget {
   final VehicleSkeleton? skeleton;
   final Uint8List? skeletonLevels;
 
+  /// Pictograms over the real structure (ignored without [skeleton]: the
+  /// generic car always shows them): engine, radiator and fuel tank /
+  /// battery, and brakes, tyres and axles.
+  final bool showCarParts;
+  final bool showWheelParts;
+
   const DamageView({
     super.key,
     required this.telemetry,
@@ -41,6 +47,8 @@ class DamageView extends StatelessWidget {
     this.pressureUnit = PressureUnit.bar,
     this.skeleton,
     this.skeletonLevels,
+    this.showCarParts = true,
+    this.showWheelParts = true,
   });
 
   /// Width / height of the schematic (car + labels on both sides).
@@ -114,7 +122,15 @@ class DamageView extends StatelessWidget {
   Widget build(BuildContext context) => AspectRatio(
         aspectRatio: aspectRatio,
         child: CustomPaint(
-          painter: _DamagePainter(telemetry, temperatureUnit, pressureUnit, DamageLayout.of(telemetry, skeleton), skeletonLevels),
+          painter: _DamagePainter(
+            telemetry,
+            temperatureUnit,
+            pressureUnit,
+            DamageLayout.of(telemetry, skeleton),
+            skeletonLevels,
+            carParts: skeleton == null || showCarParts,
+            wheelParts: skeleton == null || showWheelParts,
+          ),
         ),
       );
 }
@@ -253,7 +269,9 @@ class _DamagePainter extends CustomPainter {
   final PressureUnit pressureUnit;
   final DamageLayout layout;
   final Uint8List? levels;
-  _DamagePainter(this.t, this.temperatureUnit, this.pressureUnit, this.layout, this.levels);
+  final bool carParts;
+  final bool wheelParts;
+  _DamagePainter(this.t, this.temperatureUnit, this.pressureUnit, this.layout, this.levels, {this.carParts = true, this.wheelParts = true});
 
   static const double width = 164;
   static const double height = 200;
@@ -310,13 +328,15 @@ class _DamagePainter extends CustomPainter {
     } else {
       _bodyZones(canvas);
     }
-    _drivetrain(canvas);
-    _scaled(canvas, Offset(cx, layout.noseY + 13), () => _radiator(canvas));
-    _scaled(canvas, layout.engine, () => _engine(canvas));
-    _fuelTank(canvas);
+    if (wheelParts) _drivetrain(canvas);
+    if (carParts) {
+      _scaled(canvas, Offset(cx, layout.noseY + 13), () => _radiator(canvas));
+      _scaled(canvas, layout.engine, () => _engine(canvas));
+      _fuelTank(canvas);
+    }
     // Bent beams over the parts: the crash must never hide behind them.
     if (beams != null) _beams(canvas, beams, 1, 9);
-    _wheels(canvas);
+    if (wheelParts) _wheels(canvas);
     canvas.restore();
     _labels(canvas);
   }
