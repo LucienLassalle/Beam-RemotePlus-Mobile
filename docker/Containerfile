@@ -1,10 +1,16 @@
 # Rootless (Podman) build image: Flutter SDK + Android SDK.
-# Nothing to install on the host. Keep FLUTTER_VERSION in sync with CI
-# (.github/workflows/*.yml).
-FROM docker.io/eclipse-temurin:17-jdk-jammy
+# Nothing to install on the host. Keep FLUTTER_VERSION and the JDK version
+# in sync with CI (.github/workflows/*.yml).
+# Base image pinned by digest (eclipse-temurin:25-jdk-noble).
+FROM docker.io/eclipse-temurin@sha256:51ae87bbb1949c1afdff51f6a3e6c5f283d84a4bd68512c9657fdc6605026a49
 
+# Checksums come from the official release listings:
+# - Flutter: storage.googleapis.com/flutter_infra_release/releases/releases_linux.json
+# - cmdline-tools: dl.google.com/android/repository/repository2-3.xml (SHA-1 only)
 ARG FLUTTER_VERSION=3.47.7
-ARG ANDROID_CMDLINE_TOOLS_VERSION=11076708
+ARG FLUTTER_SHA256=af7455f540df951184c7953fbe3cf884766e7541dacf8571f9f582db03dd6230
+ARG ANDROID_CMDLINE_TOOLS_VERSION=16111833
+ARG ANDROID_CMDLINE_TOOLS_SHA1=e025545c62a8e64c7559119566a569fb1dec5f60
 
 ENV DEBIAN_FRONTEND=noninteractive \
     ANDROID_SDK_ROOT=/opt/android-sdk \
@@ -24,25 +30,24 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN mkdir -p ${ANDROID_SDK_ROOT}/cmdline-tools \
     && curl -fsSL -o /tmp/cmdline-tools.zip \
         "https://dl.google.com/android/repository/commandlinetools-linux-${ANDROID_CMDLINE_TOOLS_VERSION}_latest.zip" \
+    && echo "${ANDROID_CMDLINE_TOOLS_SHA1}  /tmp/cmdline-tools.zip" | sha1sum -c - \
     && unzip -q /tmp/cmdline-tools.zip -d ${ANDROID_SDK_ROOT}/cmdline-tools \
     && mv ${ANDROID_SDK_ROOT}/cmdline-tools/cmdline-tools ${ANDROID_SDK_ROOT}/cmdline-tools/latest \
     && rm /tmp/cmdline-tools.zip
 
+# sdkmanager verifies the checksum of every package it installs.
 RUN yes | sdkmanager --licenses >/dev/null \
     && sdkmanager --install \
         "platform-tools" \
-        "platforms;android-34" \
-        "platforms;android-35" \
         "platforms;android-36" \
         "platforms;android-37.0" \
-        "build-tools;34.0.0" \
-        "build-tools;35.0.0" \
         "build-tools;36.0.0" \
         "ndk;28.2.13676358" >/dev/null
 
 # --- Flutter SDK ---
 RUN curl -fsSL -o /tmp/flutter.tar.xz \
         "https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_${FLUTTER_VERSION}-stable.tar.xz" \
+    && echo "${FLUTTER_SHA256}  /tmp/flutter.tar.xz" | sha256sum -c - \
     && tar -xJf /tmp/flutter.tar.xz -C /opt \
     && rm /tmp/flutter.tar.xz
 
