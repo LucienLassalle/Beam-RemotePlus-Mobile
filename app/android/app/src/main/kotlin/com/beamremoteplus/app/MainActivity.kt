@@ -1,4 +1,4 @@
-package com.beamngremoteplus.app
+package com.beamremoteplus.app
 
 import android.graphics.Rect
 import android.content.Context
@@ -73,7 +73,7 @@ class MainActivity : FlutterActivity() {
         super.configureFlutterEngine(flutterEngine)
         val messenger = flutterEngine.dartExecutor.binaryMessenger
 
-        MethodChannel(messenger, "com.beamngremoteplus.app/gesture_exclusion").setMethodCallHandler { call, result ->
+        MethodChannel(messenger, "com.beamremoteplus.app/gesture_exclusion").setMethodCallHandler { call, result ->
             if (call.method != "setExclusionRects") return@setMethodCallHandler result.notImplemented()
             try {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -90,13 +90,13 @@ class MainActivity : FlutterActivity() {
             }
         }
 
-        MethodChannel(messenger, "com.beamngremoteplus.app/network_info").setMethodCallHandler { call, result ->
+        MethodChannel(messenger, "com.beamremoteplus.app/network_info").setMethodCallHandler { call, result ->
             if (call.method != "getLikelyHotspotAddress") return@setMethodCallHandler result.notImplemented()
             val found = findLikelyHotspotAddress()
             result.success(found?.let { mapOf("address" to it.first, "prefixLength" to it.second) })
         }
 
-        MethodChannel(messenger, "com.beamngremoteplus.app/vibrator").setMethodCallHandler { call, result ->
+        MethodChannel(messenger, "com.beamremoteplus.app/vibrator").setMethodCallHandler { call, result ->
             if (call.method != "vibrate") return@setMethodCallHandler result.notImplemented()
             val ms = toInt(call.argument<Any>("ms")).toLong().coerceIn(1, 1000)
             val amplitude = toInt(call.argument<Any>("amplitude")).coerceIn(1, 255)
@@ -104,7 +104,7 @@ class MainActivity : FlutterActivity() {
             result.success(null)
         }
 
-        hardwareKeysChannel = MethodChannel(messenger, "com.beamngremoteplus.app/hardware_keys").apply {
+        hardwareKeysChannel = MethodChannel(messenger, "com.beamremoteplus.app/hardware_keys").apply {
             setMethodCallHandler { call, result ->
                 if (call.method != "setVolumeKeysCaptured") return@setMethodCallHandler result.notImplemented()
                 volumeKeysCaptured = call.arguments == true

@@ -9,7 +9,7 @@ import '../network/broadcast.dart';
 class HotspotNetworkInfo {
   HotspotNetworkInfo._();
 
-  static const _channel = MethodChannel('com.beamngremoteplus.app/network_info');
+  static const _channel = MethodChannel('com.beamremoteplus.app/network_info');
 
   static Future<String?> getLikelyHotspotBroadcast() async {
     try {

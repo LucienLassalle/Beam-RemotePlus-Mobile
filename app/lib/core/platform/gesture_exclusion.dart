@@ -6,7 +6,7 @@ import 'package:flutter/services.dart';
 class GestureExclusion {
   GestureExclusion._();
 
-  static const _channel = MethodChannel('com.beamngremoteplus.app/gesture_exclusion');
+  static const _channel = MethodChannel('com.beamremoteplus.app/gesture_exclusion');
 
   static Future<void> setRects(List<Rect> rects) async {
     try {

@@ -9,7 +9,7 @@ typedef HardwareKeyListener = void Function(HardwareKey key, bool pressed);
 class HardwareKeys {
   HardwareKeys._();
 
-  static const _channel = MethodChannel('com.beamngremoteplus.app/hardware_keys');
+  static const _channel = MethodChannel('com.beamremoteplus.app/hardware_keys');
   static HardwareKeyListener? _listener;
 
   /// Starts capturing; [listener] receives every press and release.

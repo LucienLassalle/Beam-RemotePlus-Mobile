@@ -11,7 +11,7 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace = "com.beamngremoteplus.app"
+    namespace = "com.beamremoteplus.app"
     // Pinned (instead of flutter.compileSdkVersion): required by permission_handler.
     compileSdk = 37
     ndkVersion = flutter.ndkVersion
@@ -22,7 +22,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.beamngremoteplus.app"
+        applicationId = "com.beamremoteplus.app"
         // Android 7.0 (API 24): minimum supported by Flutter.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
