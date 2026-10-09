@@ -20,6 +20,11 @@ IconData warningIcon(VehicleWarning w) => switch (w) {
       VehicleWarning.clutchOverheating => Icons.settings,
       VehicleWarning.clutchDamaged => Icons.settings,
       VehicleWarning.drivetrainBroken => Icons.link_off,
+      VehicleWarning.turboOverheating => Icons.cyclone,
+      VehicleWarning.overRev => Icons.speed,
+      VehicleWarning.waterInEngine => Icons.water,
+      VehicleWarning.gearbox => Icons.settings_input_component,
+      VehicleWarning.lowAirPressure => Icons.compress,
     };
 
 String warningLabel(AppLocalizations l10n, VehicleWarning w) => switch (w) {
@@ -36,6 +41,11 @@ String warningLabel(AppLocalizations l10n, VehicleWarning w) => switch (w) {
       VehicleWarning.clutchOverheating => l10n.warningClutchOverheating,
       VehicleWarning.clutchDamaged => l10n.warningClutchDamaged,
       VehicleWarning.drivetrainBroken => l10n.warningDrivetrainBroken,
+      VehicleWarning.turboOverheating => l10n.warningTurboOverheating,
+      VehicleWarning.overRev => l10n.warningOverRev,
+      VehicleWarning.waterInEngine => l10n.warningWaterInEngine,
+      VehicleWarning.gearbox => l10n.warningGearbox,
+      VehicleWarning.lowAirPressure => l10n.warningLowAirPressure,
     };
 
 /// Warning lights: a big icon with its name pops in the middle of the
