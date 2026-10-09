@@ -28,6 +28,8 @@ dependencies:
   wakelock_plus: ^1.8.1
   # Persisted user settings
   shared_preferences: ^2.5.6
+  # Opens the GitHub repositories from the help
+  url_launcher: ^6.3.3
 
 dev_dependencies:
   flutter_test:

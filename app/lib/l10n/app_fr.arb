@@ -137,6 +137,11 @@
   "warningClutchOverheating": "Embrayage en surchauffe",
   "warningClutchDamaged": "Embrayage endommagé",
   "warningDrivetrainBroken": "Transmission cassée",
+  "helpOpenSourceTitle": "Open source",
+  "helpContributions": "Beam-RemotePlus est open source et les contributions sont les bienvenues : thèmes, traductions, signalements de bugs, idées et corrections. Tout se passe sur GitHub.",
+  "helpAppRepo": "Application sur GitHub",
+  "helpModRepo": "Mod BeamNG.drive sur GitHub",
+  "helpLinkCopied": "Aucun navigateur trouvé : lien copié",
   "dashFuel": "Carburant",
   "dashCoolant": "Temp."
 }

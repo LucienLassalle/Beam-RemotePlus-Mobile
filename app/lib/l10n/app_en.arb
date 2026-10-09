@@ -209,6 +209,11 @@
   "warningClutchOverheating": "Clutch overheating",
   "warningClutchDamaged": "Clutch damaged",
   "warningDrivetrainBroken": "Drivetrain broken",
+  "helpOpenSourceTitle": "Open source",
+  "helpContributions": "Beam-RemotePlus is open source and contributions are welcome: themes, translations, bug reports, ideas and fixes. Everything happens on GitHub.",
+  "helpAppRepo": "Phone app on GitHub",
+  "helpModRepo": "BeamNG.drive mod on GitHub",
+  "helpLinkCopied": "No browser found: link copied",
   "dashFuel": "Fuel",
   "@dashFuel": {
     "description": "Short gauge label on dashboards (shown in capitals)."
