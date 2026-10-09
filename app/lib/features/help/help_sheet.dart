@@ -45,6 +45,8 @@ Future<void> showHelpSheet(BuildContext context) {
               _LinkChip(label: l10n.helpAppRepo, url: appRepositoryUrl),
               _LinkChip(label: l10n.helpModRepo, url: modRepositoryUrl),
             ]),
+            const SizedBox(height: 12),
+            Text(l10n.helpTrademark, style: const TextStyle(fontSize: 11, color: Colors.white38)),
           ]),
         ),
       );

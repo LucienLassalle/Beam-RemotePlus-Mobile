@@ -14,10 +14,13 @@ class ModProtocol {
   /// Highest protocol version this app speaks.
   static const int version = 2;
 
-  static const String pingPrefix = 'beamngremoteplus|ping|';
-  static const String pongPrefix = 'beamngremoteplus|pong|';
-  static const String discoverMessage = 'beamngremoteplus|discover';
-  static const String helloPrefix = 'beamngremoteplus|hello|';
+  /// Handshake prefix. Mods up to 0.0.3 only know [legacyPrefix]: the app
+  /// sends both until the mod answers, then keeps the prefix of the answer.
+  static const String prefix = 'beamremoteplus';
+  static const String legacyPrefix = 'beamngremoteplus';
+  static const List<String> prefixes = [prefix, legacyPrefix];
+
+  static const List<String> discoverMessages = ['$prefix|discover', '$legacyPrefix|discover'];
   static const String cmdPrefix = 'cmd|';
 
   static const int discoverTimeoutMs = 4000;
@@ -34,15 +37,27 @@ class ModProtocol {
   static const int controlIntervalMs = 16; // ~60 Hz
 
   /// [display]: second-screen phone, telemetry only (no virtual device).
-  static String ping(String code, String deviceName, {bool display = false}) =>
-      '$pingPrefix$code|$version|${deviceName.replaceAll('|', ' ')}${display ? '|display' : ''}';
+  /// [withPrefix]: one of [prefixes].
+  static String ping(String code, String deviceName, {bool display = false, String withPrefix = prefix}) =>
+      '$withPrefix|ping|$code|$version|${deviceName.replaceAll('|', ' ')}${display ? '|display' : ''}';
+
+  /// The handshake prefix [message] starts with, null if none.
+  static String? prefixOf(String message) {
+    for (final p in prefixes) {
+      if (message.startsWith('$p|')) return p;
+    }
+    return null;
+  }
 
   /// Returns the negotiated protocol version if [message] is the pong for
-  /// [code], null otherwise. A pong without version comes from a v1 mod.
+  /// [code] (either prefix), null otherwise. A pong without version comes
+  /// from a v1 mod.
   static int? parsePong(String message, String code) {
-    final prefix = '$pongPrefix$code';
-    if (message != prefix && !message.startsWith('$prefix|')) return null;
-    final rest = message.length > prefix.length ? message.substring(prefix.length + 1) : '';
+    final p = prefixOf(message);
+    if (p == null) return null;
+    final head = '$p|pong|$code';
+    if (message != head && !message.startsWith('$head|')) return null;
+    final rest = message.length > head.length ? message.substring(head.length + 1) : '';
     return int.tryParse(rest.split('|').first) ?? 1;
   }
 
@@ -126,10 +141,12 @@ class DiscoveredHost {
 
   static const defaultLabel = 'BeamNG.drive';
 
-  /// Parses `beamngremoteplus|hello|<code>|<label>`; null if not a hello.
+  /// Parses `beamremoteplus|hello|<code>|<label>` (either prefix); null if
+  /// not a hello.
   static DiscoveredHost? parseHello(String message, String hostAddress) {
-    if (!message.startsWith(ModProtocol.helloPrefix)) return null;
-    final rest = message.substring(ModProtocol.helloPrefix.length);
+    final p = ModProtocol.prefixOf(message);
+    if (p == null || !message.startsWith('$p|hello|')) return null;
+    final rest = message.substring('$p|hello|'.length);
     final sep = rest.indexOf('|');
     final code = sep >= 0 ? rest.substring(0, sep) : rest;
     final label = sep >= 0 ? rest.substring(sep + 1) : '';

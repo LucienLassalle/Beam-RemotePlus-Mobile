@@ -1,6 +1,6 @@
 {
   "@@locale": "fr",
-  "appTitle": "BeamNG RemotePlus",
+  "appTitle": "Beam-RemotePlus",
   "cameraPermissionMessage": "L'autorisation caméra est nécessaire pour scanner le QR code affiché par BeamNG.drive.",
   "cameraPermissionButton": "Autoriser la caméra",
   "scanHint": "Ou scannez le QR code : BeamNG.drive > Options > Contrôles > Matériel",
@@ -160,6 +160,7 @@
   "helpContributions": "Beam-RemotePlus est open source et les contributions sont les bienvenues : thèmes, traductions, signalements de bugs, idées et corrections. Tout se passe sur GitHub.",
   "helpAppRepo": "Application sur GitHub",
   "helpModRepo": "Mod BeamNG.drive sur GitHub",
+  "helpTrademark": "Beam-RemotePlus est un projet communautaire indépendant : ce n'est pas un produit officiel de BeamNG, ni affilié à BeamNG GmbH, ni approuvé par elle. BeamNG.drive est une marque déposée de BeamNG GmbH.",
   "helpLinkCopied": "Aucun navigateur trouvé : lien copié",
   "dashFuel": "Carburant",
   "dashCoolant": "Temp."

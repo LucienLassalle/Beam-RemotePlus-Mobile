@@ -13,7 +13,8 @@ translations are especially welcome: see [THEMES.md](THEMES.md) and
 - **Conventional Commits**: `feat(themes): add the Bolide theme`, `fix(pairing): ...`.
 - **Code and comments in English**, user-facing texts in the `.arb` files.
 - **Tests**: `scripts/flutter.sh analyze` and `scripts/flutter.sh test` must pass.
-- License: **CC BY-NC-SA 4.0**; contributions are accepted under the same license.
+- License: **CC BY-NC-SA 4.0**; contributions are accepted under the same license,
+  with the additional permission for BeamNG GmbH described in [BEAMNG-EULA.md](BEAMNG-EULA.md).
 
 ## Development setup
 
@@ -24,8 +25,8 @@ Only [Podman](https://podman.io) is needed: Flutter and the Android SDK run in
 scripts/flutter.sh test          # unit + widget tests
 scripts/flutter.sh analyze       # lints
 scripts/flutter.sh screenshots   # theme previews in app/test/screenshots/goldens/
-scripts/build_apk.sh 2.1.0       # release APKs in dist/
-adb install -r dist/BeamNG-RemotePlus-2.1.0-arm64-v8a.apk
+scripts/build_apk.sh             # test APKs in dist/ (releases: the CI uses the tag)
+adb install -r dist/Beam-RemotePlus-0.0.0-dev-arm64-v8a.apk
 ```
 
 ## Architecture

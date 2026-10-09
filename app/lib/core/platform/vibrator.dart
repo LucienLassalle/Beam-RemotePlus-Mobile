@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 class Vibrator {
   Vibrator._();
 
-  static const _channel = MethodChannel('com.beamngremoteplus.app/vibrator');
+  static const _channel = MethodChannel('com.beamremoteplus.app/vibrator');
 
   static Future<void> pulse(int durationMs, int amplitude) async {
     try {
