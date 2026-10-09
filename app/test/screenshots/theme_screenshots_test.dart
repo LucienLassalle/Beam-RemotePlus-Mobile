@@ -17,6 +17,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../helpers/fake_link.dart';
 import '../helpers/pump_driving_view.dart';
+import '../helpers/sample_skeleton.dart';
 
 /// Renders every theme with sample telemetry into test/screenshots/goldens/
 /// so theme authors and reviewers can SEE a theme without a phone:
@@ -85,6 +86,33 @@ void main() {
       ),
     ));
     await expectLater(find.byType(MaterialApp), matchesGoldenFile('goldens/Damage schematic.png'));
+
+    final car = sampleSkeleton();
+    final truck = sampleSkeleton(id: 'truck', width: 2.5, length: 9, axles: const [3.2, -2.2, -3.6], engine: const Offset(0, 3.4));
+    await tester.pumpWidget(MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: Scaffold(
+        backgroundColor: Colors.black,
+        body: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+          SizedBox(height: 300, child: DamageView(telemetry: sampleTelemetry, skeleton: car, skeletonLevels: car.levels(''), showCarParts: false)),
+          SizedBox(
+            height: 300,
+            child: DamageView(telemetry: wrecked, skeleton: car, skeletonLevels: car.levels(sampleDamage(car))),
+          ),
+          SizedBox(
+            height: 300,
+            child: DamageView(
+              telemetry: const Telemetry(rpm: 1200, fuel: 0.6, waterTemp: 90, shafts: ['driveshaft', 'wheelaxleR1L', 'wheelaxleR1R']),
+              skeleton: truck,
+              skeletonLevels: truck.levels(sampleDamage(truck, y: 3.5, x: 2)),
+              showCarParts: false,
+              showWheelParts: false,
+            ),
+          ),
+        ]),
+      ),
+    ));
+    await expectLater(find.byType(MaterialApp), matchesGoldenFile('goldens/Damage skeleton.png'));
   });
 
   testWidgets('settings previews', (tester) async {

@@ -127,7 +127,16 @@ class DrivingView extends StatelessWidget {
                   bottom: 12,
                   width: MediaQuery.of(context).size.width * 0.3,
                   child: FittedBox(
-                    child: VehiclePanel(telemetry: t, temperatureUnit: settings.temperatureUnit, pressureUnit: settings.pressureUnit),
+                    child: VehiclePanel(
+                      telemetry: t,
+                      temperatureUnit: settings.temperatureUnit,
+                      pressureUnit: settings.pressureUnit,
+                      skeleton: controller.skeleton,
+                      skeletonLevels: controller.skeletonLevels,
+                      showCarParts: settings.damageCarParts,
+                      showWheelParts: settings.showsDamageWheelParts,
+                      simpleDamage: settings.simpleDamage,
+                    ),
                   ),
                 )
               else if (settings.showVehiclePanel)
@@ -136,6 +145,11 @@ class DrivingView extends StatelessWidget {
                     height: 160,
                     temperatureUnit: settings.temperatureUnit,
                     pressureUnit: settings.pressureUnit,
+                    skeleton: controller.skeleton,
+                    skeletonLevels: controller.skeletonLevels,
+                    showCarParts: settings.damageCarParts,
+                    showWheelParts: settings.showsDamageWheelParts,
+                    simpleDamage: settings.simpleDamage,
                   )),
               if (!controller.modActive)
                 Positioned(

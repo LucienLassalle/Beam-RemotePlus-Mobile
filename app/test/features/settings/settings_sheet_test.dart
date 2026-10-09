@@ -71,6 +71,37 @@ void main() {
     expect(store.values['useKmh'], isFalse);
   });
 
+  testWidgets('display tab: brake, tyre and axle icons can only be hidden with the engine ones', (tester) async {
+    await open(tester);
+    await tester.drag(find.text('Phone language'), const Offset(0, -900));
+    await tester.pumpAndSettle();
+    SwitchListTile tile(String title) => tester.widget(find.widgetWithText(SwitchListTile, title));
+    expect(tile('Engine, radiator and fuel tank icons').value, isFalse);
+    expect(tile('Brake, tyre and axle icons').value, isTrue);
+    await tester.tap(find.text('Brake, tyre and axle icons'));
+    await tester.pumpAndSettle();
+    expect(store.values['damageWheelParts'], isFalse);
+    await tester.tap(find.text('Engine, radiator and fuel tank icons'));
+    await tester.pumpAndSettle();
+    expect(store.values['damageCarParts'], isTrue);
+    expect(tile('Brake, tyre and axle icons').value, isTrue);
+    expect(tile('Brake, tyre and axle icons').onChanged, isNull);
+  });
+
+  testWidgets('display tab: simplified damage greys out the pictograms', (tester) async {
+    await open(tester);
+    final list = find.byWidgetPredicate((w) => w is Scrollable && w.axisDirection == AxisDirection.down).first;
+    await tester.scrollUntilVisible(find.text('Simplified damage'), 100, scrollable: list);
+    await tester.pumpAndSettle();
+    SwitchListTile tile(String title) => tester.widget(find.widgetWithText(SwitchListTile, title));
+    expect(tile('Simplified damage').value, isFalse);
+    await tester.tap(find.text('Simplified damage'));
+    await tester.pumpAndSettle();
+    expect(store.values['simpleDamage'], isTrue);
+    expect(tile('Engine, radiator and fuel tank icons').onChanged, isNull);
+    expect(tile('Brake, tyre and axle icons').onChanged, isNull);
+  });
+
   testWidgets('gameplay tab: vibrations sub-menu and custom rotation range', (tester) async {
     await open(tester);
     await tester.tap(find.text('Gameplay'));

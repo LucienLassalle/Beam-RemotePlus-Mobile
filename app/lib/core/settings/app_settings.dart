@@ -22,6 +22,16 @@ class AppSettings {
   /// Radar + damage panel over the driving screen.
   final bool showVehiclePanel;
 
+  /// Damage schematic of the real vehicle structure (with the mod's
+  /// skeleton): engine, radiator and fuel tank / battery pictograms, and
+  /// brakes, tyres and axles ones. Hiding the first lets the user hide the
+  /// second too, for the bare structure like the game's detailed app.
+  /// The 0.0.3 damage schematic (six body zones, four tyres) even when
+  /// the real vehicle structure is known.
+  final bool simpleDamage;
+  final bool damageCarParts;
+  final bool damageWheelParts;
+
   /// Display-only phone: dashboard, radar and damage, no controls.
   final bool secondScreen;
 
@@ -74,6 +84,9 @@ class AppSettings {
     this.pressureUnit = PressureUnit.bar,
     this.warningPopups = true,
     this.showVehiclePanel = false,
+    this.simpleDamage = false,
+    this.damageCarParts = false,
+    this.damageWheelParts = true,
     this.secondScreen = false,
     this.tiltSteering = true,
     this.rotationRangeDeg = 900,
@@ -97,6 +110,9 @@ class AppSettings {
   /// Some road-feel vibration is enabled.
   bool get anyRoadHaptics => hapticSpin || hapticLock || hapticImpacts || hapticKerbs || hapticAbs;
 
+  /// Brakes, tyres and axles can only be hidden with the engine   bool get anyRoadHaptics => hapticSpin || hapticLock || hapticImpacts || hapticKerbs || hapticAbs; co.
+  bool get showsDamageWheelParts => damageCarParts || damageWheelParts;
+
   static const double minHapticStrength = 0.1;
 
   // Sentinel so copyWith can set localeCode back to null (system language).
@@ -110,6 +126,9 @@ class AppSettings {
     PressureUnit? pressureUnit,
     bool? warningPopups,
     bool? showVehiclePanel,
+    bool? simpleDamage,
+    bool? damageCarParts,
+    bool? damageWheelParts,
     bool? secondScreen,
     bool? tiltSteering,
     double? rotationRangeDeg,
@@ -137,6 +156,9 @@ class AppSettings {
       pressureUnit: pressureUnit ?? this.pressureUnit,
       warningPopups: warningPopups ?? this.warningPopups,
       showVehiclePanel: showVehiclePanel ?? this.showVehiclePanel,
+      simpleDamage: simpleDamage ?? this.simpleDamage,
+      damageCarParts: damageCarParts ?? this.damageCarParts,
+      damageWheelParts: damageWheelParts ?? this.damageWheelParts,
       secondScreen: secondScreen ?? this.secondScreen,
       tiltSteering: tiltSteering ?? this.tiltSteering,
       rotationRangeDeg: rotationRangeDeg ?? this.rotationRangeDeg,
@@ -166,6 +188,9 @@ class AppSettings {
         'pressureUnit': pressureUnit.name,
         'warningPopups': warningPopups,
         'showVehiclePanel': showVehiclePanel,
+        'simpleDamage': simpleDamage,
+        'damageCarParts': damageCarParts,
+        'damageWheelParts': damageWheelParts,
         'secondScreen': secondScreen,
         'tiltSteering': tiltSteering,
         'rotationRangeDeg': rotationRangeDeg,
@@ -210,6 +235,9 @@ class AppSettings {
       pressureUnit: enumByName(PressureUnit.values, json['pressureUnit'], d.pressureUnit),
       warningPopups: pick('warningPopups', d.warningPopups),
       showVehiclePanel: pick('showVehiclePanel', d.showVehiclePanel),
+      simpleDamage: pick('simpleDamage', d.simpleDamage),
+      damageCarParts: pick('damageCarParts', d.damageCarParts),
+      damageWheelParts: pick('damageWheelParts', d.damageWheelParts),
       secondScreen: pick('secondScreen', d.secondScreen),
       tiltSteering: pick('tiltSteering', d.tiltSteering),
       rotationRangeDeg: rotation,

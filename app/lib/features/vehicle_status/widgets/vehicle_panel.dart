@@ -1,6 +1,9 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 
 import '../../../core/protocol/telemetry.dart';
+import '../../../core/protocol/vehicle_skeleton.dart';
 import '../../../core/settings/units.dart';
 import '../../../themes/kit/damage_view.dart';
 import '../../../themes/kit/radar_view.dart';
@@ -12,6 +15,11 @@ class VehiclePanel extends StatelessWidget {
   final double height;
   final TemperatureUnit temperatureUnit;
   final PressureUnit pressureUnit;
+  final VehicleSkeleton? skeleton;
+  final Uint8List? skeletonLevels;
+  final bool showCarParts;
+  final bool showWheelParts;
+  final bool simpleDamage;
 
   const VehiclePanel({
     super.key,
@@ -19,6 +27,11 @@ class VehiclePanel extends StatelessWidget {
     this.height = 150,
     this.temperatureUnit = TemperatureUnit.celsius,
     this.pressureUnit = PressureUnit.bar,
+    this.skeleton,
+    this.skeletonLevels,
+    this.showCarParts = true,
+    this.showWheelParts = true,
+    this.simpleDamage = false,
   });
 
   @override
@@ -30,7 +43,16 @@ class VehiclePanel extends StatelessWidget {
           child: Row(mainAxisSize: MainAxisSize.min, children: [
             RadarView(targets: telemetry.radar),
             const SizedBox(width: 12),
-            DamageView(telemetry: telemetry, temperatureUnit: temperatureUnit, pressureUnit: pressureUnit),
+            DamageView(
+              telemetry: telemetry,
+              temperatureUnit: temperatureUnit,
+              pressureUnit: pressureUnit,
+              skeleton: skeleton,
+              skeletonLevels: skeletonLevels,
+              showCarParts: showCarParts,
+              showWheelParts: showWheelParts,
+              simplified: simpleDamage,
+            ),
           ]),
         ),
       );

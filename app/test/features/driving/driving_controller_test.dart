@@ -1,5 +1,7 @@
 import 'package:beam_remoteplus/core/platform/hardware_keys.dart';
+import 'package:beam_remoteplus/core/protocol/mod_message.dart';
 import 'package:beam_remoteplus/core/protocol/telemetry.dart';
+import 'package:beam_remoteplus/core/protocol/vehicle_skeleton.dart';
 import 'package:beam_remoteplus/core/settings/app_settings.dart';
 import 'package:beam_remoteplus/features/driving/driving_controller.dart';
 import 'package:beam_remoteplus/themes/control_theme.dart';
@@ -100,5 +102,17 @@ void main() {
     link.telemetry_.add(const Telemetry(rpm: 8000, maxRpm: 8000));
     await Future<void>.delayed(Duration.zero);
     expect(limiterHits, 0);
+  });
+
+  test('asks for the vehicle skeleton, even in read-only, and exposes it once received', () async {
+    controller.setReadOnly(true);
+    link.telemetry_.add(const Telemetry(skeletonId: 'a', skeletonDamage: '9'));
+    await Future<void>.delayed(Duration.zero);
+    expect(link.commands, ['skeleton']);
+    expect(controller.skeleton, isNull);
+    link.events_.add(const SkeletonMessage(SkeletonChunk(id: 'a', offset: 0, count: 1, seg: [0, 0, 100, 0])));
+    await Future<void>.delayed(Duration.zero);
+    expect(controller.skeleton!.id, 'a');
+    expect(controller.skeletonLevels, [9]);
   });
 }

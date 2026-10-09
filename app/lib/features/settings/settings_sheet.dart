@@ -204,6 +204,18 @@ class _DisplayTab extends StatelessWidget {
           (v) => _set(context, (s) => s.copyWith(warningPopups: v))),
       _switch(l10n.settingsVehiclePanelTitle, l10n.settingsVehiclePanelSubtitle, s.showVehiclePanel,
           (v) => _set(context, (s) => s.copyWith(showVehiclePanel: v))),
+      _switch(l10n.settingsSimpleDamageTitle, l10n.settingsSimpleDamageSubtitle, s.simpleDamage,
+          (v) => _set(context, (s) => s.copyWith(simpleDamage: v))),
+      // The pictograms only exist on the real structure.
+      _switch(l10n.settingsDamageCarPartsTitle, l10n.settingsDamageCarPartsSubtitle, s.damageCarParts,
+          s.simpleDamage ? null : (v) => _set(context, (s) => s.copyWith(damageCarParts: v))),
+      // Only with the engine & co. hidden; shown on (greyed) otherwise.
+      _switch(
+        l10n.settingsDamageWheelPartsTitle,
+        l10n.settingsDamageWheelPartsSubtitle,
+        s.showsDamageWheelParts,
+        s.damageCarParts || s.simpleDamage ? null : (v) => _set(context, (s) => s.copyWith(damageWheelParts: v)),
+      ),
       _switch(l10n.settingsSecondScreenTitle, l10n.settingsSecondScreenSubtitle, s.secondScreen,
           (v) => _set(context, (s) => s.copyWith(secondScreen: v))),
     ]);

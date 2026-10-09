@@ -82,6 +82,9 @@ class ModCommand {
   static const recover = 'recover';
   static const debug = 'debug';
 
+  // Asks for the vehicle skeleton (allowed on a second screen too)
+  static const skeleton = 'skeleton';
+
   static const Set<String> holds = {horn, highBeam, starter, recover, debug};
 }
 

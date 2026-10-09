@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'telemetry.dart';
+import 'vehicle_skeleton.dart';
 
 /// A datagram received from the mod on [ModProtocol.clientPort].
 sealed class ModMessage {
@@ -40,6 +41,9 @@ sealed class ModMessage {
               ? [for (final c in json['commands']! as List<Object?>) if (c is String) c]
               : const [],
         );
+      case 'skeleton':
+        final chunk = SkeletonChunk.fromJson(json);
+        return chunk == null ? null : SkeletonMessage(chunk);
       default:
         return null;
     }
@@ -64,4 +68,10 @@ class SessionMessage extends ModMessage {
   final int? player;
   final List<String> commands;
   const SessionMessage({this.modVersion, this.player, this.commands = const []});
+}
+
+/// One piece of the vehicle skeleton (answer to `cmd|skeleton`).
+class SkeletonMessage extends ModMessage {
+  final SkeletonChunk chunk;
+  const SkeletonMessage(this.chunk);
 }

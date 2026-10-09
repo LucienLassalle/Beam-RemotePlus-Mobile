@@ -58,8 +58,13 @@ with sample data.
 - **Vibrations** with an adjustable strength, each one can be switched off:
   wheelspin, locked wheels, impacts, kerbs, ABS, rev limiter.
 - **Radar and damage panel**: nearby cars, and a damage schematic in the
-  spirit of the game (body, radiator, engine, driveshafts and axles,
-  brakes, jerrycan with the fuel level), tyre pressures and flat tyres,
+  spirit of the game: the real structure of the vehicle (any car, truck or
+  bus) with every bent beam coloured like the game's detailed damage app,
+  and the radiator, engine, driveshafts and axles, brakes and jerrycan
+  with the fuel level where they really are (each group of pictograms can
+  be hidden, or replaced by the simplified schematic of version 0.0.3,
+  also shown with a mod that does not send the structure); tyre pressures
+  and flat tyres,
   and tyre temperatures when the
   [Tyre Thermals and Wear](https://www.beamng.com/resources/) mod is
   installed in the game.
