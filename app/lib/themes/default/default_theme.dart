@@ -31,7 +31,12 @@ class DefaultTheme extends ControlTheme {
             children: [
               ShiftLights(rpm: t.rpm, maxRpm: t.maxRpm, shiftNow: t.shiftLight ?? false, count: 12, size: 14),
               const SizedBox(height: 6),
-              Text('${DashFormat.integer(t.rpm)} RPM', style: const TextStyle(color: Colors.white54, fontSize: 13)),
+              if (t.isElectric)
+                // Motor power, green while the regenerative braking charges.
+                Text('${DashFormat.integer(t.motorPower)} kW',
+                    style: TextStyle(color: (t.motorPower ?? 0) < 0 ? Colors.greenAccent : Colors.white54, fontSize: 13))
+              else
+                Text('${DashFormat.integer(t.rpm)} RPM', style: const TextStyle(color: Colors.white54, fontSize: 13)),
               const SizedBox(height: 4),
               Row(
                 mainAxisSize: MainAxisSize.min,
@@ -62,9 +67,23 @@ class DefaultTheme extends ControlTheme {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  _Gauge(icon: Icons.local_gas_station, value: '${DashFormat.fuelPercent(t)}%', warn: t.lowFuel ?? false),
-                  _Gauge(icon: Icons.thermostat, value: '${DashFormat.temperature(t.waterTemp, data.temperatureUnit)}°', warn: (t.waterTemp ?? 0) > 115),
-                  _Gauge(icon: Icons.oil_barrel, value: '${DashFormat.temperature(t.oilTemp, data.temperatureUnit)}°', warn: t.lowPressure ?? false),
+                  _Gauge(
+                    icon: t.isElectric ? Icons.battery_charging_full : Icons.local_gas_station,
+                    value: '${DashFormat.fuelPercent(t)}%',
+                    warn: t.lowFuel ?? false,
+                  ),
+                  if (!t.isElectric) ...[
+                    _Gauge(
+                      icon: Icons.thermostat,
+                      value: '${DashFormat.temperature(t.waterTemp, data.temperatureUnit)}°',
+                      warn: (t.waterTemp ?? 0) > 115,
+                    ),
+                    _Gauge(
+                      icon: Icons.oil_barrel,
+                      value: '${DashFormat.temperature(t.oilTemp, data.temperatureUnit)}°',
+                      warn: t.lowPressure ?? false,
+                    ),
+                  ],
                 ],
               ),
               const SizedBox(height: 10),

@@ -54,6 +54,14 @@ void main() {
       expect(t.wheelSpin, 3.5);
     });
 
+    test('electric cars', () {
+      final t = Telemetry.fromJson({'powertrain': 'electric', 'motorPower': -12.5, 'fuel': 0.8});
+      expect(t.isElectric, isTrue);
+      expect(t.motorPower, -12.5);
+      expect(Telemetry.fromJson({'powertrain': 'hybrid'}).isHybrid, isTrue);
+      expect(Telemetry.empty.isElectric, isFalse);
+    });
+
     test('wrong types become null instead of throwing', () {
       final t = Telemetry.fromJson({'rpm': 'fast', 'lowBeam': 'yes', 'gear': 3});
       expect(t.rpm, isNull);

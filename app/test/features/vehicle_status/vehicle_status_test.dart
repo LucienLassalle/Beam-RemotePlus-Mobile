@@ -1,6 +1,7 @@
 import 'package:beam_remoteplus/core/protocol/telemetry.dart';
 import 'package:beam_remoteplus/features/vehicle_status/haptics_engine.dart';
 import 'package:beam_remoteplus/features/vehicle_status/warnings.dart';
+import 'package:beam_remoteplus/themes/kit/damage_view.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -52,6 +53,14 @@ void main() {
       expect(activeWarnings(const Telemetry(engineDamage: ['mildOverrevDamage'])), [VehicleWarning.checkEngine]);
       expect(isCritical(VehicleWarning.waterInEngine), isTrue);
       expect(isCritical(VehicleWarning.turboOverheating), isFalse);
+    });
+
+    test('electric cars: low battery, no stalled-engine light', () {
+      const ev = Telemetry(powertrain: 'electric', lowFuel: true, engineRunning: false, ignitionLevel: 2);
+      expect(activeWarnings(ev), [VehicleWarning.lowBattery]);
+      expect(activeWarnings(const Telemetry(lowFuel: true)), [VehicleWarning.lowFuel]);
+      expect(activeWarnings(const Telemetry(powertrain: 'electric', batteryDamaged: true)), [VehicleWarning.batteryDamaged]);
+      expect(DamageView.fuelTankState(const Telemetry(powertrain: 'electric', fuel: 0.5, batteryDamaged: true)), PartState.broken);
     });
 
     test('gearbox and air brakes', () {

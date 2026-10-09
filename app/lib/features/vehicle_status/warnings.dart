@@ -20,6 +20,8 @@ enum VehicleWarning {
   waterInEngine,
   gearbox,
   lowAirPressure,
+  lowBattery,
+  batteryDamaged,
 }
 
 /// Engine failures that mean "stop now" (red) rather than "check soon".
@@ -49,12 +51,13 @@ List<VehicleWarning> activeWarnings(Telemetry t) {
     if (engineDamage.contains(_hydrolocking)) VehicleWarning.waterInEngine,
     if (t.lowAirPressure == true) VehicleWarning.lowAirPressure,
     if (t.fuelLeak == true) VehicleWarning.fuelLeak,
+    if (t.batteryDamaged == true) VehicleWarning.batteryDamaged,
     if (t.brokenParts.any(_isTransmissionPart)) VehicleWarning.drivetrainBroken,
     if (t.clutchState == 'damaged') VehicleWarning.clutchDamaged,
     if (engineDamage.intersection(_overRev).isNotEmpty) VehicleWarning.overRev,
     if (t.checkEngine == true || otherEngineFailures.isNotEmpty) VehicleWarning.checkEngine,
     // Engine off while the ignition is on: the battery light of real cars.
-    if (t.engineRunning == false && (t.ignitionLevel ?? 0) >= 2) VehicleWarning.engineStopped,
+    if (t.engineRunning == false && (t.ignitionLevel ?? 0) >= 2 && !t.isElectric) VehicleWarning.engineStopped,
     if (t.flatTires.isNotEmpty || t.brokenWheels.isNotEmpty) VehicleWarning.flatTire,
     if (t.flatTires.isEmpty && t.lowTirePressure()) VehicleWarning.lowTirePressure,
     if (t.hotBrakes.isNotEmpty || t.brokenBrakes.isNotEmpty) VehicleWarning.brakesOverheating,
@@ -62,7 +65,7 @@ List<VehicleWarning> activeWarnings(Telemetry t) {
     if (t.clutchState == 'hot' || t.clutchState == 'overheating') VehicleWarning.clutchOverheating,
     if (t.gearGrinding == true || (t.gearboxWear ?? 0) >= gearboxWearWarning) VehicleWarning.gearbox,
     if (t.parkingBrake == true && (t.speed ?? 0) > 3) VehicleWarning.parkingBrakeWhileMoving,
-    if (t.lowFuel == true) VehicleWarning.lowFuel,
+    if (t.lowFuel == true) t.isElectric ? VehicleWarning.lowBattery : VehicleWarning.lowFuel,
   ];
 }
 
@@ -73,6 +76,7 @@ bool isCritical(VehicleWarning w) => switch (w) {
       VehicleWarning.waterInEngine ||
       VehicleWarning.lowAirPressure ||
       VehicleWarning.fuelLeak ||
+      VehicleWarning.batteryDamaged ||
       VehicleWarning.flatTire ||
       VehicleWarning.clutchDamaged ||
       VehicleWarning.drivetrainBroken ||

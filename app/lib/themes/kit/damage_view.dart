@@ -88,7 +88,7 @@ class DamageView extends StatelessWidget {
   }
 
   static PartState fuelTankState(Telemetry t) {
-    if (t.fuelLeak == true) return PartState.broken;
+    if (t.fuelLeak == true || t.batteryDamaged == true) return PartState.broken;
     if (t.lowFuel == true || (t.fuel != null && t.fuel! < 0.1)) return PartState.warning;
     return t.fuel == null ? PartState.unknown : PartState.ok;
   }
@@ -262,6 +262,7 @@ class _DamagePainter extends CustomPainter {
   void _engine(Canvas canvas) {
     if (!_hasEngine) return;
     final color = DamageView.partColor(DamageView.engineState(t));
+    if (t.isElectric) return _motor(canvas, color);
     final y = _engineY;
     final shape = Path()
       // valve cover and cap
@@ -301,6 +302,7 @@ class _DamagePainter extends CustomPainter {
   void _fuelTank(Canvas canvas) {
     final state = DamageView.fuelTankState(t);
     if (state == PartState.unknown && t.fuel == null) return;
+    if (t.isElectric) return _battery(canvas, DamageView.partColor(state));
     final top = _rearEngine ? 58.0 : 163.0;
     final color = DamageView.partColor(state);
     // Spout on the cut corner, then the can.
@@ -338,6 +340,42 @@ class _DamagePainter extends CustomPainter {
     canvas.drawRect(Rect.fromLTRB(42, top + 14, 58, top + 26), _outline);
     canvas.drawLine(Offset(42, top + 14), Offset(58, top + 26), x);
     canvas.drawLine(Offset(58, top + 14), Offset(42, top + 26), x);
+  }
+
+  /// Electric motor pictogram: round stator with a lightning bolt.
+  void _motor(Canvas canvas, Color color) {
+    final c = Offset(50, _engineY);
+    _part(canvas, _rrect(Rect.fromCenter(center: c.translate(0, -11), width: 8, height: 4), 1), color); // terminals
+    _part(canvas, Path()..addOval(Rect.fromCircle(center: c, radius: 10)), color);
+    final bolt = Path()
+      ..moveTo(c.dx + 1.5, c.dy - 7)
+      ..lineTo(c.dx - 4, c.dy + 1)
+      ..lineTo(c.dx - 0.5, c.dy + 1)
+      ..lineTo(c.dx - 1.5, c.dy + 7)
+      ..lineTo(c.dx + 4, c.dy - 1)
+      ..lineTo(c.dx + 0.5, c.dy - 1)
+      ..close();
+    canvas.drawPath(bolt, _fill(Colors.black.withValues(alpha: 0.8)));
+  }
+
+  /// Battery pack in the floor between the axles, charged to the level.
+  void _battery(Canvas canvas, Color color) {
+    const pack = Rect.fromLTRB(31, 84, 69, 122);
+    canvas.drawRRect(RRect.fromRectAndRadius(pack, const Radius.circular(2)), _fill(const Color(0xFF3A3F45)));
+    final level = (t.fuel ?? 1).clamp(0.0, 1.0);
+    canvas.drawRect(Rect.fromLTRB(pack.left, pack.bottom - pack.height * level, pack.right, pack.bottom), _fill(color));
+    // Cells.
+    final cell = Paint()
+      ..color = Colors.black.withValues(alpha: 0.45)
+      ..strokeWidth = 0.8;
+    for (var y = pack.top + 7.6; y < pack.bottom; y += 7.6) {
+      canvas.drawLine(Offset(pack.left, y), Offset(pack.right, y), cell);
+    }
+    canvas.drawLine(pack.topCenter, pack.bottomCenter, cell);
+    canvas.drawRRect(RRect.fromRectAndRadius(pack, const Radius.circular(2)), _outline);
+    // + and - terminals.
+    _part(canvas, _rrect(const Rect.fromLTRB(36, 80, 42, 84), 0.8), color);
+    _part(canvas, _rrect(const Rect.fromLTRB(58, 80, 64, 84), 0.8), color);
   }
 
   void _wheels(Canvas canvas) {

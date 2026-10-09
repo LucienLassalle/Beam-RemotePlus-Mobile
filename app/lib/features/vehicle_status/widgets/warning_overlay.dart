@@ -25,6 +25,8 @@ IconData warningIcon(VehicleWarning w) => switch (w) {
       VehicleWarning.waterInEngine => Icons.water,
       VehicleWarning.gearbox => Icons.settings_input_component,
       VehicleWarning.lowAirPressure => Icons.compress,
+      VehicleWarning.lowBattery => Icons.battery_1_bar,
+      VehicleWarning.batteryDamaged => Icons.electric_bolt,
     };
 
 String warningLabel(AppLocalizations l10n, VehicleWarning w) => switch (w) {
@@ -46,6 +48,8 @@ String warningLabel(AppLocalizations l10n, VehicleWarning w) => switch (w) {
       VehicleWarning.waterInEngine => l10n.warningWaterInEngine,
       VehicleWarning.gearbox => l10n.warningGearbox,
       VehicleWarning.lowAirPressure => l10n.warningLowAirPressure,
+      VehicleWarning.lowBattery => l10n.warningLowBattery,
+      VehicleWarning.batteryDamaged => l10n.warningBatteryDamaged,
     };
 
 /// Warning lights: a big icon with its name pops in the middle of the
