@@ -12,10 +12,12 @@ import '../vehicle_status/haptics_engine.dart';
 
 /// Logic of the driving screen (the view is driving_screen.dart): routes the
 /// inputs to the game, tracks held commands, gear-change flashes, read-only
-/// mode and shift-point haptics. No widget code here, fully unit-tested.
+/// mode and haptics. No widget code here, fully unit-tested.
 class DrivingController extends ChangeNotifier {
   final RemoteLink link;
-  final VoidCallback onShiftPoint;
+
+  /// The engine reached the rev limiter (rising edge).
+  final VoidCallback onLimiter;
   final void Function(Pulse pulse) onPulse;
   final HapticsEngine _haptics = HapticsEngine();
   AppSettings _settings;
@@ -25,16 +27,21 @@ class DrivingController extends ChangeNotifier {
   Timer? _flashTimer;
   bool _readOnly = false;
   int _resetCount = 0;
-  bool _wasShiftLight = false;
+  bool _atLimiter = false;
   GearFlash? _gearFlash;
   Telemetry _telemetry = Telemetry.empty;
 
   static const flashDuration = Duration(milliseconds: 300);
 
+  /// Share of the max RPM where the limiter vibration fires, and where it
+  /// re-arms (hysteresis: one vibration per hit, not per frame).
+  static const double limiterOn = 0.97;
+  static const double limiterOff = 0.93;
+
   DrivingController({
     required this.link,
     required AppSettings settings,
-    required this.onShiftPoint,
+    required this.onLimiter,
     void Function(Pulse pulse)? onPulse,
   })  : onPulse = onPulse ?? _noPulse,
         _settings = settings {
@@ -66,13 +73,25 @@ class DrivingController extends ChangeNotifier {
 
   void _onTelemetry(Telemetry t) {
     _telemetry = t;
-    if (_settings.roadHaptics && !_settings.secondScreen) {
-      final pulse = _haptics.update(t, DateTime.now());
+    final s = _settings;
+    if (s.anyRoadHaptics && !s.secondScreen) {
+      final pulse = _haptics.update(t, DateTime.now(), enabled: {
+        if (s.hapticSpin) HapticKind.spin,
+        if (s.hapticLock) HapticKind.lock,
+        if (s.hapticImpacts) HapticKind.impact,
+        if (s.hapticKerbs) HapticKind.kerb,
+      });
       if (pulse != null) onPulse(pulse);
     }
-    final shift = t.shiftLight ?? false;
-    if (_settings.shiftHaptics && shift && !_wasShiftLight) onShiftPoint();
-    _wasShiftLight = shift;
+    final ratio = t.rpmRatio;
+    if (ratio != null) {
+      if (!_atLimiter && ratio >= limiterOn) {
+        _atLimiter = true;
+        if (s.hapticLimiter && !s.secondScreen) onLimiter();
+      } else if (ratio < limiterOff) {
+        _atLimiter = false;
+      }
+    }
     notifyListeners();
   }
 
@@ -129,10 +148,12 @@ class DrivingController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Volume up = horn, volume down = headlight flash, while held.
+  /// Volume up = horn, volume down = headlight flash, while held (each one
+  /// can be disabled in the settings).
   void onHardwareKey(HardwareKey key, bool pressed) {
-    if (!_settings.volumeKeys) return;
-    hold(key == HardwareKey.volumeUp ? ModCommand.horn : ModCommand.highBeam, pressed: pressed);
+    final up = key == HardwareKey.volumeUp;
+    if (up ? !_settings.hornOnVolume : !_settings.flashOnVolume) return;
+    hold(up ? ModCommand.horn : ModCommand.highBeam, pressed: pressed);
   }
 
   void setReadOnly(bool value) {

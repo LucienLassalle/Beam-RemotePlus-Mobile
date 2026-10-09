@@ -53,12 +53,43 @@ class Telemetry {
   final double? gz;
   final bool? shiftLight;
   final Map<String, double>? tirePressures; // kPa by wheel name
+
+  /// Pressures set in the vehicle configuration (kPa by wheel name).
+  final Map<String, double>? tirePressuresNominal;
   final String? driveMode;
   final int? player;
   final String? vehicle;
 
   /// Largest wheel slip velocity (m/s): wheelspin, locked wheels, drifts.
   final double? wheelSlip;
+
+  /// Largest wheelspin (tyre faster than the car) and locked-wheel slip,
+  /// m/s. Null with an older mod (only [wheelSlip] then).
+  final double? wheelSpin;
+  final double? wheelLock;
+
+  /// Brake disc temperature (°C) by wheel name.
+  final Map<String, double>? brakeTemps;
+
+  /// Clutch temperature (°C), only for cars with a friction clutch.
+  final double? clutchTemp;
+
+  /// 'hot', 'overheating' (slipping) or 'damaged'; null when fine.
+  final String? clutchState;
+
+  /// Broken powertrain parts: driveshaft, wheelaxleFL, mainEngine...
+  final List<String> brokenParts;
+
+  /// Shafts of this car (driveshaft, driveshaft_F, wheelaxleFL...).
+  final List<String> shafts;
+
+  /// Engine position along the car: 0 = front bumper, 1 = rear bumper.
+  final double? engineAt;
+
+  /// Molten brakes and torn off wheels (wheel names).
+  final List<String> brokenBrakes;
+  final List<String> brokenWheels;
+  final bool? fuelLeak;
 
   /// Cars around (empty list = none nearby, null = not sent by the mod).
   final List<RadarTarget>? radar;
@@ -121,10 +152,22 @@ class Telemetry {
     this.gz,
     this.shiftLight,
     this.tirePressures,
+    this.tirePressuresNominal,
     this.driveMode,
     this.player,
     this.vehicle,
     this.wheelSlip,
+    this.wheelSpin,
+    this.wheelLock,
+    this.brakeTemps,
+    this.clutchTemp,
+    this.clutchState,
+    this.brokenParts = const [],
+    this.shafts = const [],
+    this.engineAt,
+    this.brokenBrakes = const [],
+    this.brokenWheels = const [],
+    this.fuelLeak,
     this.radar,
     this.bodyDamage,
     this.engineDamage = const [],
@@ -170,9 +213,24 @@ class Telemetry {
   bool get tcsOn => tcsActive ?? false;
   bool get escOn => escActive ?? false;
 
-  /// True when at least one tyre is below [thresholdKpa].
-  bool lowTirePressure({double thresholdKpa = 120}) =>
-      tirePressures?.values.any((p) => p > 0 && p < thresholdKpa) ?? false;
+  /// A tyre counts as underinflated below this share of the pressure the
+  /// car is configured with.
+  static const double lowPressureRatio = 0.75;
+
+  /// Wheels whose tyre is underinflated: compared to the pressure set in
+  /// the vehicle configuration (race cars run low pressures), or to
+  /// [fallbackKpa] with an older mod that does not send it.
+  List<String> lowPressureTires({double fallbackKpa = 120}) => [
+        for (final e in (tirePressures ?? const <String, double>{}).entries)
+          if (e.value > 0 && e.value < (_nominal(e.key) ?? fallbackKpa)) e.key,
+      ];
+
+  double? _nominal(String wheel) {
+    final n = tirePressuresNominal?[wheel];
+    return n == null || n <= 0 ? null : n * lowPressureRatio;
+  }
+
+  bool lowTirePressure({double fallbackKpa = 120}) => lowPressureTires(fallbackKpa: fallbackKpa).isNotEmpty;
 
   // Decoding -------------------------------------------------------------------
 
@@ -202,6 +260,8 @@ class Telemetry {
   }
 
   static Map<String, double>? _numbers(Object? v) => _pressures(v);
+
+  static Map<Object?, Object?>? _map(Object? v) => v is Map ? v : null;
 
   static List<String> _strings(Object? v) =>
       v is List ? [for (final e in v) if (e is String) e] : const [];
@@ -272,10 +332,22 @@ class Telemetry {
       gz: _num(j['gz']),
       shiftLight: _bool(j['shiftLight']),
       tirePressures: _pressures(j['tirePressures']),
+      tirePressuresNominal: _pressures(j['tirePressuresNominal']),
       driveMode: _driveMode(j['driveMode']),
       player: _int(j['player']),
       vehicle: _str(j['vehicle']),
       wheelSlip: _num(j['wheelSlip']),
+      wheelSpin: _num(j['wheelSpin']),
+      wheelLock: _num(j['wheelLock']),
+      brakeTemps: _numbers(j['brakeTemps']),
+      clutchTemp: _num(j['clutchTemp']),
+      clutchState: _str(j['clutchState']),
+      brokenParts: _strings(j['brokenParts']),
+      shafts: _strings(_map(j['drivetrain'])?['shafts']),
+      engineAt: _num(_map(j['drivetrain'])?['engineAt']),
+      brokenBrakes: _strings(j['brokenBrakes']),
+      brokenWheels: _strings(j['brokenWheels']),
+      fuelLeak: _bool(j['fuelLeak']),
       radar: _radar(j['radar']),
       bodyDamage: _numbers(j['bodyDamage']),
       engineDamage: _strings(j['engineDamage']),

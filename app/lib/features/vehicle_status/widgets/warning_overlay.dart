@@ -16,6 +16,10 @@ IconData warningIcon(VehicleWarning w) => switch (w) {
       VehicleWarning.lowTirePressure => Icons.tire_repair,
       VehicleWarning.brakesOverheating => Icons.disc_full,
       VehicleWarning.parkingBrakeWhileMoving => Icons.local_parking,
+      VehicleWarning.fuelLeak => Icons.water_drop,
+      VehicleWarning.clutchOverheating => Icons.settings,
+      VehicleWarning.clutchDamaged => Icons.settings,
+      VehicleWarning.drivetrainBroken => Icons.link_off,
     };
 
 String warningLabel(AppLocalizations l10n, VehicleWarning w) => switch (w) {
@@ -28,6 +32,10 @@ String warningLabel(AppLocalizations l10n, VehicleWarning w) => switch (w) {
       VehicleWarning.lowTirePressure => l10n.warningLowTirePressure,
       VehicleWarning.brakesOverheating => l10n.warningBrakesOverheating,
       VehicleWarning.parkingBrakeWhileMoving => l10n.warningParkingBrake,
+      VehicleWarning.fuelLeak => l10n.warningFuelLeak,
+      VehicleWarning.clutchOverheating => l10n.warningClutchOverheating,
+      VehicleWarning.clutchDamaged => l10n.warningClutchDamaged,
+      VehicleWarning.drivetrainBroken => l10n.warningDrivetrainBroken,
     };
 
 /// Warning lights: a big icon with its name pops in the middle of the

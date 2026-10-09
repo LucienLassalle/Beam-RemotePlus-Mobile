@@ -21,7 +21,7 @@ Future<DrivingController> pumpDrivingView(
   tester.view.physicalSize = phoneSize * 2;
   tester.view.devicePixelRatio = 2;
   addTearDown(tester.view.reset);
-  final controller = DrivingController(link: link, settings: settings, onShiftPoint: () {});
+  final controller = DrivingController(link: link, settings: settings, onLimiter: () {});
   addTearDown(controller.dispose);
   await tester.pumpWidget(MaterialApp(
     debugShowCheckedModeBanner: false,

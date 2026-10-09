@@ -86,7 +86,7 @@ Ready-made blocks in `lib/themes/kit/`:
 | `ValueBox` | framed label + value cell (race displays) |
 | `DashFormat` | consistent number formatting (speed, fuel %, distance...) |
 | `RadarView` | top-down radar of the cars around |
-| `DamageView` | body damage zones, flat tyres and tyre temperatures |
+| `DamageView` | body damage zones, radiator, engine, shafts, fuel tank, brakes, flat tyres and tyre temperatures |
 
 ## Colors of the controls and vehicle buttons
 

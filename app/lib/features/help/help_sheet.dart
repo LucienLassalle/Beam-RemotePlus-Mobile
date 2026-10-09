@@ -24,7 +24,7 @@ Future<void> showHelpSheet(BuildContext context) {
               _HelpRow(Icons.drag_handle, Colors.blueAccent, l10n.helpSteeringTouch, l10n.helpSteeringTouchDesc),
             if (settings.tiltSteering && settings.pitchGearShift)
               _HelpRow(Icons.swap_vert, Colors.cyanAccent, l10n.helpGearPitch, l10n.helpGearPitchDesc, modRequired: true),
-            if (settings.volumeKeys)
+            if (settings.hornOnVolume || settings.flashOnVolume)
               _HelpRow(Icons.volume_up, Colors.amberAccent, l10n.helpVolumeKeys, l10n.helpVolumeKeysDesc, modRequired: true),
             _HelpRow(Icons.skip_next, Colors.white54, l10n.helpVehicle, l10n.helpVehicleDesc, modRequired: true),
             _HelpRow(Icons.flip_camera_android, Colors.white54, l10n.helpCamera, l10n.helpCameraDesc, modRequired: true),
