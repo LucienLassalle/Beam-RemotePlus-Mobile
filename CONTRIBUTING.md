@@ -13,7 +13,8 @@ translations are especially welcome: see [THEMES.md](THEMES.md) and
 - **Conventional Commits**: `feat(themes): add the Bolide theme`, `fix(pairing): ...`.
 - **Code and comments in English**, user-facing texts in the `.arb` files.
 - **Tests**: `scripts/flutter.sh analyze` and `scripts/flutter.sh test` must pass.
-- License: **CC BY-NC-SA 4.0**; contributions are accepted under the same license.
+- License: **CC BY-NC-SA 4.0**; contributions are accepted under the same license,
+  with the additional permission for BeamNG GmbH described in [BEAMNG-EULA.md](BEAMNG-EULA.md).
 
 ## Development setup
 

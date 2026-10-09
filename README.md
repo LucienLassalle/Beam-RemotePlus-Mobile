@@ -64,7 +64,9 @@ to build and test.
 ## License
 
 [CC BY-NC-SA 4.0](LICENSE): share and adapt for non-commercial purposes, with
-attribution, under the same license.
+attribution, under the same license. Beam-RemotePlus complies with the
+BeamNG.drive EULA and grants BeamNG GmbH the rights its § 11 asks for: see
+[BEAMNG-EULA.md](BEAMNG-EULA.md).
 
 BeamNG.drive is a registered trademark of BeamNG GmbH. Beam-RemotePlus is an
 independent community project, not affiliated with or endorsed by BeamNG
