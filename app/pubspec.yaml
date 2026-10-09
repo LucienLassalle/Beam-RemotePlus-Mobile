@@ -19,7 +19,7 @@ dependencies:
   # Accelerometer for tilt steering
   sensors_plus: ^6.1.1
   # Runtime camera permission (Android 6+)
-  permission_handler: ^11.3.1
+  permission_handler: ^13.0.2
   # Wi-Fi broadcast address for discovery
   network_info_plus: ^6.1.3
   # Phone name sent during pairing (shown in game, local multiplayer)

@@ -12,8 +12,8 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace = "com.beamngremoteplus.app"
-    // Pinned (instead of flutter.compileSdkVersion): required by wakelock_plus.
-    compileSdk = 36
+    // Pinned (instead of flutter.compileSdkVersion): required by permission_handler.
+    compileSdk = 37
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
