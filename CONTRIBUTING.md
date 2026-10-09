@@ -24,8 +24,8 @@ Only [Podman](https://podman.io) is needed: Flutter and the Android SDK run in
 scripts/flutter.sh test          # unit + widget tests
 scripts/flutter.sh analyze       # lints
 scripts/flutter.sh screenshots   # theme previews in app/test/screenshots/goldens/
-scripts/build_apk.sh 2.1.0       # release APKs in dist/
-adb install -r dist/BeamNG-RemotePlus-2.1.0-arm64-v8a.apk
+scripts/build_apk.sh             # test APKs in dist/ (releases: the CI uses the tag)
+adb install -r dist/Beam-RemotePlus-0.0.0-dev-arm64-v8a.apk
 ```
 
 ## Architecture
