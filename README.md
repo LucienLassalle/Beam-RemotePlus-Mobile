@@ -55,8 +55,9 @@ with sample data.
   damaged, broken drivetrain, parking brake while moving.
 - **Vibrations** with an adjustable strength, each one can be switched off:
   wheelspin, locked wheels, impacts, kerbs, ABS, rev limiter.
-- **Radar and damage panel**: nearby cars, body damage, radiator, engine,
-  driveshafts and axles, fuel tank, brake temperatures, flat tyres, and tyre
+- **Radar and damage panel**: nearby cars, damage schematic in the spirit of the game (body, radiator, engine,
+  driveshafts and axles, brakes, jerrycan with the fuel level), tyre
+  pressures and flat tyres, and tyre
   temperatures when the
   [Tyre Thermals and Wear](https://www.beamng.com/resources/) mod is
   installed in the game.

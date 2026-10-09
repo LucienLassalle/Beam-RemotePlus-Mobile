@@ -9,6 +9,7 @@ import 'package:beam_remoteplus/core/settings/settings_scope.dart';
 import 'package:beam_remoteplus/core/settings/settings_store.dart';
 import 'package:beam_remoteplus/features/settings/settings_sheet.dart';
 import 'package:beam_remoteplus/l10n/generated/app_localizations.dart';
+import 'package:beam_remoteplus/themes/kit/kit.dart';
 import 'package:beam_remoteplus/themes/theme_registry.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -40,6 +41,40 @@ void main() {
     }
   });
 
+  testWidgets('damage schematic', (tester) async {
+    tester.view.physicalSize = const Size(900, 420) * 2;
+    tester.view.devicePixelRatio = 2;
+    addTearDown(tester.view.reset);
+    const wrecked = Telemetry(
+      rpm: 900,
+      engineAt: 0.72,
+      waterTemp: 121,
+      fuel: 0.3,
+      fuelLeak: true,
+      engineDamage: ['radiatorLeak', 'engineLockedUp'],
+      bodyDamage: {'RL': 0.8, 'RR': 0.4, 'MR': 0.1},
+      shafts: ['wheelaxleRL', 'wheelaxleRR'],
+      brokenParts: ['wheelaxleRR'],
+      flatTires: ['RR'],
+      brokenWheels: ['FL'],
+      brokenBrakes: ['RL'],
+      tirePressures: {'FR': 180, 'RL': 120, 'RR': 0},
+      tirePressuresNominal: {'FR': 180, 'RL': 180, 'RR': 180},
+      brakeTemps: {'FR': 90, 'RL': 900, 'RR': 120},
+    );
+    await tester.pumpWidget(const MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: Scaffold(
+        backgroundColor: Colors.black,
+        body: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+          SizedBox(height: 400, child: DamageView(telemetry: sampleTelemetry)),
+          SizedBox(height: 400, child: DamageView(telemetry: wrecked, pressureUnit: PressureUnit.psi)),
+        ]),
+      ),
+    ));
+    await expectLater(find.byType(MaterialApp), matchesGoldenFile('goldens/Damage schematic.png'));
+  });
+
   testWidgets('settings previews', (tester) async {
     tester.view.physicalSize = phoneSize * 2;
     tester.view.devicePixelRatio = 2;
@@ -69,10 +104,12 @@ void main() {
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
     await expectLater(find.byType(MaterialApp), matchesGoldenFile('goldens/Settings - display.png'));
+    await tester.ensureVisible(find.byType(DropdownButton<String>).last);
+    await tester.pumpAndSettle();
     await tester.tap(find.byType(DropdownButton<String>).last);
     await tester.pumpAndSettle();
     await expectLater(find.byType(MaterialApp), matchesGoldenFile('goldens/Settings - themes.png'));
-    await tester.tapAt(const Offset(5, 5));
+    await tester.tap(find.text('Road').last); // picks a theme and closes the menu
     await tester.pumpAndSettle();
     await tester.tap(find.text('Jouabilité'));
     await tester.pumpAndSettle();

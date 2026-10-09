@@ -5,17 +5,20 @@ import 'package:flutter/material.dart';
 import '../../core/protocol/telemetry.dart';
 import 'dash_format.dart';
 
-/// Health of one mechanical part on the schematic.
-enum PartState { ok, warning, broken }
+/// Health of one part on the schematic.
+enum PartState { unknown, ok, warning, broken }
 
-/// Top-down damage schematic:
-/// - the six body zones coloured from grey (intact) to red (wrecked)
-/// - radiator, engine (where it really sits), driveshafts, wheel axles and
-///   fuel tank (with its level), outlined in grey, amber or red
-/// - a tyre at each corner coloured by temperature (blue = cold, green =
-///   working temperature, red = overheating, with the tyre mod), flat tyres
-///   crossed out, torn off wheels dashed
-/// - a brake disc in each wheel coloured by its temperature, with °C
+/// Top-down damage schematic in the spirit of BeamNG.drive's damage app:
+/// every part is a filled shape, green = fine, amber = check, red = broken,
+/// grey = not reported by this car, readable at a glance.
+/// - body: the outline in six zones, green to red as it gets crushed
+/// - radiator (car radiator with its fins) at the front, the engine
+///   (engine pictogram) right behind it, or where it really sits
+/// - driveshafts and wheel axles as thick bars, differentials as discs
+/// - a brake block inside each wheel, coloured by the brake temperature
+/// - the fuel tank as a jerrycan in the boot, filled to the fuel level
+/// - tyres: temperature colour with the tyre mod, crossed out when flat,
+///   dashed when torn off; pressure (and tyre temperature) beside them
 class DamageView extends StatelessWidget {
   final Telemetry telemetry;
   final TemperatureUnit temperatureUnit;
@@ -27,33 +30,44 @@ class DamageView extends StatelessWidget {
     this.pressureUnit = PressureUnit.bar,
   });
 
-  /// Intact = neutral grey, then yellow, orange and red as damage grows.
-  static Color damageColor(double damage) {
-    if (damage <= 0.01) return const Color(0xFF5A6068);
-    final d = (damage * 3).clamp(0.0, 1.0);
-    return d < 0.5 ? Color.lerp(Colors.amber, Colors.orange, d * 2)! : Color.lerp(Colors.orange, Colors.red, (d - 0.5) * 2)!;
-  }
+  /// Width / height of the schematic (car + labels on both sides).
+  static const double aspectRatio = _DamagePainter.width / _DamagePainter.height;
 
-  static Color heatColor(double? heat) {
-    if (heat == null) return Colors.white24;
-    if (heat < 0) return Color.lerp(Colors.greenAccent, Colors.lightBlueAccent, -heat)!;
-    return Color.lerp(Colors.greenAccent, Colors.redAccent, heat)!;
-  }
-
-  /// Grey while cold, amber when hot, red from ~700 °C or when fading.
-  static Color brakeColor(double? temp, {bool fading = false}) {
-    if (fading) return Colors.redAccent;
-    if (temp == null) return Colors.white24;
-    if (temp <= 150) return Colors.white54;
-    if (temp <= 450) return Color.lerp(Colors.white54, Colors.amber, (temp - 150) / 300)!;
-    return Color.lerp(Colors.amber, Colors.redAccent, ((temp - 450) / 250).clamp(0.0, 1.0))!;
-  }
+  static const Color okColor = Color(0xFF43C443);
+  static const Color warningColor = Color(0xFFFFB300);
+  static const Color brokenColor = Color(0xFFFF3B30);
+  static const Color unknownColor = Color(0xFF5A6068);
 
   static Color partColor(PartState s) => switch (s) {
-        PartState.ok => Colors.white60,
-        PartState.warning => Colors.amber,
-        PartState.broken => Colors.redAccent,
+        PartState.unknown => unknownColor,
+        PartState.ok => okColor,
+        PartState.warning => warningColor,
+        PartState.broken => brokenColor,
       };
+
+  /// Body zone: green when intact, then yellow, orange and red.
+  static Color damageColor(double damage) {
+    if (damage <= 0.01) return okColor;
+    final d = (damage * 3).clamp(0.0, 1.0);
+    return d < 0.5 ? Color.lerp(Colors.yellow, Colors.orange, d * 2)! : Color.lerp(Colors.orange, brokenColor, (d - 0.5) * 2)!;
+  }
+
+  /// Tyre temperature (tyre mod): blue = cold, green = working, red = hot.
+  static Color heatColor(double? heat) {
+    if (heat == null) return okColor;
+    if (heat < 0) return Color.lerp(okColor, Colors.lightBlueAccent, -heat)!;
+    return Color.lerp(okColor, brokenColor, heat)!;
+  }
+
+  /// Brake: green while cool, amber from 300 °C, red from ~550 °C or when
+  /// fading.
+  static Color brakeColor(double? temp, {bool fading = false}) {
+    if (fading) return brokenColor;
+    if (temp == null) return okColor;
+    if (temp <= 300) return okColor;
+    if (temp <= 450) return Color.lerp(okColor, warningColor, (temp - 300) / 150)!;
+    return Color.lerp(warningColor, brokenColor, ((temp - 450) / 100).clamp(0.0, 1.0))!;
+  }
 
   static const _engineFailures = {
     'engineLockedUp', 'engineHydrolocked', 'blockMelted', 'cylinderWallsMelted',
@@ -73,19 +87,36 @@ class DamageView extends StatelessWidget {
     return PartState.ok;
   }
 
+  static PartState fuelTankState(Telemetry t) {
+    if (t.fuelLeak == true) return PartState.broken;
+    if (t.lowFuel == true || (t.fuel != null && t.fuel! < 0.1)) return PartState.warning;
+    return t.fuel == null ? PartState.unknown : PartState.ok;
+  }
+
   @override
   Widget build(BuildContext context) => AspectRatio(
-        aspectRatio: 0.6,
+        aspectRatio: aspectRatio,
         child: CustomPaint(painter: _DamagePainter(telemetry, temperatureUnit, pressureUnit)),
       );
 }
 
-/// Top-down car drawn in a 100x200 design box (front at the top).
+/// Drawn in a [width] x [height] design box: the car (front at the top)
+/// in the middle 100 units, labels in the side margins.
 class _DamagePainter extends CustomPainter {
   final Telemetry t;
   final TemperatureUnit temperatureUnit;
   final PressureUnit pressureUnit;
   _DamagePainter(this.t, this.temperatureUnit, this.pressureUnit);
+
+  static const double width = 164;
+  static const double height = 200;
+  static const double margin = (width - 100) / 2;
+
+  static const double frontAxleY = 48;
+  static const double rearAxleY = 154;
+
+  /// Engine of a classic front-engined car when the mod does not say.
+  static const double defaultEngineAt = 0.2;
 
   static const _zones = [
     ['FL', 'FR'],
@@ -93,213 +124,317 @@ class _DamagePainter extends CustomPainter {
     ['RL', 'RR'],
   ];
 
-  static const double frontAxleY = 51;
-  static const double rearAxleY = 151;
-
-  /// Engine of a classic front-engined car when the mod does not say.
-  static const double defaultEngineAt = 0.2;
-
-  static Path body() => Path()
-    ..moveTo(50, 4)
-    ..cubicTo(78, 4, 86, 14, 87, 34) // front right corner
-    ..lineTo(89, 92)
-    ..lineTo(88, 170)
-    ..cubicTo(87, 190, 76, 196, 50, 196) // rear
-    ..cubicTo(24, 196, 13, 190, 12, 170)
-    ..lineTo(11, 92)
-    ..lineTo(13, 34)
-    ..cubicTo(14, 14, 22, 4, 50, 4)
-    ..close();
-
-  static const _wheels = {
-    'FL': Rect.fromLTWH(3, 36, 14, 30),
-    'FR': Rect.fromLTWH(83, 36, 14, 30),
-    'RL': Rect.fromLTWH(3, 136, 14, 30),
-    'RR': Rect.fromLTWH(83, 136, 14, 30),
+  static const _tyres = {
+    'FL': Rect.fromLTWH(1, 32, 13, 32),
+    'FR': Rect.fromLTWH(86, 32, 13, 32),
+    'RL': Rect.fromLTWH(1, 138, 13, 32),
+    'RR': Rect.fromLTWH(86, 138, 13, 32),
   };
 
-  static Paint _stroke(Color color, [double width = 1.6]) => Paint()
-    ..color = color
+  static final Paint _outline = Paint()
+    ..color = Colors.black
     ..style = PaintingStyle.stroke
-    ..strokeWidth = width
-    ..strokeCap = StrokeCap.round;
+    ..strokeWidth = 1.1
+    ..strokeJoin = StrokeJoin.round;
 
-  static final Paint _partFill = Paint()..color = Colors.black.withValues(alpha: 0.55);
+  static Paint _fill(Color c) => Paint()..color = c;
 
-  void _label(Canvas canvas, String text, Offset at, Color color, {double size = 11, bool alignRight = false}) {
-    final tp = TextPainter(
-      text: TextSpan(text: text, style: TextStyle(color: color, fontSize: size, fontFamily: 'Roboto')),
-      textDirection: TextDirection.ltr,
-    )..layout();
-    tp.paint(canvas, Offset(alignRight ? at.dx - tp.width : at.dx, at.dy - tp.height / 2));
+  /// Filled shape with a black outline, like the game's damage app.
+  static void _part(Canvas canvas, Path path, Color color) {
+    canvas.drawPath(path, _fill(color));
+    canvas.drawPath(path, _outline);
   }
+
+  static Path _rrect(Rect r, double radius) => Path()..addRRect(RRect.fromRectAndRadius(r, Radius.circular(radius)));
+
+  static Path body() => Path()
+    ..moveTo(50, 3)
+    ..cubicTo(72, 3, 80, 9, 81, 26)
+    ..lineTo(83, 96)
+    ..lineTo(82, 176)
+    ..cubicTo(81, 192, 72, 197, 50, 197)
+    ..cubicTo(28, 197, 19, 192, 18, 176)
+    ..lineTo(17, 96)
+    ..lineTo(19, 26)
+    ..cubicTo(20, 9, 28, 3, 50, 3)
+    ..close();
+
+  bool get _rearEngine => (t.engineAt ?? defaultEngineAt) > 0.5;
+  double get _engineY => (3 + (t.engineAt ?? defaultEngineAt) * 194).clamp(36.0, 168.0);
 
   @override
   void paint(Canvas canvas, Size size) {
-    final s = math.min(size.width / 100, size.height / 200);
-    canvas.translate((size.width - 100 * s) / 2, (size.height - 200 * s) / 2);
+    final s = math.min(size.width / width, size.height / height);
+    canvas.translate((size.width - width * s) / 2, (size.height - height * s) / 2);
     canvas.scale(s);
-
-    // Wheels first: the body covers their inner half, like seen from above.
-    _wheels.forEach((name, r) {
-      final rr = RRect.fromRectAndRadius(r, const Radius.circular(4));
-      if (t.brokenWheels.contains(name)) {
-        _dashed(canvas, rr, _stroke(Colors.redAccent, 1.4));
-        return;
-      }
-      final flat = t.flatTires.contains(name);
-      final tyre = t.tyres?[name];
-      canvas.drawRRect(rr, Paint()..color = flat ? Colors.redAccent : DamageView.heatColor(tyre?.heat));
-      if (flat) {
-        final x = Paint()
-          ..color = Colors.black
-          ..strokeWidth = 2.5;
-        canvas.drawLine(r.topLeft, r.bottomRight, x);
-        canvas.drawLine(r.topRight, r.bottomLeft, x);
-      }
-    });
-
-    final outline = body();
     canvas.save();
-    canvas.clipPath(outline);
-    // Damage zones: thirds of the length, halves of the width.
+    canvas.translate(margin, 0);
+
+    _bodyZones(canvas);
+    _drivetrain(canvas);
+    _radiator(canvas);
+    _engine(canvas);
+    _fuelTank(canvas);
+    _wheels(canvas);
+    canvas.restore();
+    _labels(canvas);
+  }
+
+  /// The outline, thick, coloured zone by zone (thirds of the length,
+  /// halves of the width).
+  void _bodyZones(Canvas canvas) {
+    final outline = body();
+    canvas.drawPath(outline, _fill(Colors.black.withValues(alpha: 0.35)));
     for (var row = 0; row < 3; row++) {
       for (var col = 0; col < 2; col++) {
         final damage = t.bodyDamage?[_zones[row][col]] ?? 0;
-        canvas.drawRect(Rect.fromLTWH(col * 50.0, row * 200 / 3, 50, 200 / 3), Paint()..color = DamageView.damageColor(damage));
+        canvas.save();
+        canvas.clipRect(Rect.fromLTWH(col * 50.0, row * height / 3, 50, height / 3));
+        canvas.drawPath(
+          outline,
+          Paint()
+            ..color = DamageView.damageColor(damage)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 5,
+        );
+        canvas.restore();
       }
     }
-    _glass(canvas);
-    _mechanicals(canvas);
-    canvas.restore();
-
-    // Mirrors and outline.
-    canvas.drawPath(outline, _stroke(Colors.white.withValues(alpha: 0.55), 1.5));
-    final mirror = Paint()..color = Colors.white.withValues(alpha: 0.4);
-    canvas.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTWH(4, 66, 8, 5), const Radius.circular(2)), mirror);
-    canvas.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTWH(88, 66, 8, 5), const Radius.circular(2)), mirror);
-
-    _brakesAndLabels(canvas);
-  }
-
-  void _glass(Canvas canvas) {
-    final glass = Paint()..color = Colors.black.withValues(alpha: 0.35);
-    canvas.drawPath(
-        Path()
-          ..moveTo(22, 62)
-          ..quadraticBezierTo(50, 52, 78, 62)
-          ..lineTo(74, 84)
-          ..quadraticBezierTo(50, 78, 26, 84)
-          ..close(),
-        glass);
-    canvas.drawPath(
-        Path()
-          ..moveTo(26, 138)
-          ..quadraticBezierTo(50, 142, 74, 138)
-          ..lineTo(77, 156)
-          ..quadraticBezierTo(50, 162, 23, 156)
-          ..close(),
-        glass);
-  }
-
-  /// Radiator, engine, shafts and fuel tank, over the body zones.
-  void _mechanicals(Canvas canvas) {
-    final hasEngine = t.rpm != null || t.engineAt != null || t.engineDamage.isNotEmpty;
-    final engineY = (4 + (t.engineAt ?? defaultEngineAt) * 192).clamp(22.0, 178.0);
-    final broken = t.brokenParts.toSet();
-
-    // Shafts first, the parts are drawn over their ends. A dark edge keeps
-    // them readable over any body colour.
-    final edge = _stroke(Colors.black.withValues(alpha: 0.7), 4);
-    void shaft(String name, Offset from, Offset to) {
-      canvas.drawLine(from, to, edge);
-      canvas.drawLine(from, to, _stroke(DamageView.partColor(broken.contains(name) ? PartState.broken : PartState.ok), 2.2));
+    // Zone separators, so a red corner reads as a corner.
+    final sep = Paint()
+      ..color = Colors.black
+      ..strokeWidth = 1.2;
+    for (final y in [height / 3, height * 2 / 3]) {
+      canvas.drawLine(Offset(14, y), Offset(21, y), sep);
+      canvas.drawLine(Offset(79, y), Offset(86, y), sep);
     }
+  }
 
+  PartState _shaftState(String name) => t.brokenParts.contains(name) ? PartState.broken : PartState.ok;
+
+  /// Axles, driveshafts and differentials as thick bars.
+  void _drivetrain(Canvas canvas) {
+    final hasEngine = _hasEngine;
     for (final name in t.shafts) {
-      if (name.startsWith('wheelaxle') && name.length >= 11) {
-        final wheel = name.substring(9, 11);
-        final y = wheel.startsWith('F') ? frontAxleY : rearAxleY;
-        shaft(name, Offset(50, y), Offset(wheel.endsWith('L') ? 16.0 : 84.0, y));
-      } else if (name.startsWith('driveshaft') && hasEngine) {
-        shaft(name, Offset(50, engineY), Offset(50, name.endsWith('_F') ? frontAxleY : rearAxleY));
+      if (name.startsWith('driveshaft') && hasEngine) {
+        final toFront = name.endsWith('_F');
+        final targetY = toFront ? frontAxleY : rearAxleY;
+        final fromY = _engineY + (targetY > _engineY ? 12 : -12);
+        final top = math.min(fromY, targetY), bottom = math.max(fromY, targetY);
+        _part(canvas, _rrect(Rect.fromLTRB(47.5, top, 52.5, bottom), 2), DamageView.partColor(_shaftState(name)));
       }
     }
-    // Differentials where axles meet.
+    for (final name in t.shafts) {
+      if (!name.startsWith('wheelaxle') || name.length < 11) continue;
+      final wheel = name.substring(9, 11);
+      final y = wheel.startsWith('F') ? frontAxleY : rearAxleY;
+      final r = wheel.endsWith('L') ? Rect.fromLTRB(21, y - 2.6, 45, y + 2.6) : Rect.fromLTRB(55, y - 2.6, 79, y + 2.6);
+      _part(canvas, _rrect(r, 2), DamageView.partColor(_shaftState(name)));
+    }
     for (final (axle, y) in [('F', frontAxleY), ('R', rearAxleY)]) {
       if (t.shafts.any((n) => n.startsWith('wheelaxle$axle'))) {
-        canvas.drawCircle(Offset(50, y), 4, _partFill);
-        canvas.drawCircle(Offset(50, y), 4, _stroke(Colors.white60, 1.2));
+        _part(canvas, Path()..addOval(Rect.fromCircle(center: Offset(50, y), radius: 6.5)), DamageView.okColor);
       }
-    }
-
-    // Radiator at the nose (cars with a coolant temperature).
-    if (t.waterTemp != null || DamageView.radiatorState(t) != PartState.ok) {
-      final r = RRect.fromRectAndRadius(const Rect.fromLTWH(32, 9, 36, 6), const Radius.circular(1.5));
-      canvas.drawRRect(r, _partFill);
-      canvas.drawRRect(r, _stroke(DamageView.partColor(DamageView.radiatorState(t)), 1.4));
-      for (var x = 36.0; x < 68; x += 4) {
-        canvas.drawLine(Offset(x, 10.5), Offset(x, 13.5), _stroke(Colors.white24, 0.6));
-      }
-    }
-
-    if (hasEngine) {
-      final r = RRect.fromRectAndRadius(Rect.fromCenter(center: Offset(50, engineY), width: 30, height: 20), const Radius.circular(3));
-      final color = DamageView.partColor(DamageView.engineState(t));
-      canvas.drawRRect(r, _partFill);
-      canvas.drawRRect(r, _stroke(color, 1.6));
-      // Cylinders.
-      for (var i = 0; i < 3; i++) {
-        canvas.drawCircle(Offset(42 + i * 8.0, engineY), 2.4, _stroke(color.withValues(alpha: 0.7), 0.9));
-      }
-    }
-
-    // Fuel tank: under the rear seats, or ahead of a mid/rear engine.
-    if (t.fuel != null || t.fuelLeak == true) {
-      final rearEngine = (t.engineAt ?? defaultEngineAt) > 0.5;
-      final y = rearEngine ? (engineY - 36).clamp(70.0, 120.0) : 118.0;
-      final r = Rect.fromLTWH(33, y, 34, 12);
-      canvas.drawRRect(RRect.fromRectAndRadius(r, const Radius.circular(2)), _partFill);
-      final level = (t.fuel ?? 0).clamp(0.0, 1.0);
-      if (level > 0) {
-        canvas.drawRRect(
-          RRect.fromRectAndRadius(Rect.fromLTWH(r.left + 1.5, r.top + 1.5, (r.width - 3) * level, r.height - 3), const Radius.circular(1)),
-          Paint()..color = (level < 0.12 ? Colors.amber : Colors.white38),
-        );
-      }
-      final leak = t.fuelLeak == true;
-      canvas.drawRRect(RRect.fromRectAndRadius(r, const Radius.circular(2)),
-          _stroke(DamageView.partColor(leak ? PartState.broken : PartState.ok), 1.4));
-      if (leak) canvas.drawCircle(Offset(r.center.dx, r.bottom + 4), 2.2, Paint()..color = Colors.redAccent);
     }
   }
 
-  /// Brake discs over the wheels, tyre and brake temperatures beside them.
-  void _brakesAndLabels(Canvas canvas) {
-    _wheels.forEach((name, r) {
+  bool get _hasEngine => t.rpm != null || t.engineAt != null || t.engineDamage.isNotEmpty;
+
+  /// Car radiator at the nose: header tanks top and bottom, fins between.
+  void _radiator(Canvas canvas) {
+    if (t.waterTemp == null && DamageView.radiatorState(t) == PartState.ok) return;
+    final color = DamageView.partColor(DamageView.radiatorState(t));
+    const core = Rect.fromLTRB(30, 11, 70, 21);
+    _part(canvas, _rrect(core, 1), color);
+    final fin = Paint()
+      ..color = Colors.black.withValues(alpha: 0.6)
+      ..strokeWidth = 0.8;
+    for (var x = 33.0; x < 70; x += 3) {
+      canvas.drawLine(Offset(x, core.top + 1), Offset(x, core.bottom - 1), fin);
+    }
+    _part(canvas, _rrect(const Rect.fromLTRB(28, 8.5, 72, 11.5), 1.2), color); // top tank
+    _part(canvas, _rrect(const Rect.fromLTRB(28, 20.5, 72, 23.5), 1.2), color); // bottom tank
+    _part(canvas, _rrect(const Rect.fromLTRB(66, 5.5, 69, 8.5), 0.6), color); // filler cap
+  }
+
+  /// Engine pictogram (like a check-engine light): block, valve cover with
+  /// its filler cap, intake on the left, fan on the right, sump below.
+  void _engine(Canvas canvas) {
+    if (!_hasEngine) return;
+    final color = DamageView.partColor(DamageView.engineState(t));
+    final y = _engineY;
+    final shape = Path()
+      // valve cover and cap
+      ..moveTo(40, y - 9)
+      ..lineTo(44, y - 9)
+      ..lineTo(44, y - 12)
+      ..lineTo(52, y - 12)
+      ..lineTo(52, y - 9)
+      ..lineTo(58, y - 9)
+      // block, then the fan housing on the right
+      ..lineTo(61, y - 5)
+      ..lineTo(64, y - 5)
+      ..lineTo(64, y - 8)
+      ..lineTo(67, y - 8)
+      ..lineTo(67, y + 7)
+      ..lineTo(64, y + 7)
+      ..lineTo(64, y + 4)
+      ..lineTo(61, y + 4)
+      // sump
+      ..lineTo(57, y + 10)
+      ..lineTo(41, y + 10)
+      ..lineTo(38, y + 5)
+      // intake on the left
+      ..lineTo(35, y + 5)
+      ..lineTo(35, y + 1)
+      ..lineTo(32, y + 1)
+      ..lineTo(32, y - 4)
+      ..lineTo(35, y - 4)
+      ..lineTo(35, y - 6)
+      ..lineTo(38, y - 6)
+      ..close();
+    _part(canvas, shape, color);
+  }
+
+  /// Jerrycan in the boot (ahead of the cabin for mid/rear engines),
+  /// filled from the bottom to the fuel level.
+  void _fuelTank(Canvas canvas) {
+    final state = DamageView.fuelTankState(t);
+    if (state == PartState.unknown && t.fuel == null) return;
+    final top = _rearEngine ? 58.0 : 163.0;
+    final color = DamageView.partColor(state);
+    // Spout on the cut corner, then the can.
+    _part(
+      canvas,
+      Path()
+        ..moveTo(54, top + 6)
+        ..lineTo(58.5, top + 0.5)
+        ..lineTo(62.5, top + 4)
+        ..lineTo(58, top + 9.5)
+        ..close(),
+      color,
+    );
+    final can = Path()
+      ..moveTo(39, top + 5)
+      ..lineTo(54, top + 5)
+      ..lineTo(61, top + 12)
+      ..lineTo(61, top + 28)
+      ..lineTo(39, top + 28)
+      ..close();
+    canvas.drawPath(can, _fill(const Color(0xFF3A3F45)));
+    final level = (t.fuel ?? 1).clamp(0.0, 1.0);
+    canvas.save();
+    canvas.clipPath(can);
+    canvas.drawRect(Rect.fromLTRB(38, top + 28 - 23 * level, 62, top + 28), _fill(color));
+    canvas.restore();
+    canvas.drawPath(can, _outline);
+    // Carrying handle with its hole, and the X pressed in the side.
+    _part(canvas, _rrect(Rect.fromLTRB(40, top + 0.5, 52, top + 5), 1.5), color);
+    canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromLTRB(42.5, top + 1.8, 49.5, top + 3.7), const Radius.circular(1)),
+        _fill(Colors.black));
+    final x = Paint()
+      ..color = Colors.black.withValues(alpha: 0.75)
+      ..strokeWidth = 1.2;
+    canvas.drawRect(Rect.fromLTRB(42, top + 14, 58, top + 26), _outline);
+    canvas.drawLine(Offset(42, top + 14), Offset(58, top + 26), x);
+    canvas.drawLine(Offset(58, top + 14), Offset(42, top + 26), x);
+  }
+
+  void _wheels(Canvas canvas) {
+    final low = t.lowPressureTires().toSet();
+    _tyres.forEach((name, r) {
+      if (t.brokenWheels.contains(name)) {
+        _dashed(canvas, RRect.fromRectAndRadius(r, const Radius.circular(4)), Paint()
+          ..color = DamageView.brokenColor
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.4);
+        return;
+      }
+      final flat = t.flatTires.contains(name);
+      final heat = t.tyres?[name]?.heat;
+      final tyreColor = flat
+          ? DamageView.brokenColor
+          : low.contains(name)
+              ? DamageView.warningColor
+              : DamageView.heatColor(heat);
+      _part(canvas, _rrect(r, 4), tyreColor);
+      // Tread lines.
+      final tread = Paint()
+        ..color = Colors.black.withValues(alpha: 0.35)
+        ..strokeWidth = 0.8;
+      for (var y = r.top + 5; y < r.bottom - 3; y += 5) {
+        canvas.drawLine(Offset(r.left + 2, y), Offset(r.right - 2, y), tread);
+      }
+      if (flat) {
+        final x = Paint()
+          ..color = Colors.black
+          ..strokeWidth = 2.2;
+        canvas.drawLine(r.topLeft, r.bottomRight, x);
+        canvas.drawLine(r.topRight, r.bottomLeft, x);
+      }
+
+      // Brake block between the tyre and the axle.
       final left = name.endsWith('L');
-      final labelX = left ? r.left - 2 : r.right + 2;
+      final brake = left
+          ? Rect.fromLTRB(r.right + 1, r.center.dy - 11, r.right + 7, r.center.dy + 11)
+          : Rect.fromLTRB(r.left - 7, r.center.dy - 11, r.left - 1, r.center.dy + 11);
+      final molten = t.brokenBrakes.contains(name);
+      final temp = t.brakeTemps?[name] ?? t.tyres?[name]?.brake;
+      final known = temp != null || molten || t.hotBrakes.contains(name) || t.brakeTemps != null;
+      final brakeColor = !known
+          ? DamageView.unknownColor
+          : molten
+              ? DamageView.brokenColor
+              : DamageView.brakeColor(temp, fading: t.hotBrakes.contains(name));
+      _part(canvas, _rrect(brake, 1.5), brakeColor);
+      if (molten) {
+        final x = Paint()
+          ..color = Colors.black
+          ..strokeWidth = 1.2;
+        canvas.drawLine(brake.topLeft, brake.bottomRight, x);
+        canvas.drawLine(brake.topRight, brake.bottomLeft, x);
+      }
+    });
+  }
+
+  /// Beside each tyre: its pressure, its temperature (tyre mod) and the
+  /// brake temperature once the brake gets hot.
+  void _labels(Canvas canvas) {
+    _tyres.forEach((name, r) {
+      final left = name.endsWith('L');
+      final x = left ? margin - 2 : margin + 100 + 2;
+      final pressure = t.tirePressures?[name];
       final tyreTemp = t.tyres?[name]?.temp;
       final brakeTemp = t.brakeTemps?[name] ?? t.tyres?[name]?.brake;
-      final fading = t.hotBrakes.contains(name);
-      if (!t.brokenWheels.contains(name) && (brakeTemp != null || fading || t.brokenBrakes.contains(name))) {
-        final c = Offset(left ? r.left + 6 : r.right - 6, r.center.dy);
-        final color = DamageView.brakeColor(brakeTemp, fading: fading || t.brokenBrakes.contains(name));
-        canvas.drawCircle(c, 4.2, Paint()..color = Colors.black.withValues(alpha: 0.6));
-        canvas.drawCircle(c, 4.2, _stroke(color, 1.6));
-        canvas.drawCircle(c, 1.2, Paint()..color = color);
-        if (t.brokenBrakes.contains(name)) {
-          canvas.drawLine(c - const Offset(3, 3), c + const Offset(3, 3), _stroke(Colors.redAccent, 1.4));
-        }
-      }
-      final lines = <(String, Color, double)>[
-        if (tyreTemp != null) ('${DashFormat.temperature(tyreTemp, temperatureUnit)}°', Colors.white, 11),
-        if (brakeTemp != null) ('${DashFormat.temperature(brakeTemp, temperatureUnit)}°', DamageView.brakeColor(brakeTemp, fading: fading), 9),
+      final low = t.lowPressureTires().contains(name);
+      // (text, colour, is the brake temperature)
+      final lines = <(String, Color, bool)>[
+        if (pressure != null)
+          (DashFormat.pressure(pressure, pressureUnit), low ? DamageView.warningColor : Colors.white, false),
+        if (tyreTemp != null)
+          ('${DashFormat.temperature(tyreTemp, temperatureUnit)}°', DamageView.heatColor(t.tyres?[name]?.heat), false),
+        if (brakeTemp != null && brakeTemp > 300)
+          (
+            '${DashFormat.temperature(brakeTemp, temperatureUnit)}°',
+            DamageView.brakeColor(brakeTemp, fading: t.hotBrakes.contains(name)),
+            true,
+          ),
       ];
-      var y = r.center.dy - (lines.length - 1) * 6.5;
-      for (final (text, color, size) in lines) {
-        _label(canvas, text, Offset(labelX, y), color, size: size, alignRight: left);
-        y += 13;
+      const lineHeight = 11.0;
+      var y = r.center.dy - (lines.length - 1) * lineHeight / 2;
+      for (final (text, color, brake) in lines) {
+        final tp = TextPainter(
+          text: TextSpan(text: text, style: TextStyle(color: color, fontSize: 9.5, fontFamily: 'Roboto', fontWeight: FontWeight.w600)),
+          textDirection: TextDirection.ltr,
+        )..layout(maxWidth: margin - 8);
+        final dx = left ? x - tp.width : x + (brake ? 6 : 0);
+        tp.paint(canvas, Offset(dx, y - tp.height / 2));
+        if (brake) {
+          // Small brake block before the value: tells it from the tyre one.
+          final markerX = left ? dx - 6 : x;
+          canvas.drawRRect(RRect.fromRectAndRadius(Rect.fromLTWH(markerX, y - 4, 3.5, 8), const Radius.circular(1)), _fill(color));
+        }
+        y += lineHeight;
       }
     });
   }
