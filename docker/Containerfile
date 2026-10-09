@@ -3,7 +3,7 @@
 # (.github/workflows/*.yml).
 FROM docker.io/eclipse-temurin:17-jdk-jammy
 
-ARG FLUTTER_VERSION=3.27.1
+ARG FLUTTER_VERSION=3.47.7
 ARG ANDROID_CMDLINE_TOOLS_VERSION=11076708
 
 ENV DEBIAN_FRONTEND=noninteractive \
@@ -36,7 +36,8 @@ RUN yes | sdkmanager --licenses >/dev/null \
         "platforms;android-36" \
         "build-tools;34.0.0" \
         "build-tools;35.0.0" \
-        "ndk;27.0.12077973" >/dev/null
+        "build-tools;36.0.0" \
+        "ndk;28.2.13676358" >/dev/null
 
 # --- Flutter SDK ---
 RUN curl -fsSL -o /tmp/flutter.tar.xz \

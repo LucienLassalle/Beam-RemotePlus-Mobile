@@ -3,6 +3,8 @@ include: package:flutter_lints/flutter.yaml
 analyzer:
   exclude:
     - lib/l10n/generated/**
+    - build/**
+    - android/**
   language:
     strict-casts: true
     strict-raw-types: true
