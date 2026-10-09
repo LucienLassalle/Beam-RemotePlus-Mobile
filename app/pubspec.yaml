@@ -17,7 +17,7 @@ dependencies:
   # Pairing QR code shown by BeamNG.drive
   mobile_scanner: ^6.0.2
   # Accelerometer for tilt steering
-  sensors_plus: ^6.1.1
+  sensors_plus: ^7.1.1
   # Runtime camera permission (Android 6+)
   permission_handler: ^13.0.2
   # Wi-Fi broadcast address for discovery
