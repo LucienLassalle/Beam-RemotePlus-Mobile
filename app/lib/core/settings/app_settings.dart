@@ -42,6 +42,10 @@ class AppSettings {
   final bool hapticImpacts;
   final bool hapticKerbs;
   final bool hapticLimiter;
+  final bool hapticAbs;
+
+  /// Strength of every vibration, [minHapticStrength]..1.
+  final double hapticStrength;
 
   // Controls --------------------------------------------------------------------
 
@@ -81,6 +85,8 @@ class AppSettings {
     this.hapticImpacts = true,
     this.hapticKerbs = true,
     this.hapticLimiter = false,
+    this.hapticAbs = true,
+    this.hapticStrength = 1,
     this.hornOnVolume = true,
     this.flashOnVolume = true,
     this.showActionsBar = true,
@@ -89,7 +95,9 @@ class AppSettings {
   });
 
   /// Some road-feel vibration is enabled.
-  bool get anyRoadHaptics => hapticSpin || hapticLock || hapticImpacts || hapticKerbs;
+  bool get anyRoadHaptics => hapticSpin || hapticLock || hapticImpacts || hapticKerbs || hapticAbs;
+
+  static const double minHapticStrength = 0.1;
 
   // Sentinel so copyWith can set localeCode back to null (system language).
   static const Object _keep = Object();
@@ -113,6 +121,8 @@ class AppSettings {
     bool? hapticImpacts,
     bool? hapticKerbs,
     bool? hapticLimiter,
+    bool? hapticAbs,
+    double? hapticStrength,
     bool? hornOnVolume,
     bool? flashOnVolume,
     bool? showActionsBar,
@@ -138,6 +148,8 @@ class AppSettings {
       hapticImpacts: hapticImpacts ?? this.hapticImpacts,
       hapticKerbs: hapticKerbs ?? this.hapticKerbs,
       hapticLimiter: hapticLimiter ?? this.hapticLimiter,
+      hapticAbs: hapticAbs ?? this.hapticAbs,
+      hapticStrength: hapticStrength ?? this.hapticStrength,
       hornOnVolume: hornOnVolume ?? this.hornOnVolume,
       flashOnVolume: flashOnVolume ?? this.flashOnVolume,
       showActionsBar: showActionsBar ?? this.showActionsBar,
@@ -165,6 +177,8 @@ class AppSettings {
         'hapticImpacts': hapticImpacts,
         'hapticKerbs': hapticKerbs,
         'hapticLimiter': hapticLimiter,
+        'hapticAbs': hapticAbs,
+        'hapticStrength': hapticStrength,
         'hornOnVolume': hornOnVolume,
         'flashOnVolume': flashOnVolume,
         'showActionsBar': showActionsBar,
@@ -187,6 +201,7 @@ class AppSettings {
     final rotation = range is num && range >= minRotationRange && range <= maxRotationRange ? range.toDouble() : d.rotationRangeDeg;
     final volumeKeys = pick('volumeKeys', true);
     final roadHaptics = pick('roadHaptics', true);
+    final strength = json['hapticStrength'];
     return AppSettings(
       themeName: pick('themeName', d.themeName),
       localeCode: json['localeCode'] is String ? json['localeCode'] as String : null,
@@ -206,6 +221,8 @@ class AppSettings {
       hapticImpacts: pick('hapticImpacts', roadHaptics),
       hapticKerbs: pick('hapticKerbs', roadHaptics),
       hapticLimiter: pick('hapticLimiter', pick('shiftHaptics', d.hapticLimiter)),
+      hapticAbs: pick('hapticAbs', roadHaptics),
+      hapticStrength: strength is num && strength >= minHapticStrength && strength <= 1 ? strength.toDouble() : d.hapticStrength,
       hornOnVolume: pick('hornOnVolume', volumeKeys),
       flashOnVolume: pick('flashOnVolume', volumeKeys),
       showActionsBar: pick('showActionsBar', d.showActionsBar),

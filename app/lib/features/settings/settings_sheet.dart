@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../core/platform/vibrator.dart';
 import '../../core/settings/app_settings.dart';
 import '../../core/settings/settings_scope.dart';
 import '../../l10n/generated/app_localizations.dart';
@@ -326,7 +327,21 @@ class _GameplayTab extends StatelessWidget {
           _switch(l10n.settingsHapticLock, null, s.hapticLock, (v) => _set(context, (s) => s.copyWith(hapticLock: v))),
           _switch(l10n.settingsHapticImpacts, null, s.hapticImpacts, (v) => _set(context, (s) => s.copyWith(hapticImpacts: v))),
           _switch(l10n.settingsHapticKerbs, null, s.hapticKerbs, (v) => _set(context, (s) => s.copyWith(hapticKerbs: v))),
+          _switch(l10n.settingsHapticAbs, null, s.hapticAbs, (v) => _set(context, (s) => s.copyWith(hapticAbs: v))),
           _switch(l10n.settingsHapticLimiter, null, s.hapticLimiter, (v) => _set(context, (s) => s.copyWith(hapticLimiter: v))),
+          ListTile(
+            title: Text(l10n.settingsHapticStrength),
+            subtitle: Slider(
+              value: s.hapticStrength,
+              min: AppSettings.minHapticStrength,
+              divisions: 9,
+              label: '${(s.hapticStrength * 100).round()} %',
+              onChanged: (v) => _set(context, (s) => s.copyWith(hapticStrength: v)),
+              // Lets the user feel the new strength.
+              onChangeEnd: (v) => unawaited(Vibrator.pulse(80, (255 * v).round())),
+            ),
+            trailing: Text('${(s.hapticStrength * 100).round()} %'),
+          ),
         ],
       ),
     ]);

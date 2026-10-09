@@ -23,6 +23,9 @@ enum HapticKind {
 
   /// Vertical shocks: kerbs, rough road.
   kerb,
+
+  /// ABS working: a quick pulsing, like a real brake pedal.
+  abs,
 }
 
 /// Turns telemetry into "road feel" vibrations. Pure, unit-tested.
@@ -42,7 +45,11 @@ class HapticsEngine {
   double? _gx, _gy, _gz;
   DateTime _last = DateTime.fromMillisecondsSinceEpoch(0);
 
-  static const Set<HapticKind> all = {HapticKind.spin, HapticKind.lock, HapticKind.impact, HapticKind.kerb};
+  static const Set<HapticKind> all = {HapticKind.spin, HapticKind.lock, HapticKind.impact, HapticKind.kerb, HapticKind.abs};
+
+  /// One ABS pulse; repeated at most every [minGap] while the ABS works,
+  /// which gives the ~10 Hz pulsing of a real pedal.
+  static const Pulse absPulse = Pulse(30, 170);
 
   Pulse? update(Telemetry t, DateTime now, {Set<HapticKind> enabled = all}) {
     final pulse = _compute(t, enabled);
@@ -68,6 +75,7 @@ class HapticsEngine {
       final jolt = dx * dx + dy * dy + dz * dz;
       if (jolt > impactThreshold * impactThreshold) return const Pulse(140, 255);
     }
+    if (t.absActive == true && enabled.contains(HapticKind.abs)) return absPulse;
     final lock = t.wheelLock ?? 0;
     final spin = t.wheelSpin ?? 0;
     if (lock > slipThreshold) {

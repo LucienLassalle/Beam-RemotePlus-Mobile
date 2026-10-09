@@ -55,6 +55,8 @@
   "settingsHapticImpacts": "Chocs",
   "settingsHapticKerbs": "Passage sur vibreur",
   "settingsHapticLimiter": "Lors du rupteur",
+  "settingsHapticAbs": "Déclenchement de l'ABS",
+  "settingsHapticStrength": "Intensité des vibrations",
   "settingsHornVolumeTitle": "Désactiver le klaxon sur le volume",
   "settingsHornVolumeSubtitle": "Volume + = klaxon tant que c'est appuyé",
   "settingsFlashVolumeTitle": "Désactiver les appels de phares sur le volume",

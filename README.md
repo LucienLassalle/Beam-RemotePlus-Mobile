@@ -53,8 +53,8 @@ with sample data.
   stopped, low fuel, fuel leak, flat tyre, low tyre pressure (compared to
   the pressure the car is set to), hot brakes, clutch overheating or
   damaged, broken drivetrain, parking brake while moving.
-- **Vibrations**, each one can be switched off: wheelspin, locked wheels,
-  impacts, kerbs, rev limiter.
+- **Vibrations** with an adjustable strength, each one can be switched off:
+  wheelspin, locked wheels, impacts, kerbs, ABS, rev limiter.
 - **Radar and damage panel**: nearby cars, body damage, radiator, engine,
   driveshafts and axles, fuel tank, brake temperatures, flat tyres, and tyre
   temperatures when the
