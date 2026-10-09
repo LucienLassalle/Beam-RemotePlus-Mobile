@@ -24,8 +24,8 @@ FLAGS=(--release --obfuscate --split-debug-info=build/symbols --build-name="$VER
 
 OUT="$ROOT_DIR/app/build/app/outputs/flutter-apk"
 mkdir -p "$ROOT_DIR/dist"
-cp "$OUT/app-arm64-v8a-release.apk" "$ROOT_DIR/dist/BeamNG-RemotePlus-$VERSION-arm64-v8a.apk"
-cp "$OUT/app-armeabi-v7a-release.apk" "$ROOT_DIR/dist/BeamNG-RemotePlus-$VERSION-armeabi-v7a.apk"
-cp "$OUT/app-x86_64-release.apk" "$ROOT_DIR/dist/BeamNG-RemotePlus-$VERSION-x86_64.apk"
-cp "$OUT/app-release.apk" "$ROOT_DIR/dist/BeamNG-RemotePlus-$VERSION-universal.apk"
+cp "$OUT/app-arm64-v8a-release.apk" "$ROOT_DIR/dist/Beam-RemotePlus-$VERSION-arm64-v8a.apk"
+cp "$OUT/app-armeabi-v7a-release.apk" "$ROOT_DIR/dist/Beam-RemotePlus-$VERSION-armeabi-v7a.apk"
+cp "$OUT/app-x86_64-release.apk" "$ROOT_DIR/dist/Beam-RemotePlus-$VERSION-x86_64.apk"
+cp "$OUT/app-release.apk" "$ROOT_DIR/dist/Beam-RemotePlus-$VERSION-universal.apk"
 ls -lh "$ROOT_DIR/dist"

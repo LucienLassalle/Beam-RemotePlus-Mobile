@@ -1,6 +1,6 @@
 {
   "@@locale": "en",
-  "appTitle": "BeamNG RemotePlus",
+  "appTitle": "Beam-RemotePlus",
   "cameraPermissionMessage": "Camera permission is required to scan the QR code shown by BeamNG.drive.",
   "cameraPermissionButton": "Allow camera",
   "scanHint": "Or scan the QR code: BeamNG.drive > Options > Controls > Hardware",

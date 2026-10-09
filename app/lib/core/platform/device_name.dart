@@ -7,7 +7,7 @@ Future<String> resolveDeviceName() async {
     final info = await DeviceInfoPlugin().androidInfo;
     return formatDeviceName(info.manufacturer, info.model);
   } catch (_) {
-    return 'BeamNG RemotePlus';
+    return 'Beam-RemotePlus';
   }
 }
 

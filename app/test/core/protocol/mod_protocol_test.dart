@@ -40,9 +40,9 @@ void main() {
 
   group('DiscoveredHost.parseHello', () {
     test('parses code and label', () {
-      final host = DiscoveredHost.parseHello('beamngremoteplus|hello|20367|BeamNG of Loka', '192.168.1.10')!;
+      final host = DiscoveredHost.parseHello("beamngremoteplus|hello|20367|Loka's PC", '192.168.1.10')!;
       expect(host.securityCode, '20367');
-      expect(host.label, 'BeamNG of Loka');
+      expect(host.label, "Loka's PC");
       expect(host.hostAddress, '192.168.1.10');
     });
 
