@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/generated/app_localizations.dart';
 import '../kit/kit.dart';
 
 /// Road: everyday driving. Speed, gear, fuel and temperatures, the usual
@@ -21,6 +22,7 @@ class RoadTheme extends ControlTheme {
   @override
   Widget buildDashboard(BuildContext context, DashboardData data) {
     final t = data.telemetry;
+    final l10n = AppLocalizations.of(context);
     if (!data.modActive) return const SizedBox.shrink();
     return Center(
       child: FittedBox(
@@ -52,8 +54,8 @@ class RoadTheme extends ControlTheme {
             const SizedBox(height: 8),
             Row(mainAxisSize: MainAxisSize.min, children: [
               _Info(label: t.driveMode ?? '', value: t.gearLabel, big: true),
-              _Info(label: 'FUEL', value: '${DashFormat.fuelPercent(t)}%'),
-              _Info(label: 'TEMP', value: '${DashFormat.integer(t.waterTemp)}°'),
+              _Info(label: l10n.dashFuel, value: '${DashFormat.fuelPercent(t)}%'),
+              _Info(label: l10n.dashCoolant, value: '${DashFormat.integer(t.waterTemp)}°'),
               _Info(label: data.useKmh ? 'KM' : 'MI', value: DashFormat.distance(t.odometer, kmh: data.useKmh)),
             ]),
           ]),

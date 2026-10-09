@@ -208,5 +208,13 @@
   "warningFuelLeak": "Fuel leak",
   "warningClutchOverheating": "Clutch overheating",
   "warningClutchDamaged": "Clutch damaged",
-  "warningDrivetrainBroken": "Drivetrain broken"
+  "warningDrivetrainBroken": "Drivetrain broken",
+  "dashFuel": "Fuel",
+  "@dashFuel": {
+    "description": "Short gauge label on dashboards (shown in capitals)."
+  },
+  "dashCoolant": "Temp",
+  "@dashCoolant": {
+    "description": "Short gauge label of the coolant temperature on dashboards (shown in capitals)."
+  }
 }

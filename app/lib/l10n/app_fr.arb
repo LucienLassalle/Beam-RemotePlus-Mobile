@@ -136,5 +136,7 @@
   "warningFuelLeak": "Fuite de carburant",
   "warningClutchOverheating": "Embrayage en surchauffe",
   "warningClutchDamaged": "Embrayage endommagé",
-  "warningDrivetrainBroken": "Transmission cassée"
+  "warningDrivetrainBroken": "Transmission cassée",
+  "dashFuel": "Carburant",
+  "dashCoolant": "Temp."
 }
