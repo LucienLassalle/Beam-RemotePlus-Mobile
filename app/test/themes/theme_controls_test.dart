@@ -79,24 +79,46 @@ void main() {
     await tester.tap(find.byType(GestureDetector).first, warnIfMissed: false);
   });
 
-  testWidgets('the Default theme stays clean, Road offers every vehicle button', (tester) async {
+  testWidgets('the Default theme stays clean, Road offers its vehicle buttons', (tester) async {
     final link = FakeLink();
     addTearDown(link.dispose);
     await pumpDrivingView(tester, theme: themeByName('Default'), link: link);
     expect(find.byIcon(Icons.campaign), findsNothing); // horn button
     expect(find.byIcon(Icons.tune), findsNothing); // drive mode button
     await pumpDrivingView(tester, theme: themeByName('Road'), link: link);
-    await tester.tap(find.byIcon(Icons.warning_amber).last);
-    expect(link.commands, ['hazard']);
+    expect(find.byIcon(Icons.local_parking), findsNWidgets(2)); // telltale + button
+  });
+
+  testWidgets('Road: indicators and hazards are pressed on the dashboard, no pedal', (tester) async {
+    final link = FakeLink();
+    addTearDown(link.dispose);
+    await pumpDrivingView(tester, theme: themeByName('Road'), link: link);
+    for (final icon in [Icons.arrow_back, Icons.warning_amber, Icons.arrow_forward]) {
+      expect(find.byIcon(icon), findsOneWidget, reason: 'only on the dashboard, not in the bottom bar');
+      await tester.tap(find.byIcon(icon));
+      await tester.pump();
+    }
+    expect(link.commands, ['signal_left', 'hazard', 'signal_right']);
+    expect(link.brake + link.throttle, 0);
+  });
+
+  testWidgets('Road: the dashboard buttons take no touch in read-only mode', (tester) async {
+    final link = FakeLink();
+    addTearDown(link.dispose);
+    final controller = await pumpDrivingView(tester, theme: themeByName('Road'), link: link);
+    controller.setReadOnly(true);
+    await tester.pump();
+    await tester.tap(find.byIcon(Icons.arrow_back), warnIfMissed: false);
+    expect(link.commands, isEmpty);
   });
 
   testWidgets('vehicle buttons hidden in the settings disappear', (tester) async {
     final link = FakeLink();
     addTearDown(link.dispose);
     await pumpDrivingView(tester,
-        theme: themeByName('Road'), link: link, settings: const AppSettings(hiddenActions: {'hazard', 'cruise'}));
-    expect(find.byIcon(Icons.warning_amber), findsNothing);
-    expect(find.byIcon(Icons.campaign), findsOneWidget);
+        theme: themeByName('Road'), link: link, settings: const AppSettings(hiddenActions: {'starter', 'cruise'}));
+    expect(find.byIcon(Icons.key), findsNothing);
+    expect(find.byIcon(Icons.local_parking), findsNWidgets(2));
   });
 
   testWidgets('second-screen mode shows no controls', (tester) async {
