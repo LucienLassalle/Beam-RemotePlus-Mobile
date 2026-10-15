@@ -19,6 +19,8 @@
   "statusTimeout": "Timed out",
   "statusError": "Error",
   "statusIdle": "Disconnected",
+  "statusKicked": "Kicked",
+  "kickedByHost": "The PC removed this phone from the game. Connect again when the player allows it.",
   "modMissingBanner": "Install the Beam-RemotePlus mod in BeamNG.drive for analog pedals, the dashboard and the vehicle buttons.",
   "settingsTitle": "Settings",
   "settingsSectionDisplay": "Display",

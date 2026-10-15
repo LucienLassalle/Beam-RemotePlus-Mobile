@@ -163,6 +163,7 @@ class StatusChip extends StatelessWidget {
       LinkState.connecting => (l10n.statusConnecting, Colors.amberAccent),
       LinkState.timeout => (l10n.statusTimeout, Colors.orangeAccent),
       LinkState.error => (l10n.statusError, Colors.redAccent),
+      LinkState.kicked => (l10n.statusKicked, Colors.redAccent),
       LinkState.idle => (l10n.statusIdle, Colors.white38),
     };
     return Row(mainAxisSize: MainAxisSize.min, children: [
