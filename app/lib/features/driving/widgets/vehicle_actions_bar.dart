@@ -67,16 +67,18 @@ class VehicleActionsBar extends StatelessWidget {
                 press(Icons.local_parking, l10n.actionParkingBrake, ModCommand.parkingBrake, t.parkingBrake),
               ],
             VehicleAction.starter => [hold(Icons.key, l10n.actionStarter, ModCommand.starter, t.engineRunning)],
+            // Hidden on vehicles with neither drive modes nor ESC.
             VehicleAction.driveMode => [
-                _ModeButton(
-                  mode: t.driveMode,
-                  esc: t.driveModeIsEsc ?? false,
-                  modeColor: t.driveModeColor,
-                  intervening: (t.escActive ?? false) || (t.tcsActive ?? false),
-                  color: color,
-                  enabled: enabled,
-                  onPressed: () => controller.press(ModCommand.escMode),
-                ),
+                if (t.driveMode case final mode?)
+                  _ModeButton(
+                    mode: mode,
+                    esc: t.driveModeIsEsc ?? false,
+                    modeColor: t.driveModeColor,
+                    intervening: (t.escActive ?? false) || (t.tcsActive ?? false),
+                    color: color,
+                    enabled: enabled,
+                    onPressed: () => controller.press(ModCommand.escMode),
+                  ),
               ],
             VehicleAction.cruise => [
                 press(Icons.speed, l10n.actionCruise, t.cruiseActive == true ? ModCommand.cruiseOff : ModCommand.cruiseSet,
@@ -109,7 +111,7 @@ class VehicleActionsBar extends StatelessWidget {
 /// next one (chevron), in the color the game gives that mode; like the
 /// game's own ESC button, it blinks while the ESC or traction control acts.
 class _ModeButton extends StatelessWidget {
-  final String? mode;
+  final String mode;
   final bool esc;
 
   /// 0xRRGGBB from the game, or null (then the theme button color).
@@ -139,8 +141,7 @@ class _ModeButton extends StatelessWidget {
     final tint = rgb == null || blinkOff ? null : Color(0xFF000000 | rgb);
     final base = tint ?? color;
     final fg = enabled ? base : base.withValues(alpha: 0.2);
-    final mode = this.mode;
-    final tooltip = mode == null ? l10n.actionEscMode : (esc ? l10n.actionEscNext(mode) : l10n.actionDriveModeNext(mode));
+    final tooltip = esc ? l10n.actionEscNext(mode) : l10n.actionDriveModeNext(mode);
     return Tooltip(
       message: tooltip,
       child: GestureDetector(
@@ -160,11 +161,10 @@ class _ModeButton extends StatelessWidget {
               child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text(esc ? l10n.actionEscCaption : l10n.actionDriveModeCaption,
                     style: TextStyle(color: fg.withValues(alpha: enabled ? 0.55 : 0.2), fontSize: 9, letterSpacing: 1.2, height: 1.1)),
-                if (mode != null)
-                  Text(mode.toUpperCase(),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(color: fg, fontSize: 13, fontWeight: FontWeight.w700, height: 1.2)),
+                Text(mode.toUpperCase(),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: fg, fontSize: 13, fontWeight: FontWeight.w700, height: 1.2)),
               ]),
             ),
             Icon(Icons.chevron_right, size: 20, color: fg),

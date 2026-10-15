@@ -37,7 +37,8 @@ void main() {
     addTearDown(link.dispose);
     await pumpDrivingView(tester, theme: themeByName('Road'), link: link);
 
-    expect(find.byTooltip('Drive mode / ESC'), findsOneWidget); // not known yet
+    // Hidden while the vehicle reports neither drive mode nor ESC.
+    expect(find.byIcon(Icons.chevron_right), findsNothing);
     link.telemetry_.add(const Telemetry(driveMode: 'Sport'));
     await tester.pump();
     await tester.pump();
