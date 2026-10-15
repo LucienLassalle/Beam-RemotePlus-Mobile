@@ -55,6 +55,46 @@ longer maintained.
 3. Put the phone on the same Wi-Fi as the PC (or share the phone's hotspot
    with the PC), load a level and tap **Automatic connection**.
 
+## Network
+
+The app only talks to the PC on your local network, never to the internet.
+It uses four UDP ports:
+
+| Port | Listens on | Used for |
+|---|---|---|
+| UDP **4445** | phone (the app) | the game's answer to the pairing handshake |
+| UDP **4447** | phone (the app) | hello, pong, telemetry and events from the mod |
+| UDP **4444** | PC (the game's own remote control) | pairing handshake, then basic steering/pedals until the mod answers |
+| UDP **4446** | PC (the [mod](https://github.com/LucienLassalle/Beam-RemotePlus-Mod#network)) | discovery, ping, controls (60 Hz), commands |
+
+```mermaid
+sequenceDiagram
+    participant P as Phone (app)<br/>UDP 4445, 4447
+    box PC (BeamNG.drive)
+        participant G as Game remote control<br/>UDP 4444
+        participant M as Beam-RemotePlus mod<br/>UDP 4446
+    end
+    opt Automatic connection
+        P->>M: discover (broadcast to 4446)
+        M-->>P: hello + pairing code (to 4447)
+    end
+    opt Controller mode (skipped by a second screen)
+        P->>G: handshake + pairing code (to 4444)
+        G-->>P: handshake answer (to 4445)
+    end
+    P->>M: ping + pairing code (to 4446)
+    M-->>P: pong (to 4447)
+    loop While connected
+        P->>M: controls and commands (to 4446)
+        M-->>P: telemetry and events (to 4447)
+    end
+```
+
+- A **second screen** only uses 4446 and 4447.
+- Nothing has to be opened on the phone. If the phone cannot find the PC,
+  allow incoming UDP 4444 and 4446 on the PC (see the
+  [mod README](https://github.com/LucienLassalle/Beam-RemotePlus-Mod#network)).
+
 ## Contributing
 
 New themes, translations and fixes are welcome through pull requests, in
