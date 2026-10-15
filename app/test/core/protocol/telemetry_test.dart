@@ -23,9 +23,48 @@ void main() {
       expect(t.escActive, isTrue);
       expect(t.tirePressures, {'FL': 210.0});
       expect(t.driveMode, 'Sport');
+      expect(t.driveModeIsEsc, isFalse);
       expect(t.player, 1);
       expect(t.receivedFields, containsAll(['speed', 'gear', 'player']));
       expect(t.receivedFields, isNot(contains('type')));
+    });
+
+    test('tells the ESC mode of vehicles without drive modes', () {
+      final t = Telemetry.fromJson({
+        'driveMode': {'key': 'esc:Regular', 'name': 'Regular', 'esc': true, 'color': '98FB00'},
+      });
+      expect(t.driveMode, 'Regular');
+      expect(t.driveModeIsEsc, isTrue);
+      expect(t.driveModeColor, 0x98FB00);
+      expect(Telemetry.fromJson({'driveMode': {'name': 'Sport', 'color': 'green'}}).driveModeColor, isNull);
+    });
+
+    test('emergency lights and siren of fitted vehicles', () {
+      final t = Telemetry.fromJson({'hasLightbar': true, 'hasSiren': true, 'lightbar': 2});
+      expect(t.hasLightbar, isTrue);
+      expect(t.hasSiren, isTrue);
+      expect(t.lightbar, 2);
+      expect(Telemetry.fromJson({}).hasLightbar, isNull);
+    });
+
+    test('DRS of vehicle mods', () {
+      final t = Telemetry.fromJson({'hasDrs': true, 'drsOpen': true});
+      expect(t.hasDrs, isTrue);
+      expect(t.drsOpen, isTrue);
+    });
+
+    test('Push-to-Pass of vehicle mods', () {
+      final t = Telemetry.fromJson({'hasPushToPass': true, 'pushToPass': true, 'pushToPassLeft': 3.3});
+      expect(t.hasPushToPass, isTrue);
+      expect(t.pushToPass, isTrue);
+      expect(t.pushToPassLeft, 3.3);
+    });
+
+    test('pit limiter of vehicle mods', () {
+      final t = Telemetry.fromJson({'hasPitLimiter': true, 'pitLimiter': false});
+      expect(t.hasPitLimiter, isTrue);
+      expect(t.pitLimiter, isFalse);
+      expect(Telemetry.fromJson({}).driveModeIsEsc, isNull);
     });
 
     test('reads the drivetrain, brakes and clutch fields', () {

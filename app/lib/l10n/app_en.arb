@@ -106,9 +106,49 @@
   "actionSignalLeft": "Left indicator",
   "actionSignalRight": "Right indicator",
   "actionLights": "Headlights",
+  "actionLightsOff": "Headlights off (tap: dipped beam)",
+  "actionLightsLow": "Dipped beam (tap: main beam)",
+  "actionLightsHigh": "Main beam (tap: off)",
+  "actionFlashers": "Emergency lights",
+  "actionSiren": "Siren",
+  "actionDrs": "DRS: open / close the rear wing",
+  "actionPushToPass": "Push-to-Pass",
+  "actionPitLimiter": "Pit limiter",
+  "actionPushToPassLeft": "Push-to-Pass: {seconds} s of boost left",
+  "@actionPushToPassLeft": {
+    "description": "Tooltip of the Push-to-Pass button (CF26 vehicle mod).",
+    "placeholders": {
+      "seconds": {
+        "type": "String",
+        "example": "3.5"
+      }
+    }
+  },
   "actionParkingBrake": "Parking brake",
   "actionStarter": "Ignition",
   "actionEscMode": "Drive mode / ESC",
+  "actionDriveModeCaption": "MODE",
+  "actionEscCaption": "ESC",
+  "actionDriveModeNext": "Drive mode: {mode} (tap: next mode)",
+  "@actionDriveModeNext": {
+    "description": "Tooltip of the drive mode button; mode is the current drive mode name from the game.",
+    "placeholders": {
+      "mode": {
+        "type": "String",
+        "example": "Sport"
+      }
+    }
+  },
+  "actionEscNext": "ESC: {mode} (tap: next mode)",
+  "@actionEscNext": {
+    "description": "Tooltip of the drive mode button on vehicles without drive modes; mode is the current ESC mode name from the game.",
+    "placeholders": {
+      "mode": {
+        "type": "String",
+        "example": "Regular"
+      }
+    }
+  },
   "actionCruise": "Cruise control",
   "helpTitle": "Help — Controls",
   "helpBrake": "Brake",

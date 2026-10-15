@@ -32,8 +32,11 @@ longer maintained.
 - **Analog pedals** with both thumbs.
 - **Dashboard themes**, easy to make: [THEMES.md](THEMES.md).
 - **Vehicle buttons**: indicators, hazards, horn, lights, parking brake,
-  ignition, drive mode, cruise control, camera, vehicle switching, reset.
-  Volume buttons for the horn and the headlight flash.
+  ignition, drive mode (in the game's color), cruise control, camera,
+  vehicle switching, reset. Volume buttons for the horn and the headlight
+  flash. On the Road theme, indicators and hazards are pressed right on the
+  dashboard, and police cars, ambulances, fire trucks and pace cars get
+  their emergency lights and siren.
 - **Warning lights** like a real car (engine, oil, temperature, fuel or
   battery, tyres, brakes, clutch, gearbox...).
 - **Vibrations**: wheelspin, locked wheels, impacts, kerbs, ABS, rev limiter.
@@ -43,6 +46,21 @@ longer maintained.
   gamepad) and **local multiplayer** (one phone per player).
 - **Automatic connection** on the local network, or pairing code / QR code.
 - **English and French** ([TRANSLATING.md](TRANSLATING.md)).
+
+### Optional vehicle mods
+
+When you drive one of these vehicle mods (BeamNG.drive repository), the
+**F4** theme adds its race controls; nothing changes with other vehicles and
+none of these mods is needed:
+
+| Vehicle mod | Buttons |
+|---|---|
+| **CF26** (F3 configurations of the fr04) | DRS, Push-to-Pass (P2P), pit limiter (PIT) |
+| **F4** by LucasBE (fr04) | pit limiter (PIT) |
+| **FR17** | DRS |
+
+With the **Tyre Thermals and Wear** mod, the damage view also shows the
+temperature and wear of each tyre.
 
 ## Installation
 

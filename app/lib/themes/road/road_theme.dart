@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 
+import '../../core/protocol/mod_protocol.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../kit/kit.dart';
 
 /// Road: everyday driving. Speed, gear, fuel and temperatures, the usual
-/// warning lights, and every vehicle button (indicators, hazards, lights,
-/// horn, parking brake, ignition, drive mode, cruise control); each button
-/// can be hidden in the settings.
+/// warning lights, indicators and hazards pressed right on their telltales,
+/// and the other vehicle buttons at the bottom (lights, parking brake,
+/// ignition, drive mode, cruise control, and the emergency lights and siren
+/// of the vehicles fitted with them); each can be hidden in the settings.
+/// The horn and the headlight flash are on the volume buttons.
 class RoadTheme extends ControlTheme {
   const RoadTheme();
 
@@ -17,7 +20,15 @@ class RoadTheme extends ControlTheme {
   String get author => 'LucienLassalle';
 
   @override
-  ThemeStyle get style => const ThemeStyle(actions: {...VehicleAction.values});
+  ThemeStyle get style => const ThemeStyle(actions: {
+        VehicleAction.lights,
+        VehicleAction.flashers,
+        VehicleAction.siren,
+        VehicleAction.parkingBrake,
+        VehicleAction.starter,
+        VehicleAction.driveMode,
+        VehicleAction.cruise,
+      });
 
   @override
   Widget buildDashboard(BuildContext context, DashboardData data) {
@@ -29,15 +40,37 @@ class RoadTheme extends ControlTheme {
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
+            // Indicators and hazards are pressed right on their telltales.
             Row(mainAxisSize: MainAxisSize.min, children: [
-              WarningLamp(icon: Icons.arrow_back, on: (t.signalLeft ?? false) || (t.hazard ?? false), color: Colors.greenAccent, size: 34),
-              const SizedBox(width: 40),
+              DashboardButton(
+                command: ModCommand.signalLeft,
+                onCommand: data.onCommand,
+                tooltip: l10n.actionSignalLeft,
+                child: WarningLamp(
+                    icon: Icons.arrow_back, on: (t.signalLeft ?? false) || (t.hazard ?? false), color: Colors.greenAccent, size: 34),
+              ),
+              const SizedBox(width: 24),
               WarningLamp(icon: Icons.light_mode, on: t.lowBeam, color: Colors.greenAccent, size: 26),
               WarningLamp(icon: Icons.highlight, on: t.highBeam, color: Colors.lightBlueAccent, size: 26),
+              const SizedBox(width: 12),
+              DashboardButton(
+                command: ModCommand.hazard,
+                onCommand: data.onCommand,
+                tooltip: l10n.actionHazard,
+                size: 48,
+                child: WarningLamp(icon: Icons.warning_amber, on: t.hazard, color: Colors.redAccent, size: 28),
+              ),
+              const SizedBox(width: 12),
               WarningLamp(icon: Icons.speed, on: t.cruiseActive, color: Colors.greenAccent, size: 26),
               WarningLamp(icon: Icons.local_parking, on: t.parkingBrake, color: Colors.redAccent, size: 26),
-              const SizedBox(width: 40),
-              WarningLamp(icon: Icons.arrow_forward, on: (t.signalRight ?? false) || (t.hazard ?? false), color: Colors.greenAccent, size: 34),
+              const SizedBox(width: 24),
+              DashboardButton(
+                command: ModCommand.signalRight,
+                onCommand: data.onCommand,
+                tooltip: l10n.actionSignalRight,
+                child: WarningLamp(
+                    icon: Icons.arrow_forward, on: (t.signalRight ?? false) || (t.hazard ?? false), color: Colors.greenAccent, size: 34),
+              ),
             ]),
             const SizedBox(height: 4),
             Row(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.end, children: [

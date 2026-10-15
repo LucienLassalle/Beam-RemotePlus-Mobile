@@ -45,6 +45,27 @@ class Telemetry {
   final bool? hasTcs;
   final bool? tcsActive;
   final bool? cruiseActive;
+
+  /// Emergency lights / siren fitted (police, ambulance, fire, pace car).
+  final bool? hasLightbar;
+  final bool? hasSiren;
+
+  /// 0 off, 1 emergency lights, 2 lights + siren (fitted vehicles only).
+  final int? lightbar;
+
+  /// DRS of the vehicle mods that have one (CF26, FR17): present, wing open.
+  final bool? hasDrs;
+  final bool? drsOpen;
+
+  /// Push-to-Pass of the CF26 vehicle mod: present, boost active, seconds of
+  /// boost left (0 = used up until the vehicle is reset).
+  final bool? hasPushToPass;
+  final bool? pushToPass;
+  final double? pushToPassLeft;
+
+  /// Pit limiter of the fr04 vehicle mods (F4, CF26): present, on.
+  final bool? hasPitLimiter;
+  final bool? pitLimiter;
   final double? cruiseSpeed; // m/s
   final double? odometer; // m
   final double? trip; // m
@@ -57,6 +78,14 @@ class Telemetry {
   /// Pressures set in the vehicle configuration (kPa by wheel name).
   final Map<String, double>? tirePressuresNominal;
   final String? driveMode;
+
+  /// True when [driveMode] is the ESC mode ("Regular", "Off"...) of a vehicle
+  /// without drive modes: the drive mode button then switches the ESC.
+  final bool? driveModeIsEsc;
+
+  /// Color the game gives [driveMode] in its own UI, as 0xRRGGBB (the ESC
+  /// mode is green "98FB00" by default); null when it has none.
+  final int? driveModeColor;
   final int? player;
   final String? vehicle;
 
@@ -170,6 +199,16 @@ class Telemetry {
     this.hasTcs,
     this.tcsActive,
     this.cruiseActive,
+    this.hasLightbar,
+    this.hasSiren,
+    this.lightbar,
+    this.hasDrs,
+    this.drsOpen,
+    this.hasPushToPass,
+    this.pushToPass,
+    this.pushToPassLeft,
+    this.hasPitLimiter,
+    this.pitLimiter,
     this.cruiseSpeed,
     this.odometer,
     this.trip,
@@ -180,6 +219,8 @@ class Telemetry {
     this.tirePressures,
     this.tirePressuresNominal,
     this.driveMode,
+    this.driveModeIsEsc,
+    this.driveModeColor,
     this.player,
     this.vehicle,
     this.wheelSlip,
@@ -319,6 +360,12 @@ class Telemetry {
     };
   }
 
+  /// "98FB00" -> 0x98FB00; anything else -> null.
+  static int? _rgb(Object? v) {
+    if (v is! String || !RegExp(r'^#?[0-9a-fA-F]{6}$').hasMatch(v)) return null;
+    return int.parse(v.replaceFirst('#', ''), radix: 16);
+  }
+
   static String? _driveMode(Object? v) {
     if (v is Map) return _str(v['name']) ?? _str(v['key']);
     return _str(v);
@@ -363,6 +410,16 @@ class Telemetry {
       hasTcs: _bool(j['hasTcs']),
       tcsActive: _bool(j['tcsActive']),
       cruiseActive: _bool(j['cruiseActive']),
+      hasLightbar: _bool(j['hasLightbar']),
+      hasSiren: _bool(j['hasSiren']),
+      lightbar: _int(j['lightbar']),
+      hasDrs: _bool(j['hasDrs']),
+      drsOpen: _bool(j['drsOpen']),
+      hasPushToPass: _bool(j['hasPushToPass']),
+      pushToPass: _bool(j['pushToPass']),
+      pushToPassLeft: _num(j['pushToPassLeft']),
+      hasPitLimiter: _bool(j['hasPitLimiter']),
+      pitLimiter: _bool(j['pitLimiter']),
       cruiseSpeed: _num(j['cruiseSpeed']),
       odometer: _num(j['odometer']),
       trip: _num(j['trip']),
@@ -373,6 +430,8 @@ class Telemetry {
       tirePressures: _pressures(j['tirePressures']),
       tirePressuresNominal: _pressures(j['tirePressuresNominal']),
       driveMode: _driveMode(j['driveMode']),
+      driveModeIsEsc: j['driveMode'] is Map ? (j['driveMode']! as Map)['esc'] == true : null,
+      driveModeColor: j['driveMode'] is Map ? _rgb((j['driveMode']! as Map)['color']) : null,
       player: _int(j['player']),
       vehicle: _str(j['vehicle']),
       wheelSlip: _num(j['wheelSlip']),

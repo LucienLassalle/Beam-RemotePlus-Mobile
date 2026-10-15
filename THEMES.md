@@ -116,6 +116,23 @@ ThemeStyle get style => const ThemeStyle(
 The app always adds the vehicle switch (top left), hold-to-reset (top
 centre), camera buttons (bottom centre), settings and warning lights.
 
+## Buttons on the dashboard itself
+
+Touching the dashboard presses a pedal, except on a `DashboardButton`: wrap a
+telltale with it to make it pressable (Road's indicator arrows and hazard
+triangle). A tap sends its `ModCommand` to the game:
+
+```dart
+DashboardButton(
+  command: ModCommand.signalLeft,
+  onCommand: data.onCommand, // null without the mod or in read-only mode
+  child: WarningLamp(icon: Icons.arrow_back, on: t.signalLeft, color: Colors.greenAccent, size: 34),
+)
+```
+
+Keep them few and away from where the thumbs rest: every button is a spot
+where the pedal underneath cannot be pressed.
+
 ## Rules for a theme pull request
 
 - One folder, no new dependency, no network, no file access, no images

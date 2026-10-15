@@ -4,6 +4,7 @@ import 'package:sensors_plus/sensors_plus.dart';
 import '../../core/settings/app_settings.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../themes/control_theme.dart';
+import '../../themes/kit/dashboard_button.dart';
 import '../vehicle_status/widgets/vehicle_panel.dart';
 import '../vehicle_status/widgets/warning_overlay.dart';
 import 'driving_controller.dart';
@@ -16,8 +17,8 @@ import 'widgets/vehicle_actions_bar.dart';
 /// Composition of the driving screen, without any platform side effect
 /// (lifecycle lives in DrivingScreen), so tests can pump it. Layers, bottom
 /// to top:
-///   1. theme dashboard: visual only, ignores touches
-///   2. pedal zones: every touch not taken by a control below
+///   1. pedal zones: every touch not taken by a layer above
+///   2. theme dashboard: lets touches through, except on its DashboardButtons
 ///   3. steering bar, buttons and overlays: only the area they cover
 /// In second-screen mode only the dashboard, warnings and the vehicle
 /// panel are shown: no controls at all.
@@ -64,6 +65,7 @@ class DrivingView extends StatelessWidget {
           pressureUnit: settings.pressureUnit,
           readOnly: controller.readOnly,
           gearFlash: controller.gearFlash,
+          onCommand: !_display && controller.commandsEnabled ? controller.press : null,
         );
         final actions = settings.showActionsBar && !_display
             ? style.actions.where((a) => !settings.hiddenActions.contains(a.name)).toSet()
@@ -73,17 +75,7 @@ class DrivingView extends StatelessWidget {
           color: style.background,
           child: Stack(
             children: [
-              // The dashboard gets the space between the button rows, so
-              // buttons never hide a gauge. In second-screen mode the vehicle
-              // panel takes the right third.
-              Positioned(
-                top: topBarHeight,
-                bottom: bottom,
-                left: 0,
-                right: _display ? MediaQuery.of(context).size.width * 0.34 : 0,
-                child: IgnorePointer(child: theme.buildDashboard(context, data)),
-              ),
-              if (!_display) ...[
+              if (!_display)
                 Positioned.fill(
                   child: IgnorePointer(
                     ignoring: controller.readOnly,
@@ -97,8 +89,17 @@ class DrivingView extends StatelessWidget {
                     ),
                   ),
                 ),
-                _steering(context),
-              ],
+              // The dashboard gets the space between the button rows, so
+              // buttons never hide a gauge. In second-screen mode the vehicle
+              // panel takes the right third.
+              Positioned(
+                top: topBarHeight,
+                bottom: bottom,
+                left: 0,
+                right: _display ? MediaQuery.of(context).size.width * 0.34 : 0,
+                child: DashboardTouchFilter(child: theme.buildDashboard(context, data)),
+              ),
+              if (!_display) _steering(context),
               if (controller.gearFlash != null)
                 Positioned.fill(
                   child: IgnorePointer(
