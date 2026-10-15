@@ -61,6 +61,10 @@ class Telemetry {
   /// True when [driveMode] is the ESC mode ("Regular", "Off"...) of a vehicle
   /// without drive modes: the drive mode button then switches the ESC.
   final bool? driveModeIsEsc;
+
+  /// Color the game gives [driveMode] in its own UI, as 0xRRGGBB (the ESC
+  /// mode is green "98FB00" by default); null when it has none.
+  final int? driveModeColor;
   final int? player;
   final String? vehicle;
 
@@ -185,6 +189,7 @@ class Telemetry {
     this.tirePressuresNominal,
     this.driveMode,
     this.driveModeIsEsc,
+    this.driveModeColor,
     this.player,
     this.vehicle,
     this.wheelSlip,
@@ -324,6 +329,12 @@ class Telemetry {
     };
   }
 
+  /// "98FB00" -> 0x98FB00; anything else -> null.
+  static int? _rgb(Object? v) {
+    if (v is! String || !RegExp(r'^#?[0-9a-fA-F]{6}$').hasMatch(v)) return null;
+    return int.parse(v.replaceFirst('#', ''), radix: 16);
+  }
+
   static String? _driveMode(Object? v) {
     if (v is Map) return _str(v['name']) ?? _str(v['key']);
     return _str(v);
@@ -379,6 +390,7 @@ class Telemetry {
       tirePressuresNominal: _pressures(j['tirePressuresNominal']),
       driveMode: _driveMode(j['driveMode']),
       driveModeIsEsc: j['driveMode'] is Map ? (j['driveMode']! as Map)['esc'] == true : null,
+      driveModeColor: j['driveMode'] is Map ? _rgb((j['driveMode']! as Map)['color']) : null,
       player: _int(j['player']),
       vehicle: _str(j['vehicle']),
       wheelSlip: _num(j['wheelSlip']),

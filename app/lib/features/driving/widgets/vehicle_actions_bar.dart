@@ -71,6 +71,8 @@ class VehicleActionsBar extends StatelessWidget {
                 _ModeButton(
                   mode: t.driveMode,
                   esc: t.driveModeIsEsc ?? false,
+                  modeColor: t.driveModeColor,
+                  intervening: (t.escActive ?? false) || (t.tcsActive ?? false),
                   color: color,
                   enabled: enabled,
                   onPressed: () => controller.press(ModCommand.escMode),
@@ -104,10 +106,15 @@ class VehicleActionsBar extends StatelessWidget {
 
 /// Drive mode button: says which mode is on ("MODE / SPORT", or "ESC /
 /// REGULAR" on vehicles without drive modes) and that a tap goes to the
-/// next one (chevron).
+/// next one (chevron), in the color the game gives that mode; like the
+/// game's own ESC button, it blinks while the ESC or traction control acts.
 class _ModeButton extends StatelessWidget {
   final String? mode;
   final bool esc;
+
+  /// 0xRRGGBB from the game, or null (then the theme button color).
+  final int? modeColor;
+  final bool intervening;
   final Color color;
   final bool enabled;
   final VoidCallback onPressed;
@@ -115,6 +122,8 @@ class _ModeButton extends StatelessWidget {
   const _ModeButton({
     required this.mode,
     required this.esc,
+    required this.modeColor,
+    required this.intervening,
     required this.color,
     required this.enabled,
     required this.onPressed,
@@ -123,7 +132,13 @@ class _ModeButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final fg = enabled ? color : color.withValues(alpha: 0.2);
+    // Telemetry rebuilds the bar ~30 times per second: enough to blink at
+    // the game's pace without an animation of our own.
+    final blinkOff = intervening && DateTime.now().millisecondsSinceEpoch ~/ 150 % 2 == 1;
+    final rgb = modeColor;
+    final tint = rgb == null || blinkOff ? null : Color(0xFF000000 | rgb);
+    final base = tint ?? color;
+    final fg = enabled ? base : base.withValues(alpha: 0.2);
     final mode = this.mode;
     final tooltip = mode == null ? l10n.actionEscMode : (esc ? l10n.actionEscNext(mode) : l10n.actionDriveModeNext(mode));
     return Tooltip(
@@ -137,8 +152,8 @@ class _ModeButton extends StatelessWidget {
           padding: const EdgeInsets.only(left: 14, right: 6),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(21),
-            color: Colors.black.withValues(alpha: 0.45),
-            border: Border.all(color: color.withValues(alpha: enabled ? 0.35 : 0.1)),
+            color: tint == null ? Colors.black.withValues(alpha: 0.45) : Color.alphaBlend(tint.withValues(alpha: 0.16), Colors.black),
+            border: Border.all(color: base.withValues(alpha: !enabled ? 0.1 : (tint == null ? 0.35 : 0.8))),
           ),
           child: Row(mainAxisSize: MainAxisSize.min, children: [
             Flexible(

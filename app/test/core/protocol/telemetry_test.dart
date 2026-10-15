@@ -31,10 +31,12 @@ void main() {
 
     test('tells the ESC mode of vehicles without drive modes', () {
       final t = Telemetry.fromJson({
-        'driveMode': {'key': 'esc:Regular', 'name': 'Regular', 'esc': true},
+        'driveMode': {'key': 'esc:Regular', 'name': 'Regular', 'esc': true, 'color': '98FB00'},
       });
       expect(t.driveMode, 'Regular');
       expect(t.driveModeIsEsc, isTrue);
+      expect(t.driveModeColor, 0x98FB00);
+      expect(Telemetry.fromJson({'driveMode': {'name': 'Sport', 'color': 'green'}}).driveModeColor, isNull);
       expect(Telemetry.fromJson({}).driveModeIsEsc, isNull);
     });
 
