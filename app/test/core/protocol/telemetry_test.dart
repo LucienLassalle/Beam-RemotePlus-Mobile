@@ -37,6 +37,14 @@ void main() {
       expect(t.driveModeIsEsc, isTrue);
       expect(t.driveModeColor, 0x98FB00);
       expect(Telemetry.fromJson({'driveMode': {'name': 'Sport', 'color': 'green'}}).driveModeColor, isNull);
+    });
+
+    test('emergency lights and siren of fitted vehicles', () {
+      final t = Telemetry.fromJson({'hasLightbar': true, 'hasSiren': true, 'lightbar': 2});
+      expect(t.hasLightbar, isTrue);
+      expect(t.hasSiren, isTrue);
+      expect(t.lightbar, 2);
+      expect(Telemetry.fromJson({}).hasLightbar, isNull);
       expect(Telemetry.fromJson({}).driveModeIsEsc, isNull);
     });
 

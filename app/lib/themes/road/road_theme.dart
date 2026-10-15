@@ -7,7 +7,8 @@ import '../kit/kit.dart';
 /// Road: everyday driving. Speed, gear, fuel and temperatures, the usual
 /// warning lights, indicators and hazards pressed right on their telltales,
 /// and the other vehicle buttons at the bottom (lights, parking brake,
-/// ignition, drive mode, cruise control); each can be hidden in the settings.
+/// ignition, drive mode, cruise control, and the emergency lights and siren
+/// of the vehicles fitted with them); each can be hidden in the settings.
 /// The horn and the headlight flash are on the volume buttons.
 class RoadTheme extends ControlTheme {
   const RoadTheme();
@@ -21,6 +22,8 @@ class RoadTheme extends ControlTheme {
   @override
   ThemeStyle get style => const ThemeStyle(actions: {
         VehicleAction.lights,
+        VehicleAction.flashers,
+        VehicleAction.siren,
         VehicleAction.parkingBrake,
         VehicleAction.starter,
         VehicleAction.driveMode,

@@ -10,6 +10,7 @@ import '../../helpers/pump_driving_view.dart';
 Finder inBar(String text) => find.descendant(of: find.byType(VehicleActionsBar), matching: find.text(text));
 
 void main() {
+  _emergencyTests();
   testWidgets('one headlights button shows off, dipped and main beam, and cycles them', (tester) async {
     final link = FakeLink();
     addTearDown(link.dispose);
@@ -70,5 +71,33 @@ void main() {
     expect(border.top.color.toARGB32() & 0xFFFFFF, 0x98FB00);
     final text = tester.widget<Text>(inBar('REGULAR'));
     expect(text.style!.color!.toARGB32(), 0xFF98FB00);
+  });
+}
+
+void _emergencyTests() {
+  testWidgets('Road: emergency lights and siren only on fitted vehicles', (tester) async {
+    final link = FakeLink();
+    addTearDown(link.dispose);
+    await pumpDrivingView(tester, theme: themeByName('Road'), link: link);
+    expect(find.byTooltip('Emergency lights'), findsNothing);
+    expect(find.byTooltip('Siren'), findsNothing);
+
+    link.telemetry_.add(const Telemetry(hasLightbar: true, hasSiren: true, lightbar: 0));
+    await tester.pump();
+    await tester.pump();
+    await tester.tap(find.byTooltip('Emergency lights'));
+    await tester.tap(find.byTooltip('Siren'));
+    expect(link.commands, ['flashers', 'siren']);
+  });
+
+  testWidgets('Road: a lightbar without siren shows the emergency lights only', (tester) async {
+    final link = FakeLink();
+    addTearDown(link.dispose);
+    await pumpDrivingView(tester, theme: themeByName('Road'), link: link);
+    link.telemetry_.add(const Telemetry(hasLightbar: true, lightbar: 1));
+    await tester.pump();
+    await tester.pump();
+    expect(find.byTooltip('Emergency lights'), findsOneWidget);
+    expect(find.byTooltip('Siren'), findsNothing);
   });
 }

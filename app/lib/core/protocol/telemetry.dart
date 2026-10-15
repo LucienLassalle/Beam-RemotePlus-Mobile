@@ -45,6 +45,13 @@ class Telemetry {
   final bool? hasTcs;
   final bool? tcsActive;
   final bool? cruiseActive;
+
+  /// Emergency lights / siren fitted (police, ambulance, fire, pace car).
+  final bool? hasLightbar;
+  final bool? hasSiren;
+
+  /// 0 off, 1 emergency lights, 2 lights + siren (fitted vehicles only).
+  final int? lightbar;
   final double? cruiseSpeed; // m/s
   final double? odometer; // m
   final double? trip; // m
@@ -178,6 +185,9 @@ class Telemetry {
     this.hasTcs,
     this.tcsActive,
     this.cruiseActive,
+    this.hasLightbar,
+    this.hasSiren,
+    this.lightbar,
     this.cruiseSpeed,
     this.odometer,
     this.trip,
@@ -379,6 +389,9 @@ class Telemetry {
       hasTcs: _bool(j['hasTcs']),
       tcsActive: _bool(j['tcsActive']),
       cruiseActive: _bool(j['cruiseActive']),
+      hasLightbar: _bool(j['hasLightbar']),
+      hasSiren: _bool(j['hasSiren']),
+      lightbar: _int(j['lightbar']),
       cruiseSpeed: _num(j['cruiseSpeed']),
       odometer: _num(j['odometer']),
       trip: _num(j['trip']),

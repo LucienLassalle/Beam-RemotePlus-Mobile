@@ -109,6 +109,8 @@
   "actionLightsOff": "Headlights off (tap: dipped beam)",
   "actionLightsLow": "Dipped beam (tap: main beam)",
   "actionLightsHigh": "Main beam (tap: off)",
+  "actionFlashers": "Emergency lights",
+  "actionSiren": "Siren",
   "actionParkingBrake": "Parking brake",
   "actionStarter": "Ignition",
   "actionEscMode": "Drive mode / ESC",

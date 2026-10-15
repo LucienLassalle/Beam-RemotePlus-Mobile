@@ -13,6 +13,8 @@ String vehicleActionLabel(AppLocalizations l10n, VehicleAction a) => switch (a) 
       VehicleAction.horn => l10n.actionHorn,
       VehicleAction.highBeam => l10n.actionHighBeam,
       VehicleAction.lights => l10n.actionLights,
+      VehicleAction.flashers => l10n.actionFlashers,
+      VehicleAction.siren => l10n.actionSiren,
       VehicleAction.parkingBrake => l10n.actionParkingBrake,
       VehicleAction.starter => l10n.actionStarter,
       VehicleAction.driveMode => l10n.actionEscMode,
@@ -35,10 +37,11 @@ class VehicleActionsBar extends StatelessWidget {
     final t = controller.telemetry;
     final enabled = controller.commandsEnabled;
     final held = controller.heldCommands;
-    HoldButton press(IconData icon, String tip, String command, bool? on) => HoldButton(
+    HoldButton press(IconData icon, String tip, String command, bool? on, {Color? activeColor}) => HoldButton(
           icon: icon,
           tooltip: tip,
           color: color,
+          activeColor: activeColor,
           enabled: enabled,
           active: on ?? false,
           onPressed: () => controller.press(command),
@@ -63,6 +66,16 @@ class VehicleActionsBar extends StatelessWidget {
             VehicleAction.horn => [hold(Icons.campaign, l10n.actionHorn, ModCommand.horn, null)],
             VehicleAction.highBeam => [hold(Icons.flare, l10n.actionHighBeam, ModCommand.highBeam, t.highBeam)],
             VehicleAction.lights => [_lights(l10n, t, enabled)],
+            // Emergency vehicles only (police, ambulance, fire, pace car).
+            VehicleAction.flashers => [
+                if (t.hasLightbar == true)
+                  press(Icons.emergency_share, l10n.actionFlashers, ModCommand.flashers, (t.lightbar ?? 0) > 0,
+                      activeColor: Colors.lightBlueAccent),
+              ],
+            VehicleAction.siren => [
+                if (t.hasSiren == true)
+                  press(Icons.volume_up, l10n.actionSiren, ModCommand.siren, t.lightbar == 2, activeColor: Colors.redAccent),
+              ],
             VehicleAction.parkingBrake => [
                 press(Icons.local_parking, l10n.actionParkingBrake, ModCommand.parkingBrake, t.parkingBrake),
               ],

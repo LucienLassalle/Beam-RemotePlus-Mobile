@@ -87,6 +87,8 @@
   "actionLightsOff": "Phares éteints (appui : codes)",
   "actionLightsLow": "Codes (appui : pleins phares)",
   "actionLightsHigh": "Pleins phares (appui : éteints)",
+  "actionFlashers": "Gyrophares",
+  "actionSiren": "Sirène",
   "actionParkingBrake": "Frein à main",
   "actionStarter": "Contact",
   "actionEscMode": "Mode de conduite / ESC",

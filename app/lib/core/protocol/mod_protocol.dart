@@ -78,6 +78,8 @@ class ModCommand {
   static const gearUp = 'gear_up';
   static const gearDown = 'gear_down';
   static const hazard = 'hazard';
+  static const flashers = 'flashers';
+  static const siren = 'siren';
   static const signalLeft = 'signal_left';
   static const signalRight = 'signal_right';
   static const lights = 'lights';
