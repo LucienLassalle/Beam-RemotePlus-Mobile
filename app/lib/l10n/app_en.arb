@@ -113,6 +113,7 @@
   "actionSiren": "Siren",
   "actionDrs": "DRS: open / close the rear wing",
   "actionPushToPass": "Push-to-Pass",
+  "actionPitLimiter": "Pit limiter",
   "actionPushToPassLeft": "Push-to-Pass: {seconds} s of boost left",
   "@actionPushToPassLeft": {
     "description": "Tooltip of the Push-to-Pass button (CF26 vehicle mod).",

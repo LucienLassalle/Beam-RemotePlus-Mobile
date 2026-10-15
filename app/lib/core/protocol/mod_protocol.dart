@@ -82,6 +82,7 @@ class ModCommand {
   static const siren = 'siren';
   static const drs = 'drs';
   static const pushToPass = 'push_to_pass';
+  static const pitLimiter = 'pit_limiter';
   static const signalLeft = 'signal_left';
   static const signalRight = 'signal_right';
   static const lights = 'lights';

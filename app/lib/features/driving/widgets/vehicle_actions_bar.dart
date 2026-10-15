@@ -17,6 +17,7 @@ String vehicleActionLabel(AppLocalizations l10n, VehicleAction a) => switch (a) 
       VehicleAction.siren => l10n.actionSiren,
       VehicleAction.drs => l10n.actionDrs,
       VehicleAction.pushToPass => l10n.actionPushToPass,
+      VehicleAction.pitLimiter => l10n.actionPitLimiter,
       VehicleAction.parkingBrake => l10n.actionParkingBrake,
       VehicleAction.starter => l10n.actionStarter,
       VehicleAction.driveMode => l10n.actionEscMode,
@@ -123,6 +124,19 @@ class VehicleActionsBar extends StatelessWidget {
                     enabled: enabled && ((t.pushToPass ?? false) || (t.pushToPassLeft ?? 1) > 0),
                     active: t.pushToPass ?? false,
                     onPressed: () => controller.press(ModCommand.pushToPass),
+                  ),
+              ],
+            // Pit limiter of the fr04 (F4, CF26), amber while it limits.
+            VehicleAction.pitLimiter => [
+                if (t.hasPitLimiter == true)
+                  HoldButton(
+                    label: 'PIT',
+                    tooltip: l10n.actionPitLimiter,
+                    color: color,
+                    activeColor: Colors.amberAccent,
+                    enabled: enabled,
+                    active: t.pitLimiter ?? false,
+                    onPressed: () => controller.press(ModCommand.pitLimiter),
                   ),
               ],
           },

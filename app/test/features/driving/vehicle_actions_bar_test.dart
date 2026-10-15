@@ -13,6 +13,7 @@ void main() {
   _emergencyTests();
   _raceTests();
   _pushToPassTests();
+  _pitLimiterTests();
   testWidgets('one headlights button shows off, dipped and main beam, and cycles them', (tester) async {
     final link = FakeLink();
     addTearDown(link.dispose);
@@ -147,5 +148,20 @@ void _pushToPassTests() {
     await tester.pump();
     await tester.tap(find.text('P2P'), warnIfMissed: false);
     expect(link.commands, ['push_to_pass']);
+  });
+}
+
+void _pitLimiterTests() {
+  testWidgets('F4: pit limiter on fr04 vehicle mods only', (tester) async {
+    final link = FakeLink();
+    addTearDown(link.dispose);
+    await pumpDrivingView(tester, theme: themeByName('F4'), link: link);
+    expect(find.text('PIT'), findsNothing);
+
+    link.telemetry_.add(const Telemetry(hasPitLimiter: true, pitLimiter: false));
+    await tester.pump();
+    await tester.pump();
+    await tester.tap(find.byTooltip('Pit limiter'));
+    expect(link.commands, ['pit_limiter']);
   });
 }

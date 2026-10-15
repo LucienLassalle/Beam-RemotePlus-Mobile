@@ -62,6 +62,10 @@ class Telemetry {
   final bool? hasPushToPass;
   final bool? pushToPass;
   final double? pushToPassLeft;
+
+  /// Pit limiter of the fr04 vehicle mods (F4, CF26): present, on.
+  final bool? hasPitLimiter;
+  final bool? pitLimiter;
   final double? cruiseSpeed; // m/s
   final double? odometer; // m
   final double? trip; // m
@@ -203,6 +207,8 @@ class Telemetry {
     this.hasPushToPass,
     this.pushToPass,
     this.pushToPassLeft,
+    this.hasPitLimiter,
+    this.pitLimiter,
     this.cruiseSpeed,
     this.odometer,
     this.trip,
@@ -412,6 +418,8 @@ class Telemetry {
       hasPushToPass: _bool(j['hasPushToPass']),
       pushToPass: _bool(j['pushToPass']),
       pushToPassLeft: _num(j['pushToPassLeft']),
+      hasPitLimiter: _bool(j['hasPitLimiter']),
+      pitLimiter: _bool(j['pitLimiter']),
       cruiseSpeed: _num(j['cruiseSpeed']),
       odometer: _num(j['odometer']),
       trip: _num(j['trip']),

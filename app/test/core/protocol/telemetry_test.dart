@@ -58,6 +58,12 @@ void main() {
       expect(t.hasPushToPass, isTrue);
       expect(t.pushToPass, isTrue);
       expect(t.pushToPassLeft, 3.3);
+    });
+
+    test('pit limiter of vehicle mods', () {
+      final t = Telemetry.fromJson({'hasPitLimiter': true, 'pitLimiter': false});
+      expect(t.hasPitLimiter, isTrue);
+      expect(t.pitLimiter, isFalse);
       expect(Telemetry.fromJson({}).driveModeIsEsc, isNull);
     });
 
