@@ -5,10 +5,10 @@ import '../core/settings/units.dart';
 
 /// A driving screen theme. See THEMES.md for a step-by-step guide.
 ///
-/// A theme only DRAWS the dashboard: it receives the latest telemetry and
-/// returns a widget filling the screen. Pedals, steering and buttons are
-/// placed by the app on top of it, so no theme can ever block the controls
-/// (touching the dashboard is touching a pedal).
+/// A theme DRAWS the dashboard: it receives the latest telemetry and returns
+/// a widget filling the screen. Pedals, steering and buttons are placed by
+/// the app, and touching the dashboard is touching a pedal, except on the
+/// few DashboardButtons a theme may add (kit/dashboard_button.dart).
 abstract class ControlTheme {
   const ControlTheme();
 
@@ -45,6 +45,10 @@ class DashboardData {
   /// Set for ~300 ms after a gear change requested from the phone.
   final GearFlash? gearFlash;
 
+  /// Sends a command to the game (see ModCommand), for DashboardButtons.
+  /// Null when commands cannot be sent (no mod, read-only mode).
+  final void Function(String command)? onCommand;
+
   const DashboardData({
     required this.telemetry,
     required this.modActive,
@@ -53,6 +57,7 @@ class DashboardData {
     this.pressureUnit = PressureUnit.bar,
     this.readOnly = false,
     this.gearFlash,
+    this.onCommand,
   });
 }
 
