@@ -90,6 +90,8 @@
   "actionFlashers": "Gyrophares",
   "actionSiren": "Sirène",
   "actionDrs": "DRS : ouvrir / fermer l'aileron arrière",
+  "actionPushToPass": "Push-to-Pass",
+  "actionPushToPassLeft": "Push-to-Pass : {seconds} s de boost restantes",
   "actionParkingBrake": "Frein à main",
   "actionStarter": "Contact",
   "actionEscMode": "Mode de conduite / ESC",

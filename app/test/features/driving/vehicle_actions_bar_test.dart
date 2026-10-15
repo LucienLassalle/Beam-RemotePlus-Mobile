@@ -12,6 +12,7 @@ Finder inBar(String text) => find.descendant(of: find.byType(VehicleActionsBar),
 void main() {
   _emergencyTests();
   _raceTests();
+  _pushToPassTests();
   testWidgets('one headlights button shows off, dipped and main beam, and cycles them', (tester) async {
     final link = FakeLink();
     addTearDown(link.dispose);
@@ -125,5 +126,26 @@ void _raceTests() {
     await tester.pump();
     await tester.pump();
     expect(find.text('DRS'), findsNothing);
+  });
+}
+
+void _pushToPassTests() {
+  testWidgets('F4: Push-to-Pass with the boost left, dim once used up', (tester) async {
+    final link = FakeLink();
+    addTearDown(link.dispose);
+    await pumpDrivingView(tester, theme: themeByName('F4'), link: link);
+    expect(find.text('P2P'), findsNothing);
+
+    link.telemetry_.add(const Telemetry(hasPushToPass: true, pushToPass: false, pushToPassLeft: 5));
+    await tester.pump();
+    await tester.pump();
+    await tester.tap(find.byTooltip('Push-to-Pass: 5.0 s of boost left'));
+    expect(link.commands, ['push_to_pass']);
+
+    link.telemetry_.add(const Telemetry(hasPushToPass: true, pushToPass: false, pushToPassLeft: 0));
+    await tester.pump();
+    await tester.pump();
+    await tester.tap(find.text('P2P'), warnIfMissed: false);
+    expect(link.commands, ['push_to_pass']);
   });
 }

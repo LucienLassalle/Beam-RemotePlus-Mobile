@@ -51,6 +51,13 @@ void main() {
       final t = Telemetry.fromJson({'hasDrs': true, 'drsOpen': true});
       expect(t.hasDrs, isTrue);
       expect(t.drsOpen, isTrue);
+    });
+
+    test('Push-to-Pass of vehicle mods', () {
+      final t = Telemetry.fromJson({'hasPushToPass': true, 'pushToPass': true, 'pushToPassLeft': 3.3});
+      expect(t.hasPushToPass, isTrue);
+      expect(t.pushToPass, isTrue);
+      expect(t.pushToPassLeft, 3.3);
       expect(Telemetry.fromJson({}).driveModeIsEsc, isNull);
     });
 

@@ -56,6 +56,12 @@ class Telemetry {
   /// DRS of the vehicle mods that have one (CF26, FR17): present, wing open.
   final bool? hasDrs;
   final bool? drsOpen;
+
+  /// Push-to-Pass of the CF26 vehicle mod: present, boost active, seconds of
+  /// boost left (0 = used up until the vehicle is reset).
+  final bool? hasPushToPass;
+  final bool? pushToPass;
+  final double? pushToPassLeft;
   final double? cruiseSpeed; // m/s
   final double? odometer; // m
   final double? trip; // m
@@ -194,6 +200,9 @@ class Telemetry {
     this.lightbar,
     this.hasDrs,
     this.drsOpen,
+    this.hasPushToPass,
+    this.pushToPass,
+    this.pushToPassLeft,
     this.cruiseSpeed,
     this.odometer,
     this.trip,
@@ -400,6 +409,9 @@ class Telemetry {
       lightbar: _int(j['lightbar']),
       hasDrs: _bool(j['hasDrs']),
       drsOpen: _bool(j['drsOpen']),
+      hasPushToPass: _bool(j['hasPushToPass']),
+      pushToPass: _bool(j['pushToPass']),
+      pushToPassLeft: _num(j['pushToPassLeft']),
       cruiseSpeed: _num(j['cruiseSpeed']),
       odometer: _num(j['odometer']),
       trip: _num(j['trip']),
