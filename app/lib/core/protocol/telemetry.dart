@@ -52,6 +52,10 @@ class Telemetry {
 
   /// 0 off, 1 emergency lights, 2 lights + siren (fitted vehicles only).
   final int? lightbar;
+
+  /// DRS of the vehicle mods that have one (CF26, FR17): present, wing open.
+  final bool? hasDrs;
+  final bool? drsOpen;
   final double? cruiseSpeed; // m/s
   final double? odometer; // m
   final double? trip; // m
@@ -188,6 +192,8 @@ class Telemetry {
     this.hasLightbar,
     this.hasSiren,
     this.lightbar,
+    this.hasDrs,
+    this.drsOpen,
     this.cruiseSpeed,
     this.odometer,
     this.trip,
@@ -392,6 +398,8 @@ class Telemetry {
       hasLightbar: _bool(j['hasLightbar']),
       hasSiren: _bool(j['hasSiren']),
       lightbar: _int(j['lightbar']),
+      hasDrs: _bool(j['hasDrs']),
+      drsOpen: _bool(j['drsOpen']),
       cruiseSpeed: _num(j['cruiseSpeed']),
       odometer: _num(j['odometer']),
       trip: _num(j['trip']),

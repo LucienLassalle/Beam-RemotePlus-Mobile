@@ -7,6 +7,7 @@ import '../kit/kit.dart';
 /// oil and water temperatures below, a big gear in a blue box, and a red
 /// blinking banner for "WATER TEMP HI", "OIL TEMP HI" and "FUEL LEVEL LOW".
 /// Laid out in the original 320x220 pixel space and scaled to the phone.
+/// The DRS of the vehicle mods that have one (CF26, FR17) gets a button.
 class F4Theme extends ControlTheme {
   const F4Theme();
 
@@ -17,7 +18,12 @@ class F4Theme extends ControlTheme {
   String get author => 'LucienLassalle';
 
   @override
-  ThemeStyle get style => const ThemeStyle(brakeColor: Color(0xFFFF3D00), throttleColor: Color(0xFF00E676));
+  ThemeStyle get style => const ThemeStyle(
+        brakeColor: Color(0xFFFF3D00),
+        throttleColor: Color(0xFF00E676),
+        // Race controls of the vehicle mods that have them (shown only then).
+        actions: {VehicleAction.drs},
+      );
 
   static const Size design = Size(320, 220);
   static const background = Color(0xFF050505);

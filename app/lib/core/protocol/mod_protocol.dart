@@ -80,6 +80,7 @@ class ModCommand {
   static const hazard = 'hazard';
   static const flashers = 'flashers';
   static const siren = 'siren';
+  static const drs = 'drs';
   static const signalLeft = 'signal_left';
   static const signalRight = 'signal_right';
   static const lights = 'lights';

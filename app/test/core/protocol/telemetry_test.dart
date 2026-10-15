@@ -45,6 +45,12 @@ void main() {
       expect(t.hasSiren, isTrue);
       expect(t.lightbar, 2);
       expect(Telemetry.fromJson({}).hasLightbar, isNull);
+    });
+
+    test('DRS of vehicle mods', () {
+      final t = Telemetry.fromJson({'hasDrs': true, 'drsOpen': true});
+      expect(t.hasDrs, isTrue);
+      expect(t.drsOpen, isTrue);
       expect(Telemetry.fromJson({}).driveModeIsEsc, isNull);
     });
 

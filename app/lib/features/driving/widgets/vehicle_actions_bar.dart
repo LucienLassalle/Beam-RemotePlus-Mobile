@@ -15,6 +15,7 @@ String vehicleActionLabel(AppLocalizations l10n, VehicleAction a) => switch (a) 
       VehicleAction.lights => l10n.actionLights,
       VehicleAction.flashers => l10n.actionFlashers,
       VehicleAction.siren => l10n.actionSiren,
+      VehicleAction.drs => l10n.actionDrs,
       VehicleAction.parkingBrake => l10n.actionParkingBrake,
       VehicleAction.starter => l10n.actionStarter,
       VehicleAction.driveMode => l10n.actionEscMode,
@@ -96,6 +97,19 @@ class VehicleActionsBar extends StatelessWidget {
             VehicleAction.cruise => [
                 press(Icons.speed, l10n.actionCruise, t.cruiseActive == true ? ModCommand.cruiseOff : ModCommand.cruiseSet,
                     t.cruiseActive),
+              ],
+            // DRS of vehicle mods (CF26, FR17), green when the wing is open.
+            VehicleAction.drs => [
+                if (t.hasDrs == true)
+                  HoldButton(
+                    label: 'DRS',
+                    tooltip: l10n.actionDrs,
+                    color: color,
+                    activeColor: Colors.greenAccent,
+                    enabled: enabled,
+                    active: t.drsOpen ?? false,
+                    onPressed: () => controller.press(ModCommand.drs),
+                  ),
               ],
           },
     ];

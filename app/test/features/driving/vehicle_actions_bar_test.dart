@@ -11,6 +11,7 @@ Finder inBar(String text) => find.descendant(of: find.byType(VehicleActionsBar),
 
 void main() {
   _emergencyTests();
+  _raceTests();
   testWidgets('one headlights button shows off, dipped and main beam, and cycles them', (tester) async {
     final link = FakeLink();
     addTearDown(link.dispose);
@@ -99,5 +100,30 @@ void _emergencyTests() {
     await tester.pump();
     expect(find.byTooltip('Emergency lights'), findsOneWidget);
     expect(find.byTooltip('Siren'), findsNothing);
+  });
+}
+
+void _raceTests() {
+  testWidgets('F4: DRS button on vehicle mods that have one only', (tester) async {
+    final link = FakeLink();
+    addTearDown(link.dispose);
+    await pumpDrivingView(tester, theme: themeByName('F4'), link: link);
+    expect(find.text('DRS'), findsNothing);
+
+    link.telemetry_.add(const Telemetry(hasDrs: true, drsOpen: false));
+    await tester.pump();
+    await tester.pump();
+    await tester.tap(find.text('DRS'));
+    expect(link.commands, ['drs']);
+  });
+
+  testWidgets('Road: no DRS even on a vehicle that has one', (tester) async {
+    final link = FakeLink();
+    addTearDown(link.dispose);
+    await pumpDrivingView(tester, theme: themeByName('Road'), link: link);
+    link.telemetry_.add(const Telemetry(hasDrs: true));
+    await tester.pump();
+    await tester.pump();
+    expect(find.text('DRS'), findsNothing);
   });
 }

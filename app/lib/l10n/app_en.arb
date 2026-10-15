@@ -111,6 +111,7 @@
   "actionLightsHigh": "Main beam (tap: off)",
   "actionFlashers": "Emergency lights",
   "actionSiren": "Siren",
+  "actionDrs": "DRS: open / close the rear wing",
   "actionParkingBrake": "Parking brake",
   "actionStarter": "Ignition",
   "actionEscMode": "Drive mode / ESC",

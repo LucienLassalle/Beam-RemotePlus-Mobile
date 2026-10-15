@@ -89,6 +89,7 @@
   "actionLightsHigh": "Pleins phares (appui : éteints)",
   "actionFlashers": "Gyrophares",
   "actionSiren": "Sirène",
+  "actionDrs": "DRS : ouvrir / fermer l'aileron arrière",
   "actionParkingBrake": "Frein à main",
   "actionStarter": "Contact",
   "actionEscMode": "Mode de conduite / ESC",

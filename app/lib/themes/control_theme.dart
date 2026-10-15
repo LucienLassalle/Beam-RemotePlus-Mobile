@@ -65,9 +65,9 @@ enum GearFlash { up, down }
 
 /// Vehicle buttons a theme may show at the bottom of the screen (the user
 /// can still hide each one in the settings). The horn and headlight flash
-/// are also on the volume buttons. Vehicle-specific ones (flashers, siren)
-/// only show on vehicles fitted with them.
-enum VehicleAction { signals, hazard, horn, highBeam, lights, flashers, siren, parkingBrake, starter, driveMode, cruise }
+/// are also on the volume buttons. Vehicle-specific ones (flashers, siren,
+/// DRS of vehicle mods) only show on vehicles fitted with them.
+enum VehicleAction { signals, hazard, horn, highBeam, lights, flashers, siren, parkingBrake, starter, driveMode, cruise, drs }
 
 /// Look of the app-drawn controls over a theme.
 class ThemeStyle {
