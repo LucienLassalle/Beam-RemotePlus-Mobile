@@ -67,7 +67,15 @@ class VehicleActionsBar extends StatelessWidget {
                 press(Icons.local_parking, l10n.actionParkingBrake, ModCommand.parkingBrake, t.parkingBrake),
               ],
             VehicleAction.starter => [hold(Icons.key, l10n.actionStarter, ModCommand.starter, t.engineRunning)],
-            VehicleAction.driveMode => [press(Icons.tune, l10n.actionEscMode, ModCommand.escMode, null)],
+            VehicleAction.driveMode => [
+                _ModeButton(
+                  mode: t.driveMode,
+                  esc: t.driveModeIsEsc ?? false,
+                  color: color,
+                  enabled: enabled,
+                  onPressed: () => controller.press(ModCommand.escMode),
+                ),
+              ],
             VehicleAction.cruise => [
                 press(Icons.speed, l10n.actionCruise, t.cruiseActive == true ? ModCommand.cruiseOff : ModCommand.cruiseSet,
                     t.cruiseActive),
@@ -90,6 +98,64 @@ class VehicleActionsBar extends StatelessWidget {
       enabled: enabled,
       active: high || low,
       onPressed: () => controller.press(ModCommand.lights),
+    );
+  }
+}
+
+/// Drive mode button: says which mode is on ("MODE / SPORT", or "ESC /
+/// REGULAR" on vehicles without drive modes) and that a tap goes to the
+/// next one (chevron).
+class _ModeButton extends StatelessWidget {
+  final String? mode;
+  final bool esc;
+  final Color color;
+  final bool enabled;
+  final VoidCallback onPressed;
+
+  const _ModeButton({
+    required this.mode,
+    required this.esc,
+    required this.color,
+    required this.enabled,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final fg = enabled ? color : color.withValues(alpha: 0.2);
+    final mode = this.mode;
+    final tooltip = mode == null ? l10n.actionEscMode : (esc ? l10n.actionEscNext(mode) : l10n.actionDriveModeNext(mode));
+    return Tooltip(
+      message: tooltip,
+      child: GestureDetector(
+        onTap: enabled ? onPressed : null,
+        child: Container(
+          height: 42,
+          constraints: const BoxConstraints(minWidth: 72, maxWidth: 132),
+          margin: const EdgeInsets.symmetric(horizontal: 3),
+          padding: const EdgeInsets.only(left: 14, right: 6),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(21),
+            color: Colors.black.withValues(alpha: 0.45),
+            border: Border.all(color: color.withValues(alpha: enabled ? 0.35 : 0.1)),
+          ),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            Flexible(
+              child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(esc ? l10n.actionEscCaption : l10n.actionDriveModeCaption,
+                    style: TextStyle(color: fg.withValues(alpha: enabled ? 0.55 : 0.2), fontSize: 9, letterSpacing: 1.2, height: 1.1)),
+                if (mode != null)
+                  Text(mode.toUpperCase(),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(color: fg, fontSize: 13, fontWeight: FontWeight.w700, height: 1.2)),
+              ]),
+            ),
+            Icon(Icons.chevron_right, size: 20, color: fg),
+          ]),
+        ),
+      ),
     );
   }
 }

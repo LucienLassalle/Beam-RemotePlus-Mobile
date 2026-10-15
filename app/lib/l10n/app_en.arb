@@ -112,6 +112,28 @@
   "actionParkingBrake": "Parking brake",
   "actionStarter": "Ignition",
   "actionEscMode": "Drive mode / ESC",
+  "actionDriveModeCaption": "MODE",
+  "actionEscCaption": "ESC",
+  "actionDriveModeNext": "Drive mode: {mode} (tap: next mode)",
+  "@actionDriveModeNext": {
+    "description": "Tooltip of the drive mode button; mode is the current drive mode name from the game.",
+    "placeholders": {
+      "mode": {
+        "type": "String",
+        "example": "Sport"
+      }
+    }
+  },
+  "actionEscNext": "ESC: {mode} (tap: next mode)",
+  "@actionEscNext": {
+    "description": "Tooltip of the drive mode button on vehicles without drive modes; mode is the current ESC mode name from the game.",
+    "placeholders": {
+      "mode": {
+        "type": "String",
+        "example": "Regular"
+      }
+    }
+  },
   "actionCruise": "Cruise control",
   "helpTitle": "Help — Controls",
   "helpBrake": "Brake",

@@ -57,6 +57,10 @@ class Telemetry {
   /// Pressures set in the vehicle configuration (kPa by wheel name).
   final Map<String, double>? tirePressuresNominal;
   final String? driveMode;
+
+  /// True when [driveMode] is the ESC mode ("Regular", "Off"...) of a vehicle
+  /// without drive modes: the drive mode button then switches the ESC.
+  final bool? driveModeIsEsc;
   final int? player;
   final String? vehicle;
 
@@ -180,6 +184,7 @@ class Telemetry {
     this.tirePressures,
     this.tirePressuresNominal,
     this.driveMode,
+    this.driveModeIsEsc,
     this.player,
     this.vehicle,
     this.wheelSlip,
@@ -373,6 +378,7 @@ class Telemetry {
       tirePressures: _pressures(j['tirePressures']),
       tirePressuresNominal: _pressures(j['tirePressuresNominal']),
       driveMode: _driveMode(j['driveMode']),
+      driveModeIsEsc: j['driveMode'] is Map ? (j['driveMode']! as Map)['esc'] == true : null,
       player: _int(j['player']),
       vehicle: _str(j['vehicle']),
       wheelSlip: _num(j['wheelSlip']),

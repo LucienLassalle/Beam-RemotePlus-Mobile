@@ -23,9 +23,19 @@ void main() {
       expect(t.escActive, isTrue);
       expect(t.tirePressures, {'FL': 210.0});
       expect(t.driveMode, 'Sport');
+      expect(t.driveModeIsEsc, isFalse);
       expect(t.player, 1);
       expect(t.receivedFields, containsAll(['speed', 'gear', 'player']));
       expect(t.receivedFields, isNot(contains('type')));
+    });
+
+    test('tells the ESC mode of vehicles without drive modes', () {
+      final t = Telemetry.fromJson({
+        'driveMode': {'key': 'esc:Regular', 'name': 'Regular', 'esc': true},
+      });
+      expect(t.driveMode, 'Regular');
+      expect(t.driveModeIsEsc, isTrue);
+      expect(Telemetry.fromJson({}).driveModeIsEsc, isNull);
     });
 
     test('reads the drivetrain, brakes and clutch fields', () {

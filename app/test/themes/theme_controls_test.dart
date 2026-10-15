@@ -84,7 +84,7 @@ void main() {
     addTearDown(link.dispose);
     await pumpDrivingView(tester, theme: themeByName('Default'), link: link);
     expect(find.byIcon(Icons.campaign), findsNothing); // horn button
-    expect(find.byIcon(Icons.tune), findsNothing); // drive mode button
+    expect(find.byIcon(Icons.chevron_right), findsNothing); // drive mode button
     await pumpDrivingView(tester, theme: themeByName('Road'), link: link);
     expect(find.byIcon(Icons.local_parking), findsNWidgets(2)); // telltale + button
     // Horn and headlight flash are on the volume buttons.
