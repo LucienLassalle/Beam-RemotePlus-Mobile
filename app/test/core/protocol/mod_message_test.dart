@@ -27,6 +27,10 @@ void main() {
     expect(m.commands, ['horn']);
   });
 
+  test('decodes the kicked event', () {
+    expect(ModMessage.decode(_json({'type': 'kicked'}), 2), isA<KickedMessage>());
+  });
+
   test('ignores unknown types, garbage and non-objects (forward compatible)', () {
     expect(ModMessage.decode(_json({'type': 'future'}), 2), isNull);
     expect(ModMessage.decode(Uint8List.fromList(utf8.encode('{broken')), 2), isNull);

@@ -44,6 +44,8 @@ sealed class ModMessage {
       case 'skeleton':
         final chunk = SkeletonChunk.fromJson(json);
         return chunk == null ? null : SkeletonMessage(chunk);
+      case 'kicked':
+        return const KickedMessage();
       default:
         return null;
     }
@@ -68,6 +70,12 @@ class SessionMessage extends ModMessage {
   final int? player;
   final List<String> commands;
   const SessionMessage({this.modVersion, this.player, this.commands = const []});
+}
+
+/// The player kicked this phone from the mod's in-game panel: the session
+/// is already closed on the PC side.
+class KickedMessage extends ModMessage {
+  const KickedMessage();
 }
 
 /// One piece of the vehicle skeleton (answer to `cmd|skeleton`).

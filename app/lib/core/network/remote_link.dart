@@ -1,7 +1,9 @@
 import '../protocol/mod_message.dart';
 import '../protocol/telemetry.dart';
 
-enum LinkState { idle, connecting, connected, timeout, error }
+/// [kicked]: the player removed this phone from the game; the connection is
+/// closed and does not retry.
+enum LinkState { idle, connecting, connected, timeout, error, kicked }
 
 /// What the driving screen needs from a connection to the game. Implemented
 /// by [BeamngConnection]; tests use a fake.

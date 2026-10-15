@@ -274,6 +274,8 @@ class BeamngConnection implements RemoteLink {
       final message = ModMessage.decode(dg.data, _protocolVersion);
       if (message is TelemetryMessage) {
         if (!_telemetry.isClosed) _telemetry.add(message.telemetry);
+      } else if (message is KickedMessage) {
+        unawaited(_onKicked());
       } else if (message != null) {
         if (!_events.isClosed) _events.add(message);
       }
@@ -281,6 +283,14 @@ class BeamngConnection implements RemoteLink {
       // One malformed frame must never break the dashboard.
       DebugLog.log('mod datagram dropped ($e)');
     }
+  }
+
+  /// Kicked from the game: stop everything, pings included, otherwise the
+  /// keep-alive would pair the phone again at once.
+  Future<void> _onKicked() async {
+    DebugLog.log('kicked by the game');
+    await disconnect();
+    _setState(LinkState.kicked);
   }
 
   /// Asks the mod for success acknowledgements too (debug overlay).

@@ -6,6 +6,7 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../core/debug/debug_monitor.dart';
 import '../../core/network/beamng_connection.dart';
+import '../../core/network/remote_link.dart';
 import '../../core/platform/gesture_exclusion.dart';
 import '../../core/platform/hardware_keys.dart';
 import '../../core/platform/vibrator.dart';
@@ -20,7 +21,7 @@ import 'driving_view.dart';
 
 /// Driving screen: owns the controller and the platform side effects
 /// (immersive mode, wakelock, volume keys, gesture exclusion); the layout is
-/// in [DrivingView].
+/// in [DrivingView]. Pops with `true` when the game kicked the phone.
 class DrivingScreen extends StatefulWidget {
   final BeamngConnection connection;
   const DrivingScreen({super.key, required this.connection});
@@ -34,6 +35,7 @@ class _DrivingScreenState extends State<DrivingScreen> with WidgetsBindingObserv
   late final DebugMonitor _debug;
   int _recalibrate = 0;
   Timer? _immersiveTimer;
+  late final StreamSubscription<LinkState> _linkStates;
 
   @override
   void initState() {
@@ -47,6 +49,10 @@ class _DrivingScreenState extends State<DrivingScreen> with WidgetsBindingObserv
     );
     _debug = DebugMonitor(widget.connection);
     widget.connection.setDebugAcks(settings.debugMode);
+    // Kicked: back to the pairing screen, which tells the player why.
+    _linkStates = widget.connection.states.listen((state) {
+      if (state == LinkState.kicked && mounted) Navigator.of(context).pop(true);
+    });
     WidgetsBinding.instance.addObserver(this);
     unawaited(WakelockPlus.enable());
     unawaited(SystemChrome.setPreferredOrientations([DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight]));
@@ -87,6 +93,7 @@ class _DrivingScreenState extends State<DrivingScreen> with WidgetsBindingObserv
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _immersiveTimer?.cancel();
+    unawaited(_linkStates.cancel());
     unawaited(HardwareKeys.release());
     unawaited(WakelockPlus.disable());
     unawaited(SystemChrome.setPreferredOrientations(DeviceOrientation.values));

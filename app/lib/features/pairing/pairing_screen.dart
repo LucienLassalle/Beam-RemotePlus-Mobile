@@ -56,7 +56,14 @@ class _PairingScreenState extends State<PairingScreen> {
     if (_cameraAllowed) await _scanner.stop();
     final connection = await attempt();
     if (connection != null && mounted) {
-      await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => DrivingScreen(connection: connection)));
+      final kicked = await Navigator.of(context).push(MaterialPageRoute<bool>(builder: (_) => DrivingScreen(connection: connection)));
+      if (kicked == true && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(AppLocalizations.of(context).kickedByHost),
+          duration: const Duration(seconds: 6),
+          behavior: SnackBarBehavior.floating,
+        ));
+      }
     }
     if (mounted && _cameraAllowed) await _scanner.start();
   }
