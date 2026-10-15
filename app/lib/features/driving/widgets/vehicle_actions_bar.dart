@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/protocol/mod_protocol.dart';
+import '../../../core/protocol/telemetry.dart';
 import '../../../l10n/generated/app_localizations.dart';
 import '../../../themes/control_theme.dart';
 import '../driving_controller.dart';
@@ -61,7 +62,7 @@ class VehicleActionsBar extends StatelessWidget {
             VehicleAction.hazard => [press(Icons.warning_amber, l10n.actionHazard, ModCommand.hazard, t.hazard)],
             VehicleAction.horn => [hold(Icons.campaign, l10n.actionHorn, ModCommand.horn, null)],
             VehicleAction.highBeam => [hold(Icons.flare, l10n.actionHighBeam, ModCommand.highBeam, t.highBeam)],
-            VehicleAction.lights => [press(Icons.light_mode, l10n.actionLights, ModCommand.lights, t.lowBeam)],
+            VehicleAction.lights => [_lights(l10n, t, enabled)],
             VehicleAction.parkingBrake => [
                 press(Icons.local_parking, l10n.actionParkingBrake, ModCommand.parkingBrake, t.parkingBrake),
               ],
@@ -74,5 +75,21 @@ class VehicleActionsBar extends StatelessWidget {
           },
     ];
     return Row(mainAxisSize: MainAxisSize.min, children: buttons);
+  }
+
+  /// One button for the headlights: each tap goes to the next state (the
+  /// game cycles off, dipped, main beam), shown with the dashboard colors.
+  HoldButton _lights(AppLocalizations l10n, Telemetry t, bool enabled) {
+    final high = t.highBeam ?? false;
+    final low = !high && (t.lowBeam ?? false);
+    return HoldButton(
+      icon: high ? Icons.highlight : Icons.light_mode,
+      tooltip: high ? l10n.actionLightsHigh : (low ? l10n.actionLightsLow : l10n.actionLightsOff),
+      color: color,
+      activeColor: high ? Colors.lightBlueAccent : Colors.greenAccent,
+      enabled: enabled,
+      active: high || low,
+      onPressed: () => controller.press(ModCommand.lights),
+    );
   }
 }

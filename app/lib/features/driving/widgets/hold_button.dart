@@ -8,6 +8,9 @@ class HoldButton extends StatelessWidget {
   final bool enabled;
   final bool active;
   final Color color;
+
+  /// Fill when [active] (defaults to [color]), e.g. blue for main beam.
+  final Color? activeColor;
   final ValueChanged<bool>? onHold;
   final VoidCallback? onPressed;
   final double size;
@@ -17,6 +20,7 @@ class HoldButton extends StatelessWidget {
     required this.icon,
     required this.tooltip,
     required this.color,
+    this.activeColor,
     this.enabled = true,
     this.active = false,
     this.onHold,
@@ -26,6 +30,7 @@ class HoldButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final fill = activeColor ?? color;
     final fg = !enabled ? color.withValues(alpha: 0.2) : (active ? Colors.black : color);
     return Tooltip(
       message: tooltip,
@@ -41,7 +46,7 @@ class HoldButton extends StatelessWidget {
             margin: const EdgeInsets.symmetric(horizontal: 3),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: active ? color : Colors.black.withValues(alpha: 0.45),
+              color: active ? fill : Colors.black.withValues(alpha: 0.45),
               border: Border.all(color: color.withValues(alpha: enabled ? 0.35 : 0.1)),
             ),
             child: Icon(icon, size: size * 0.48, color: fg),
