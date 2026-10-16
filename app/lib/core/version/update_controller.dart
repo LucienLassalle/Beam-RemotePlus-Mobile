@@ -35,6 +35,27 @@ class LatestRelease {
   Map<String, Object?> toJson() => {'version': version, 'url': url};
 }
 
+/// What to tell the player once connected to a mod.
+enum UpdateNoticeKind {
+  /// The mod is a newer release than the app: update the app.
+  updateApp,
+
+  /// The app is a newer release than the mod: update the mod.
+  updateMod,
+
+  /// App and mod match, but a newer mod was released.
+  modRelease,
+}
+
+class UpdateNotice {
+  final UpdateNoticeKind kind;
+
+  /// Version to update to: the mod's, the app's or the released one.
+  final String version;
+
+  const UpdateNotice(this.kind, this.version);
+}
+
 /// Where the latest releases come from (abstract so tests stay offline).
 abstract class ReleaseSource {
   /// Latest release of `owner/name`, null when it cannot be known now.
@@ -99,6 +120,16 @@ class UpdateController extends ChangeNotifier {
 
   /// A newer mod than [modVersion] (as sent by the mod) was released.
   LatestRelease? modUpdate(String? modVersion) => ReleaseVersion.isNewer(_mod?.version, modVersion) ? _mod : null;
+
+  /// What to tell about the versions once the mod said its own (session
+  /// message): which side is older, else whether a newer mod is out.
+  UpdateNotice? noticeFor(String? modVersion) {
+    final c = ReleaseVersion.compareTexts(modVersion, appVersion);
+    if (c != null && c > 0) return UpdateNotice(UpdateNoticeKind.updateApp, modVersion!);
+    if (c != null && c < 0) return UpdateNotice(UpdateNoticeKind.updateMod, appVersion!);
+    final release = modUpdate(modVersion);
+    return release == null ? null : UpdateNotice(UpdateNoticeKind.modRelease, release.version);
+  }
 
   /// Reads the releases cached by the last successful check.
   Future<void> load() async {

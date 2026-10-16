@@ -70,5 +70,23 @@ void main() {
       expect(c.latestApp?.version, '0.0.6');
       expect(c.latestMod?.version, '0.0.5-0.39');
     });
+
+    test('tells which side to update once the mod said its version', () async {
+      final c = _controller({UpdateController.modRepository: _mod5});
+      await c.check();
+      expect(c.noticeFor('0.0.5-0.39')?.kind, UpdateNoticeKind.updateApp);
+      expect(c.noticeFor('0.0.5-0.39')?.version, '0.0.5-0.39');
+      expect(c.noticeFor('0.0.3')?.kind, UpdateNoticeKind.updateMod);
+      expect(c.noticeFor('0.0.3')?.version, '0.0.4-0.39');
+    });
+
+    test('offers a newer mod release when app and mod match', () async {
+      final c = _controller({UpdateController.modRepository: _mod5});
+      await c.check();
+      expect(c.noticeFor('0.0.4')?.kind, UpdateNoticeKind.modRelease);
+      expect(c.noticeFor('0.0.4')?.version, '0.0.5-0.39');
+      expect(_controller({}).noticeFor('0.0.4'), isNull);
+      expect(_controller({}).noticeFor(null), isNull);
+    });
   });
 }

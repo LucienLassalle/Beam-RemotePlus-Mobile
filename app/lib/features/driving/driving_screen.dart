@@ -10,7 +10,10 @@ import '../../core/network/remote_link.dart';
 import '../../core/platform/gesture_exclusion.dart';
 import '../../core/platform/hardware_keys.dart';
 import '../../core/platform/vibrator.dart';
+import '../../core/protocol/mod_message.dart';
 import '../../core/settings/settings_scope.dart';
+import '../../core/version/update_controller.dart';
+import '../../core/version/update_scope.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../themes/theme_registry.dart';
 import '../debug/debug_overlay.dart';
@@ -36,6 +39,11 @@ class _DrivingScreenState extends State<DrivingScreen> with WidgetsBindingObserv
   int _recalibrate = 0;
   Timer? _immersiveTimer;
   late final StreamSubscription<LinkState> _linkStates;
+  late final StreamSubscription<ModMessage> _modEvents;
+
+  /// Mod version the update notice was shown for: the mod sends a session
+  /// message at every player change, the notice is shown once.
+  String? _noticeShownFor;
 
   @override
   void initState() {
@@ -53,6 +61,7 @@ class _DrivingScreenState extends State<DrivingScreen> with WidgetsBindingObserv
     _linkStates = widget.connection.states.listen((state) {
       if (state == LinkState.kicked && mounted) Navigator.of(context).pop(true);
     });
+    _modEvents = widget.connection.events.listen(_onModEvent);
     WidgetsBinding.instance.addObserver(this);
     unawaited(WakelockPlus.enable());
     unawaited(SystemChrome.setPreferredOrientations([DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight]));
@@ -94,6 +103,7 @@ class _DrivingScreenState extends State<DrivingScreen> with WidgetsBindingObserv
     WidgetsBinding.instance.removeObserver(this);
     _immersiveTimer?.cancel();
     unawaited(_linkStates.cancel());
+    unawaited(_modEvents.cancel());
     unawaited(HardwareKeys.release());
     unawaited(WakelockPlus.disable());
     unawaited(SystemChrome.setPreferredOrientations(DeviceOrientation.values));
@@ -102,6 +112,28 @@ class _DrivingScreenState extends State<DrivingScreen> with WidgetsBindingObserv
     _debug.dispose();
     widget.connection.dispose();
     super.dispose();
+  }
+
+  /// The mod said its version (session message): tells once whether the
+  /// app or the mod should be updated.
+  void _onModEvent(ModMessage message) {
+    if (message is! SessionMessage || !mounted) return;
+    final modVersion = message.modVersion;
+    if (modVersion == null || modVersion == _noticeShownFor) return;
+    _noticeShownFor = modVersion;
+    final notice = UpdateScope.maybeRead(context)?.noticeFor(modVersion);
+    if (notice == null) return;
+    final l10n = AppLocalizations.of(context);
+    final text = switch (notice.kind) {
+      UpdateNoticeKind.updateApp => l10n.updateNoticeApp(notice.version),
+      UpdateNoticeKind.updateMod => l10n.updateNoticeMod(notice.version),
+      UpdateNoticeKind.modRelease => l10n.updateNoticeModRelease(notice.version),
+    };
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(text),
+      duration: const Duration(seconds: 8),
+      behavior: SnackBarBehavior.floating,
+    ));
   }
 
   void _showRecovered() {
