@@ -46,6 +46,9 @@ longer maintained.
   gamepad) and **local multiplayer** (one phone per player).
 - **Automatic connection** on the local network, or pairing code / QR code.
 - **English and French** ([TRANSLATING.md](TRANSLATING.md)).
+- **Update check**: the home screen says when a newer app is out, and once
+  connected the app says whether the app or the mod should be updated (they
+  should be the same release).
 
 ### Optional vehicle mods
 
@@ -81,8 +84,14 @@ the game.
 
 ## Network
 
-The app only talks to the PC on your local network, never to the internet.
-It uses four UDP ports:
+The app talks to the PC on your local network only. The one exception is
+the **update check**: at launch, the app asks the GitHub API
+(`api.github.com`) for the latest release of the app and of the mod; it
+sends nothing else, and it can be turned off in Settings > Advanced > *Check
+for updates*. Without internet, the releases seen at the last check are
+used.
+
+The app uses four UDP ports:
 
 | Port | Listens on | Used for |
 |---|---|---|
