@@ -34,6 +34,7 @@ class DrivingController extends ChangeNotifier {
   bool _atLimiter = false;
   GearFlash? _gearFlash;
   Telemetry _telemetry = Telemetry.empty;
+  Map<String, String>? _optionalMods;
 
   static const flashDuration = Duration(milliseconds: 300);
 
@@ -66,6 +67,9 @@ class DrivingController extends ChangeNotifier {
   AppSettings get settings => _settings;
   Set<String> get heldCommands => Set.unmodifiable(_heldCommands);
 
+  /// State of each optional mod in the game by id, null while unknown.
+  Map<String, String>? get optionalMods => _optionalMods;
+
   /// Real structure of the followed vehicle, and the damage of each of its
   /// segments (null until the mod sent it).
   VehicleSkeleton? get skeleton => _skeleton.skeleton;
@@ -83,6 +87,10 @@ class DrivingController extends ChangeNotifier {
 
   void _onEvent(ModMessage message) {
     if (message is SkeletonMessage && _skeleton.onChunk(message.chunk)) notifyListeners();
+    if (message is SessionMessage && message.optionalMods != null) {
+      _optionalMods = message.optionalMods;
+      notifyListeners();
+    }
   }
 
   void _onTelemetry(Telemetry t) {

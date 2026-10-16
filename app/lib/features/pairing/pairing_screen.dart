@@ -10,6 +10,7 @@ import '../../core/network/beamng_connection.dart';
 import '../../core/settings/settings_scope.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../driving/driving_screen.dart';
+import '../optional_mods/optional_mods_sheet.dart';
 import 'pairing_controller.dart';
 import 'widgets/connect_panel.dart';
 import 'widgets/qr_scan_overlay.dart';
@@ -89,6 +90,11 @@ class _PairingScreenState extends State<PairingScreen> {
       appBar: AppBar(
         title: Text(l10n.appTitle),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.extension),
+            tooltip: l10n.optionalModsTitle,
+            onPressed: () => showOptionalModsSheet(context),
+          ),
           IconButton(
             icon: Icon(Icons.bug_report, color: debug ? Colors.orangeAccent : null),
             tooltip: l10n.debugModeTooltip,

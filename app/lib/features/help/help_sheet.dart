@@ -6,11 +6,14 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/settings/settings_scope.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../optional_mods/optional_mods_sheet.dart';
 
 const appRepositoryUrl = 'https://github.com/LucienLassalle/Beam-RemotePlus-Mobile';
 const modRepositoryUrl = 'https://github.com/LucienLassalle/Beam-RemotePlus-Mod';
 
-Future<void> showHelpSheet(BuildContext context) {
+/// [optionalMods]: state of each optional mod in the game (see
+/// showOptionalModsSheet), null when unknown.
+Future<void> showHelpSheet(BuildContext context, {Map<String, String>? optionalMods}) {
   final settings = SettingsScope.read(context).settings;
   return showModalBottomSheet<void>(
     context: context,
@@ -36,6 +39,14 @@ Future<void> showHelpSheet(BuildContext context) {
             _HelpRow(Icons.skip_next, Colors.white54, l10n.helpVehicle, l10n.helpVehicleDesc, modRequired: true),
             _HelpRow(Icons.flip_camera_android, Colors.white54, l10n.helpCamera, l10n.helpCameraDesc, modRequired: true),
             _HelpRow(Icons.restart_alt, Colors.orangeAccent, l10n.helpResetVehicle, l10n.helpResetVehicleDesc, modRequired: true),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                icon: const Icon(Icons.extension, size: 18),
+                label: Text(l10n.optionalModsTitle),
+                onPressed: () => showOptionalModsSheet(context, states: optionalMods),
+              ),
+            ),
             const Divider(height: 24),
             Text(l10n.helpOpenSourceTitle, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
             const SizedBox(height: 4),
