@@ -92,6 +92,19 @@
   "settingsRecalibrateDone": "Recalibrating…",
   "settingsDebugTitle": "Debug mode",
   "settingsDebugSubtitle": "Shows missing values and failed commands on screen",
+  "settingsCheckUpdatesTitle": "Check for updates",
+  "settingsCheckUpdatesSubtitle": "Looks for new versions of the app and of the mod on GitHub when the app starts",
+  "updateAppAvailable": "Beam-RemotePlus {version} is available",
+  "@updateAppAvailable": {
+    "description": "Banner of the home screen when a newer app was released.",
+    "placeholders": {
+      "version": {
+        "type": "String",
+        "example": "0.0.5-0.39"
+      }
+    }
+  },
+  "updateDownload": "Download",
   "pedalBrake": "BRAKE",
   "pedalThrottle": "GAS",
   "vehiclePrev": "Previous vehicle",

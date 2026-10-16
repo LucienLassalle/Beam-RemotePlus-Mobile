@@ -14,6 +14,7 @@ import '../optional_mods/optional_mods_sheet.dart';
 import 'pairing_controller.dart';
 import 'widgets/connect_panel.dart';
 import 'widgets/qr_scan_overlay.dart';
+import 'widgets/update_banner.dart';
 
 /// Home screen: automatic connection (recommended, needs the mod), manual
 /// pairing code, or the QR code shown by the game.
@@ -104,6 +105,7 @@ class _PairingScreenState extends State<PairingScreen> {
       ),
       body: SafeArea(
         child: Column(children: [
+          const UpdateBanner(),
           Expanded(child: _scannerView(l10n)),
           ListenableBuilder(
             listenable: _controller,

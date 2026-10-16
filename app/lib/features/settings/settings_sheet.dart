@@ -457,6 +457,8 @@ class _AdvancedTab extends StatelessWidget {
     final s = SettingsScope.of(context).settings;
     return _Tab([
       _switch(l10n.settingsDebugTitle, l10n.settingsDebugSubtitle, s.debugMode, (v) => _set(context, (s) => s.copyWith(debugMode: v))),
+      _switch(l10n.settingsCheckUpdatesTitle, l10n.settingsCheckUpdatesSubtitle, s.checkUpdates,
+          (v) => _set(context, (s) => s.copyWith(checkUpdates: v))),
     ]);
   }
 }

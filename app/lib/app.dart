@@ -3,18 +3,23 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'core/settings/settings_controller.dart';
 import 'core/settings/settings_scope.dart';
+import 'core/version/update_controller.dart';
+import 'core/version/update_scope.dart';
 import 'features/pairing/pairing_screen.dart';
 import 'l10n/generated/app_localizations.dart';
 
 class BeamRemotePlusApp extends StatelessWidget {
   final SettingsController settings;
+
+  /// Latest releases; null in tests, where nothing is said about updates.
+  final UpdateController? updates;
   final Widget? home;
 
-  const BeamRemotePlusApp({super.key, required this.settings, this.home});
+  const BeamRemotePlusApp({super.key, required this.settings, this.updates, this.home});
 
   @override
   Widget build(BuildContext context) {
-    return SettingsScope(
+    final app = SettingsScope(
       controller: settings,
       child: ListenableBuilder(
         listenable: settings,
@@ -43,5 +48,7 @@ class BeamRemotePlusApp extends StatelessWidget {
         },
       ),
     );
+    final updates = this.updates;
+    return updates == null ? app : UpdateScope(controller: updates, child: app);
   }
 }
