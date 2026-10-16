@@ -55,12 +55,18 @@ none of these mods is needed:
 
 | Vehicle mod | Buttons |
 |---|---|
-| **CF26** (F3 configurations of the fr04) | DRS, Push-to-Pass (P2P), pit limiter (PIT) |
-| **F4** by LucasBE (fr04) | pit limiter (PIT) |
+| **CF26** (add-on of the F4, its F3 configurations) | DRS, Push-to-Pass (P2P), pit limiter (PIT) |
+| **Carbonworks F4** by LucasBE (fr04) | pit limiter (PIT) |
 | **FR17** | DRS |
 
-With the **Tyre Thermals and Wear** mod, the damage view also shows the
-temperature and wear of each tyre.
+With a tyre thermals mod, the damage view also shows the temperature and
+wear of each tyre: **Tyre Wear and Thermals Redux** (maintained) or the
+original **Luuks Tyre Thermals and Wear Mod** (unsupported since 2024).
+
+The **Optional mods** list (puzzle icon on the home screen, or *Optional
+mods* in the help while driving) shows these mods and, once connected,
+whether each one is enabled, installed but disabled, or not installed in
+the game.
 
 ## Installation
 

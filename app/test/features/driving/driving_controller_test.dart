@@ -115,4 +115,14 @@ void main() {
     expect(controller.skeleton!.id, 'a');
     expect(controller.skeletonLevels, [9]);
   });
+
+  test('keeps the state of the optional mods, unknown until the mod tells', () async {
+    expect(controller.optionalMods, isNull);
+    link.events_.add(const SessionMessage(modVersion: '0.0.4'));
+    await Future<void>.delayed(Duration.zero);
+    expect(controller.optionalMods, isNull);
+    link.events_.add(const SessionMessage(optionalMods: {'fr17': 'enabled'}));
+    await Future<void>.delayed(Duration.zero);
+    expect(controller.optionalMods, {'fr17': 'enabled'});
+  });
 }

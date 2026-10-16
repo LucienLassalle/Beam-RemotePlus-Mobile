@@ -145,7 +145,7 @@ class _DrivingScreenState extends State<DrivingScreen> with WidgetsBindingObserv
       IconButton(
         icon: const Icon(Icons.help_outline, color: Colors.white54),
         tooltip: l10n.helpTitle,
-        onPressed: () => showHelpSheet(context),
+        onPressed: () => showHelpSheet(context, optionalMods: _controller.optionalMods),
       ),
       IconButton(
         icon: const Icon(Icons.settings, color: Colors.white70),

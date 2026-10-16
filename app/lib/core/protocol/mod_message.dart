@@ -40,6 +40,12 @@ sealed class ModMessage {
           commands: json['commands'] is List
               ? [for (final c in json['commands']! as List<Object?>) if (c is String) c]
               : const [],
+          optionalMods: json['optionalMods'] is Map
+              ? {
+                  for (final e in (json['optionalMods']! as Map).entries)
+                    if (e.key is String && e.value is String) e.key as String: e.value as String,
+                }
+              : null,
         );
       case 'skeleton':
         final chunk = SkeletonChunk.fromJson(json);
@@ -69,7 +75,13 @@ class SessionMessage extends ModMessage {
   final String? modVersion;
   final int? player;
   final List<String> commands;
-  const SessionMessage({this.modVersion, this.player, this.commands = const []});
+
+  /// State of each optional mod in the game, by id (`tyreThermals`,
+  /// `cf26`...): `enabled`, `disabled` or `missing`. Null for older mods,
+  /// which do not tell.
+  final Map<String, String>? optionalMods;
+
+  const SessionMessage({this.modVersion, this.player, this.commands = const [], this.optionalMods});
 }
 
 /// The player kicked this phone from the mod's in-game panel: the session
