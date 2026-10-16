@@ -25,6 +25,17 @@ void main() {
     expect(m.modVersion, '2.0.0');
     expect(m.player, 1);
     expect(m.commands, ['horn']);
+    expect(m.optionalMods, isNull);
+  });
+
+  test('decodes the state of the optional mods', () {
+    final m = ModMessage.decode(
+        _json({
+          'type': 'session',
+          'optionalMods': {'fr17': 'enabled', 'cf26': 'disabled', 'f4': 3},
+        }),
+        2)! as SessionMessage;
+    expect(m.optionalMods, {'fr17': 'enabled', 'cf26': 'disabled'});
   });
 
   test('decodes the kicked event', () {
