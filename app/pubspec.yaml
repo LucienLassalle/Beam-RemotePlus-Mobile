@@ -31,6 +31,8 @@ dependencies:
   shared_preferences: ^2.5.6
   # Opens the GitHub repositories from the help
   url_launcher: ^6.3.3
+  # App version sent to the mod and compared with the releases
+  package_info_plus: ^10.2.2
 
 dev_dependencies:
   flutter_test:

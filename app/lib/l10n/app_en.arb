@@ -92,6 +92,49 @@
   "settingsRecalibrateDone": "Recalibrating…",
   "settingsDebugTitle": "Debug mode",
   "settingsDebugSubtitle": "Shows missing values and failed commands on screen",
+  "settingsCheckUpdatesTitle": "Check for updates",
+  "settingsCheckUpdatesSubtitle": "Looks for new versions of the app and of the mod on GitHub when the app starts",
+  "updateAppAvailable": "Beam-RemotePlus {version} is available",
+  "@updateAppAvailable": {
+    "description": "Banner of the home screen when a newer app was released.",
+    "placeholders": {
+      "version": {
+        "type": "String",
+        "example": "0.0.5-0.39"
+      }
+    }
+  },
+  "updateDownload": "Download",
+  "updateNoticeApp": "The mod on the PC is newer ({version}): update the app",
+  "@updateNoticeApp": {
+    "description": "Shown once connected when the mod is a newer release than the app.",
+    "placeholders": {
+      "version": {
+        "type": "String",
+        "example": "0.0.5-0.39"
+      }
+    }
+  },
+  "updateNoticeMod": "This app ({version}) is newer than the mod: update the mod on the PC",
+  "@updateNoticeMod": {
+    "description": "Shown once connected when the app is a newer release than the mod.",
+    "placeholders": {
+      "version": {
+        "type": "String",
+        "example": "0.0.5-0.39"
+      }
+    }
+  },
+  "updateNoticeModRelease": "Beam-RemotePlus mod {version} is available: update it on the PC",
+  "@updateNoticeModRelease": {
+    "description": "Shown once connected when a newer mod was released.",
+    "placeholders": {
+      "version": {
+        "type": "String",
+        "example": "0.0.5-0.39"
+      }
+    }
+  },
   "pedalBrake": "BRAKE",
   "pedalThrottle": "GAS",
   "vehiclePrev": "Previous vehicle",

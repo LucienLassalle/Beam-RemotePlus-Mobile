@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import '../debug/debug_log.dart';
+import '../platform/app_version.dart';
 import '../platform/device_name.dart';
 import '../protocol/mod_message.dart';
 import '../protocol/mod_protocol.dart';
@@ -48,8 +49,12 @@ class BeamngConnection implements RemoteLink {
   /// to 0.0.3 only know the legacy one), then the one of its answer.
   List<String> _pingPrefixes = ModProtocol.prefixes;
 
+  /// Sent in the pings so the mod can tell whether the app and the mod match.
+  String? _appVersion;
+
   List<List<int>> _pings(String code, String deviceName) => [
-        for (final p in _pingPrefixes) utf8.encode(ModProtocol.ping(code, deviceName, display: _display, withPrefix: p)),
+        for (final p in _pingPrefixes)
+          utf8.encode(ModProtocol.ping(code, deviceName, display: _display, withPrefix: p, appVersion: _appVersion)),
       ];
 
   /// Keeps the prefix of [answer] (a pong) for the next pings.
@@ -93,6 +98,7 @@ class BeamngConnection implements RemoteLink {
     _setState(LinkState.connecting);
 
     final deviceName = await resolveDeviceName();
+    _appVersion ??= await resolveAppVersion();
     final targets = [if (knownHost != null) knownHost, ...await broadcastTargets()];
     DebugLog.log('connect: targets=$targets device=$deviceName display=$display');
     if (display) return _connectDisplay(code, deviceName, targets);

@@ -9,7 +9,10 @@ abstract class SettingsStore {
 }
 
 class SharedPreferencesSettingsStore implements SettingsStore {
-  static const _key = 'settings.v1';
+  final String _key;
+
+  /// [key]: one JSON document per key (settings, cached releases...).
+  const SharedPreferencesSettingsStore([this._key = 'settings.v1']);
 
   @override
   Future<Map<String, Object?>> load() async {

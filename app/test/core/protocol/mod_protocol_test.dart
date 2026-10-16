@@ -11,6 +11,11 @@ void main() {
       expect(ModProtocol.ping('1', 'Tab', display: true, withPrefix: ModProtocol.legacyPrefix), 'beamngremoteplus|ping|1|2|Tab|display');
     });
 
+    test('ping sends the app version after the role', () {
+      expect(ModProtocol.ping('1', 'Tab', appVersion: '0.0.5-0.39'), 'beamremoteplus|ping|1|2|Tab|controller|0.0.5-0.39');
+      expect(ModProtocol.ping('1', 'Tab', display: true, appVersion: '0.0.5'), 'beamremoteplus|ping|1|2|Tab|display|0.0.5');
+    });
+
     test('parses pongs of v1 and v2 mods, with either prefix', () {
       expect(ModProtocol.parsePong('beamremoteplus|pong|20367|2', '20367'), 2);
       expect(ModProtocol.parsePong('beamngremoteplus|pong|20367|2', '20367'), 2);

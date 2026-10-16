@@ -71,6 +71,9 @@ class AppSettings {
 
   final bool debugMode;
 
+  /// Looks for new releases of the app and of the mod on GitHub at launch.
+  final bool checkUpdates;
+
   /// Presets offered next to a custom value.
   static const List<double> rotationRanges = [360, 540, 720, 900];
   static const double minRotationRange = 90;
@@ -105,6 +108,7 @@ class AppSettings {
     this.showActionsBar = true,
     this.hiddenActions = const {},
     this.debugMode = false,
+    this.checkUpdates = true,
   });
 
   /// Some road-feel vibration is enabled.
@@ -147,6 +151,7 @@ class AppSettings {
     bool? showActionsBar,
     Set<String>? hiddenActions,
     bool? debugMode,
+    bool? checkUpdates,
   }) {
     return AppSettings(
       themeName: themeName ?? this.themeName,
@@ -177,6 +182,7 @@ class AppSettings {
       showActionsBar: showActionsBar ?? this.showActionsBar,
       hiddenActions: hiddenActions ?? this.hiddenActions,
       debugMode: debugMode ?? this.debugMode,
+      checkUpdates: checkUpdates ?? this.checkUpdates,
     );
   }
 
@@ -209,6 +215,7 @@ class AppSettings {
         'showActionsBar': showActionsBar,
         'hiddenActions': hiddenActions.toList()..sort(),
         'debugMode': debugMode,
+        'checkUpdates': checkUpdates,
       };
 
   /// Missing or wrongly typed values fall back to the defaults, so settings
@@ -258,6 +265,7 @@ class AppSettings {
           ? {for (final a in json['hiddenActions']! as List<Object?>) if (a is String) a}
           : d.hiddenActions,
       debugMode: pick('debugMode', d.debugMode),
+      checkUpdates: pick('checkUpdates', d.checkUpdates),
     );
   }
 }

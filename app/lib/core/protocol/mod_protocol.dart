@@ -37,9 +37,14 @@ class ModProtocol {
   static const int controlIntervalMs = 16; // ~60 Hz
 
   /// [display]: second-screen phone, telemetry only (no virtual device).
-  /// [withPrefix]: one of [prefixes].
-  static String ping(String code, String deviceName, {bool display = false, String withPrefix = prefix}) =>
-      '$withPrefix|ping|$code|$version|${deviceName.replaceAll('|', ' ')}${display ? '|display' : ''}';
+  /// [withPrefix]: one of [prefixes]. [appVersion] goes after the role, so
+  /// the role is always written with it (older mods ignore it).
+  static String ping(String code, String deviceName,
+      {bool display = false, String withPrefix = prefix, String? appVersion}) {
+    final head = '$withPrefix|ping|$code|$version|${deviceName.replaceAll('|', ' ')}';
+    if (appVersion != null) return '$head|${display ? 'display' : 'controller'}|${appVersion.replaceAll('|', ' ')}';
+    return display ? '$head|display' : head;
+  }
 
   /// The handshake prefix [message] starts with, null if none.
   static String? prefixOf(String message) {
