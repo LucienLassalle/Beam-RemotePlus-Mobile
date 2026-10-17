@@ -15,6 +15,7 @@ class SteeringControl extends StatefulWidget {
   final ValueChanged<double> onSteering;
   final bool tiltMode;
   final double rotationRangeDeg;
+  final bool realWheel;
   final bool invert;
   final bool smoothing;
   final SteeringSensor sensor;
@@ -34,6 +35,7 @@ class SteeringControl extends StatefulWidget {
     required this.onSteering,
     this.tiltMode = true,
     this.rotationRangeDeg = 900,
+    this.realWheel = false,
     this.invert = false,
     this.smoothing = true,
     this.sensor = SteeringSensor.auto,
@@ -72,6 +74,7 @@ class _SteeringControlState extends State<SteeringControl> {
   void _configure() {
     _tilt
       ..rotationRangeDeg = widget.rotationRangeDeg
+      ..realWheel = widget.realWheel
       ..invert = widget.invert
       ..smoothing = widget.smoothing;
   }

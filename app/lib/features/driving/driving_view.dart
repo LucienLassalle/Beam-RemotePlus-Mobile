@@ -252,6 +252,7 @@ class DrivingView extends StatelessWidget {
       onSteering: controller.steer,
       tiltMode: settings.tiltSteering,
       rotationRangeDeg: settings.rotationRangeDeg,
+      realWheel: settings.realWheel,
       invert: settings.invertSteering,
       smoothing: settings.steeringSmoothing,
       sensor: settings.steeringSensor,

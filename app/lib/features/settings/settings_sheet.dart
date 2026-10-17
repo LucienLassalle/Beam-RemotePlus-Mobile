@@ -343,10 +343,13 @@ class _GameplayTab extends StatelessWidget {
               onSelected: (_) => unawaited(_customRange(context, s.rotationRangeDeg)),
             ),
           ]),
-          Text(l10n.settingsRotationRangeHint(TiltSteering.maxTiltDegFor(s.rotationRangeDeg).round()),
+          Text(l10n.settingsRotationRangeHint(
+              TiltSteering.fullLockDegFor(s.rotationRangeDeg, realWheel: s.realWheel).round()),
               style: const TextStyle(fontSize: 11, color: Colors.white38)),
         ]),
       ),
+      _switch(l10n.settingsRealWheelTitle, l10n.settingsRealWheelSubtitle, s.realWheel,
+          s.tiltSteering ? (v) => _set(context, (s) => s.copyWith(realWheel: v)) : null),
       // Tilt only: the touch bar and the thumb wheel follow the finger.
       _switch(l10n.settingsInvertTitle, null, s.invertSteering,
           s.tiltSteering ? (v) => _set(context, (s) => s.copyWith(invertSteering: v)) : null),

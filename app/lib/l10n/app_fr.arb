@@ -61,6 +61,8 @@
   "settingsOk": "OK",
   "settingsRotationRangeSubtitle": "Comme un vrai volant : 360° = rapide, 900° = plus lourd et progressif.",
   "settingsRotationRangeHint": "Il faut incliner d'environ {deg}° pour braquer à fond.",
+  "settingsRealWheelTitle": "Volant réel (1:1)",
+  "settingsRealWheelSubtitle": "Tourner le téléphone autant que le volant : 900° = 450° de chaque côté (l'écran est alors à l'envers). Désactivé : une inclinaison plus faible suffit.",
   "settingsInvertTitle": "Inverser la direction",
   "settingsSensorTitle": "Capteur de mouvement",
   "settingsSensorSubtitle": "Le gyroscope dirige de façon plus réactive et plus stable. Auto l'utilise si le téléphone en a un, sinon l'accéléromètre.",
