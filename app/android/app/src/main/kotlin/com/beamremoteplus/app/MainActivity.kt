@@ -108,7 +108,8 @@ class MainActivity : FlutterActivity() {
             if (call.method != "vibrate") return@setMethodCallHandler result.notImplemented()
             val ms = toInt(call.argument<Any>("ms")).toLong().coerceIn(1, 1000)
             val amplitude = toInt(call.argument<Any>("amplitude")).coerceIn(1, 255)
-            vibrate(ms, amplitude)
+            val primitive = call.argument<String>("primitive")
+            if (primitive == null || !vibratePrimitive(primitive, amplitude)) vibrate(ms, amplitude)
             result.success(null)
         }
 
@@ -161,13 +162,33 @@ class MainActivity : FlutterActivity() {
         gravityListener = null
     }
 
+    private fun vibrator(): android.os.Vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        (getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager).defaultVibrator
+    } else {
+        @Suppress("DEPRECATION")
+        getSystemService(Context.VIBRATOR_SERVICE) as android.os.Vibrator
+    }
+
+    // Short shaped vibrations of Android 11+ (tick, low tick, thud), when the
+    // vibration motor supports them. Returns false otherwise: the caller then
+    // plays the plain pulse, as on older phones.
+    private fun vibratePrimitive(name: String, amplitude: Int): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return false
+        val id = when (name) {
+            "tick" -> VibrationEffect.Composition.PRIMITIVE_TICK
+            "lowTick" -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) VibrationEffect.Composition.PRIMITIVE_LOW_TICK else return false
+            "thud" -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) VibrationEffect.Composition.PRIMITIVE_THUD else return false
+            else -> return false
+        }
+        val vibrator = vibrator()
+        if (!vibrator.hasVibrator() || !vibrator.areAllPrimitivesSupported(id)) return false
+        vibrator.vibrate(VibrationEffect.startComposition().addPrimitive(id, amplitude / 255f).compose())
+        return true
+    }
+
     @Suppress("DEPRECATION")
     private fun vibrate(ms: Long, amplitude: Int) {
-        val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            (getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager).defaultVibrator
-        } else {
-            getSystemService(Context.VIBRATOR_SERVICE) as android.os.Vibrator
-        }
+        val vibrator = vibrator()
         if (!vibrator.hasVibrator()) return
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val strength = if (vibrator.hasAmplitudeControl()) amplitude else VibrationEffect.DEFAULT_AMPLITUDE
