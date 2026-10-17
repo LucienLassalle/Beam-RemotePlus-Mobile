@@ -70,4 +70,20 @@ void main() {
       expect(p.update(-30, t0.add(const Duration(milliseconds: 1300))), 0); // cooldown
     });
   });
+
+  test('the gyroscope-based samples are never smoothed: no delay', () {
+    double firstStep({required bool fused}) {
+      final s = TiltSteering(rotationRangeDeg: 360, smoothing: true, fused: fused);
+      for (var i = 0; i < TiltSteering.calibrationSamples; i++) {
+        final (x, y, z) = _rolled(0);
+        s.steering(x, y, z);
+      }
+      s.steering(0, 0, 9.81); // first smoothed sample at rest
+      final (x, y, z) = _rolled(30);
+      return 0.5 - s.steering(x, y, z);
+    }
+
+    expect(firstStep(fused: true), closeTo(0.5 * 30 / 75, 1e-6), reason: '30° of a 360° range (75° tilt)');
+    expect(firstStep(fused: false), lessThan(firstStep(fused: true)));
+  });
 }

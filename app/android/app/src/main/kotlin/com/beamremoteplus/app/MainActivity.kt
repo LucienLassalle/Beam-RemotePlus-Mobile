@@ -2,6 +2,10 @@ package com.beamremoteplus.app
 
 import android.graphics.Rect
 import android.content.Context
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.os.Build
 import android.os.VibrationEffect
 import android.os.VibratorManager
@@ -9,6 +13,7 @@ import android.util.Log
 import android.view.KeyEvent
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodChannel
 import java.net.Inet4Address
 import java.net.NetworkInterface
@@ -20,11 +25,14 @@ import java.util.Collections
  *  - network_info: finds the hotspot interface address (phone as access point)
  *  - hardware_keys: captures the volume buttons while driving (horn / flash)
  *  - vibrator: variable-strength pulses for the road-feel haptics
+ *  - sensors / gravity: gravity seen by the phone, from the gyroscope fused
+ *    with the accelerometer (game rotation vector), for tilt steering
  */
 class MainActivity : FlutterActivity() {
     private val logTag = "BeamRemotePlus"
     private var hardwareKeysChannel: MethodChannel? = null
     private var volumeKeysCaptured = false
+    private var gravityListener: SensorEventListener? = null
 
     // Interfaces that are never the local Wi-Fi access point (mobile data,
     // USB tethering, loopback): skipping them avoids picking the SIM address.
@@ -104,6 +112,16 @@ class MainActivity : FlutterActivity() {
             result.success(null)
         }
 
+        MethodChannel(messenger, "com.beamremoteplus.app/sensors").setMethodCallHandler { call, result ->
+            if (call.method != "hasGameRotationVector") return@setMethodCallHandler result.notImplemented()
+            result.success(gameRotationVector() != null)
+        }
+
+        EventChannel(messenger, "com.beamremoteplus.app/gravity").setStreamHandler(object : EventChannel.StreamHandler {
+            override fun onListen(arguments: Any?, events: EventChannel.EventSink) = startGravity(events)
+            override fun onCancel(arguments: Any?) = stopGravity()
+        })
+
         hardwareKeysChannel = MethodChannel(messenger, "com.beamremoteplus.app/hardware_keys").apply {
             setMethodCallHandler { call, result ->
                 if (call.method != "setVolumeKeysCaptured") return@setMethodCallHandler result.notImplemented()
@@ -111,6 +129,36 @@ class MainActivity : FlutterActivity() {
                 result.success(null)
             }
         }
+    }
+
+    private fun sensorManager() = getSystemService(Context.SENSOR_SERVICE) as SensorManager
+
+    // Fusion of the gyroscope and the accelerometer without the magnetometer:
+    // smooth and quick relative rotations, unaffected by magnets.
+    private fun gameRotationVector(): Sensor? = sensorManager().getDefaultSensor(Sensor.TYPE_GAME_ROTATION_VECTOR)
+
+    // Streams the gravity vector in the phone frame (m/s², same axes as the
+    // accelerometer), computed from the rotation: what the accelerometer
+    // would read without the shakes of the hands.
+    private fun startGravity(events: EventChannel.EventSink) {
+        stopGravity()
+        val sensor = gameRotationVector() ?: return events.error("unavailable", "no game rotation vector sensor", null)
+        val rotation = FloatArray(9)
+        val listener = object : SensorEventListener {
+            override fun onSensorChanged(event: SensorEvent) {
+                SensorManager.getRotationMatrixFromVector(rotation, event.values)
+                val g = SensorManager.GRAVITY_EARTH
+                events.success(listOf(rotation[6] * g, rotation[7] * g, rotation[8] * g))
+            }
+            override fun onAccuracyChanged(sensor: Sensor, accuracy: Int) {}
+        }
+        gravityListener = listener
+        sensorManager().registerListener(listener, sensor, SensorManager.SENSOR_DELAY_GAME)
+    }
+
+    private fun stopGravity() {
+        gravityListener?.let { sensorManager().unregisterListener(it) }
+        gravityListener = null
     }
 
     @Suppress("DEPRECATION")

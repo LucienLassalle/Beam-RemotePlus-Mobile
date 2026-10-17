@@ -3,9 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 
+import '../../../core/platform/gravity_sensor.dart';
+import '../../../core/settings/app_settings.dart';
 import '../tilt_steering.dart';
 
-/// Steering input: phone tilt (accelerometer) or a horizontal touch bar.
+/// Steering input: phone tilt (gyroscope or accelerometer, see [sensor]) or
+/// a horizontal touch bar.
 /// Emits 0 (full right) .. 1 (full left), 0.5 = centre. In tilt mode the
 /// widget draws nothing.
 class SteeringControl extends StatefulWidget {
@@ -14,6 +17,7 @@ class SteeringControl extends StatefulWidget {
   final double rotationRangeDeg;
   final bool invert;
   final bool smoothing;
+  final SteeringSensor sensor;
 
   /// Non-null enables pitch gear shifting (+1 up, -1 down).
   final ValueChanged<int>? onPitchShift;
@@ -21,7 +25,8 @@ class SteeringControl extends StatefulWidget {
   /// Increment to recalibrate the resting position.
   final int recalibrateCounter;
 
-  /// Accelerometer samples; defaults to the phone sensor (tests inject one).
+  /// Tilt samples; defaults to the phone sensor picked by [sensor] (tests
+  /// inject one).
   final Stream<AccelerometerEvent>? accelerometer;
 
   const SteeringControl({
@@ -31,6 +36,7 @@ class SteeringControl extends StatefulWidget {
     this.rotationRangeDeg = 900,
     this.invert = false,
     this.smoothing = true,
+    this.sensor = SteeringSensor.auto,
     this.onPitchShift,
     this.recalibrateCounter = 0,
     this.accelerometer,
@@ -56,7 +62,7 @@ class _SteeringControlState extends State<SteeringControl> {
   void didUpdateWidget(covariant SteeringControl old) {
     super.didUpdateWidget(old);
     _configure();
-    if (widget.tiltMode != old.tiltMode) {
+    if (widget.tiltMode != old.tiltMode || widget.sensor != old.sensor) {
       _subscribe();
     } else if (widget.recalibrateCounter != old.recalibrateCounter) {
       _tilt.recalibrate();
@@ -78,8 +84,23 @@ class _SteeringControlState extends State<SteeringControl> {
       widget.onSteering(0.5);
       return;
     }
-    final samples = widget.accelerometer ?? accelerometerEventStream(samplingPeriod: SensorInterval.gameInterval);
-    _sub = samples.listen(_onSample);
+    final injected = widget.accelerometer;
+    if (injected != null) {
+      _tilt.fused = false;
+      _sub = injected.listen(_onSample);
+      return;
+    }
+    unawaited(_subscribeSensor(widget.sensor));
+  }
+
+  /// The gyroscope-based gravity unless the accelerometer is asked for or
+  /// the phone has no gyroscope.
+  Future<void> _subscribeSensor(SteeringSensor sensor) async {
+    final fused = sensor != SteeringSensor.accelerometer && await GravitySensor.available();
+    if (!mounted || !widget.tiltMode || widget.sensor != sensor || _sub != null) return;
+    _tilt.fused = fused;
+    _sub = (fused ? GravitySensor.samples() : accelerometerEventStream(samplingPeriod: SensorInterval.gameInterval))
+        .listen(_onSample, onError: (Object _) {});
   }
 
   void _onSample(AccelerometerEvent e) {

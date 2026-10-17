@@ -28,7 +28,8 @@ longer maintained.
 
 ## Features
 
-- **Steering** by tilting the phone like a wheel, or with a touch bar.
+- **Steering** by tilting the phone like a wheel (with the gyroscope when
+  the phone has one, quicker and steadier), or with a touch bar.
 - **Analog pedals** with both thumbs.
 - **Dashboard themes**, easy to make: [THEMES.md](THEMES.md).
 - **Vehicle buttons**: indicators, hazards, horn, lights, parking brake,

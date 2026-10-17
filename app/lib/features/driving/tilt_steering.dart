@@ -27,13 +27,18 @@ class TiltSteering {
   bool invert;
   bool smoothing;
 
+  /// Samples come from the gyroscope fused with the accelerometer
+  /// (GravitySensor) instead of the raw accelerometer. They have no
+  /// jitter to filter: [smoothing] only applies to the accelerometer.
+  bool fused;
+
   int _count = 0;
   double _sumX = 0, _sumY = 0, _sumZ = 0;
   double _restX = 0, _restY = 0, _restMag = 9.81;
   bool _calibrated = false;
   double? _smoothedRoll;
 
-  TiltSteering({this.rotationRangeDeg = 900, this.invert = false, this.smoothing = true});
+  TiltSteering({this.rotationRangeDeg = 900, this.invert = false, this.smoothing = true, this.fused = false});
 
   bool get calibrated => _calibrated;
 
@@ -73,7 +78,7 @@ class TiltSteering {
         : deviation >= shakeHardDeviation
             ? shakeMinConfidence
             : 1.0 - (deviation - shakeSoftDeviation) / (shakeHardDeviation - shakeSoftDeviation) * (1.0 - shakeMinConfidence);
-    final alpha = (smoothing ? emaAlpha : 1.0) * confidence;
+    final alpha = (smoothing && !fused ? emaAlpha : 1.0) * confidence;
     _smoothedRoll = _smoothedRoll == null ? roll : _smoothedRoll! + alpha * (roll - _smoothedRoll!);
     roll = _smoothedRoll!;
     if (roll.abs() < centerDeadZoneDeg) roll = 0;

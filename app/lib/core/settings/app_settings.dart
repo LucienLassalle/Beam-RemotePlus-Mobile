@@ -2,6 +2,10 @@ import 'units.dart';
 
 export 'units.dart';
 
+/// Sensor read by tilt steering: [auto] = the gyroscope when the phone has
+/// one (quicker, steadier), otherwise the accelerometer.
+enum SteeringSensor { auto, gyroscope, accelerometer }
+
 /// User preferences, persisted between launches (see [SettingsController]).
 /// Immutable: change it with [copyWith].
 class AppSettings {
@@ -41,6 +45,8 @@ class AppSettings {
   final bool tiltSteering;
   final double rotationRangeDeg;
   final bool invertSteering;
+
+  final SteeringSensor steeringSensor;
 
   /// Filters the accelerometer jitter ("shake reduction").
   final bool steeringSmoothing;
@@ -94,6 +100,7 @@ class AppSettings {
     this.tiltSteering = true,
     this.rotationRangeDeg = 900,
     this.invertSteering = true,
+    this.steeringSensor = SteeringSensor.auto,
     this.steeringSmoothing = true,
     this.pitchGearShift = false,
     this.hapticSpin = true,
@@ -137,6 +144,7 @@ class AppSettings {
     bool? tiltSteering,
     double? rotationRangeDeg,
     bool? invertSteering,
+    SteeringSensor? steeringSensor,
     bool? steeringSmoothing,
     bool? pitchGearShift,
     bool? hapticSpin,
@@ -168,6 +176,7 @@ class AppSettings {
       tiltSteering: tiltSteering ?? this.tiltSteering,
       rotationRangeDeg: rotationRangeDeg ?? this.rotationRangeDeg,
       invertSteering: invertSteering ?? this.invertSteering,
+      steeringSensor: steeringSensor ?? this.steeringSensor,
       steeringSmoothing: steeringSmoothing ?? this.steeringSmoothing,
       pitchGearShift: pitchGearShift ?? this.pitchGearShift,
       hapticSpin: hapticSpin ?? this.hapticSpin,
@@ -201,6 +210,7 @@ class AppSettings {
         'tiltSteering': tiltSteering,
         'rotationRangeDeg': rotationRangeDeg,
         'invertSteering': invertSteering,
+        'steeringSensor': steeringSensor.name,
         'steeringSmoothing': steeringSmoothing,
         'pitchGearShift': pitchGearShift,
         'hapticSpin': hapticSpin,
@@ -249,6 +259,7 @@ class AppSettings {
       tiltSteering: pick('tiltSteering', d.tiltSteering),
       rotationRangeDeg: rotation,
       invertSteering: pick('invertSteering', d.invertSteering),
+      steeringSensor: enumByName(SteeringSensor.values, json['steeringSensor'], d.steeringSensor),
       steeringSmoothing: pick('steeringSmoothing', d.steeringSmoothing),
       pitchGearShift: pick('pitchGearShift', d.pitchGearShift),
       hapticSpin: pick('hapticSpin', roadHaptics),
