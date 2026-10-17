@@ -299,6 +299,8 @@
   "settingsSecondScreenSubtitle": "Applies at the next connection",
   "settingsWarningsTitle": "Warning lights",
   "settingsWarningsSubtitle": "Shows engine, oil, temperature, fuel, tyre… warnings on screen",
+  "settingsColorBlindTitle": "Colour-blind mode",
+  "settingsColorBlindSubtitle": "Orange and blue instead of red and green: pedals, shift lights, damage view",
   "settingsVehiclePanelTitle": "Radar and damage panel",
   "settingsVehiclePanelSubtitle": "Nearby cars, body and mechanical damage, brake temperatures and tyre temperatures (tyre temperatures need the Tyre Thermals and Wear mod)",
   "settingsSimpleDamageTitle": "Simplified damage",

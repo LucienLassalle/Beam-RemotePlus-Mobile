@@ -3,6 +3,7 @@ library;
 
 export '../../core/protocol/telemetry.dart';
 export '../control_theme.dart';
+export 'color_vision.dart';
 export 'damage_view.dart';
 export 'dash_format.dart';
 export 'dashboard_button.dart';
