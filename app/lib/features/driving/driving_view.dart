@@ -12,6 +12,7 @@ import 'driving_controller.dart';
 import 'pedal_mapping.dart';
 import 'tilt_steering.dart';
 import 'widgets/pedal_zones.dart';
+import 'widgets/player_badge.dart';
 import 'widgets/steering_control.dart';
 import 'widgets/top_bar.dart';
 import 'widgets/touch_wheel.dart';
@@ -136,7 +137,10 @@ class DrivingView extends StatelessWidget {
                   top: 54,
                   right: 16,
                   child: IgnorePointer(
-                    child: StatusChip(state: controller.linkState, latencyMs: controller.latencyMs, signalLost: controller.signalLost),
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      if (!_display && t.player != null) ...[PlayerBadge(player: t.player!), const SizedBox(width: 6)],
+                      StatusChip(state: controller.linkState, latencyMs: controller.latencyMs, signalLost: controller.signalLost),
+                    ]),
                   ),
                 ),
                 if (settings.warningPopups)
