@@ -53,8 +53,9 @@ String warningLabel(AppLocalizations l10n, VehicleWarning w) => switch (w) {
     };
 
 /// Warning lights: a big icon with its name pops in the middle of the
-/// screen when a warning turns on, then stays as a small icon while it is
-/// active. Never takes touches.
+/// screen when a warning turns on, then flies to its small icon in the
+/// column of active warnings (right edge), where it stays while the warning
+/// is on. Never takes touches.
 ///
 /// When [resetCount] changes (the vehicle was reset from the phone), the
 /// warnings active at that moment are acknowledged and hidden: the game does
@@ -66,16 +67,32 @@ class WarningOverlay extends StatefulWidget {
   const WarningOverlay({super.key, required this.telemetry, this.resetCount = 0});
 
   static const popDuration = Duration(milliseconds: 2500);
+  static const flyDuration = Duration(milliseconds: 600);
+
+  /// Column of active warnings: offset from the top right corner, and the
+  /// height of one icon with its padding.
+  static const double columnTop = 28;
+  static const double columnRight = 14;
+  static const double iconSize = 24;
+  static const double rowHeight = iconSize + 6;
+  static const double popIconSize = 64;
 
   @override
   State<WarningOverlay> createState() => _WarningOverlayState();
 }
 
-class _WarningOverlayState extends State<WarningOverlay> {
+class _WarningOverlayState extends State<WarningOverlay> with SingleTickerProviderStateMixin {
   List<VehicleWarning> _active = const [];
   final Set<VehicleWarning> _acknowledged = {};
   VehicleWarning? _popping;
   Timer? _popTimer;
+
+  /// The warning flying from the middle to its column icon, if any.
+  VehicleWarning? _flying;
+  late final AnimationController _fly = AnimationController(vsync: this, duration: WarningOverlay.flyDuration)
+    ..addStatusListener((status) {
+      if (status == AnimationStatus.completed && mounted) setState(() => _flying = null);
+    });
 
   @override
   void initState() {
@@ -89,24 +106,36 @@ class _WarningOverlayState extends State<WarningOverlay> {
     if (widget.resetCount != oldWidget.resetCount) {
       _acknowledged.addAll(activeWarnings(widget.telemetry));
       _popping = null;
+      _flying = null;
     }
     final raw = activeWarnings(widget.telemetry);
     _acknowledged.removeWhere((w) => !raw.contains(w)); // turned off: armed again
     final next = raw.where((w) => !_acknowledged.contains(w)).toList();
     final appeared = next.where((w) => !_active.contains(w)).toList();
     _active = next;
+    if (_flying != null && !_active.contains(_flying)) _flying = null;
     if (appeared.isNotEmpty) {
       _popping = appeared.first;
+      _flying = null;
       _popTimer?.cancel();
-      _popTimer = Timer(WarningOverlay.popDuration, () {
-        if (mounted) setState(() => _popping = null);
-      });
+      _popTimer = Timer(WarningOverlay.popDuration, _startFlying);
     }
+  }
+
+  void _startFlying() {
+    if (!mounted) return;
+    setState(() {
+      // Still on: it flies to its icon; turned off meanwhile: it just goes.
+      _flying = _popping != null && _active.contains(_popping) ? _popping : null;
+      _popping = null;
+    });
+    if (_flying != null) unawaited(_fly.forward(from: 0));
   }
 
   @override
   void dispose() {
     _popTimer?.cancel();
+    _fly.dispose();
     super.dispose();
   }
 
@@ -116,37 +145,77 @@ class _WarningOverlayState extends State<WarningOverlay> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final popping = _popping;
+    final flying = _flying;
     return IgnorePointer(
-      child: Stack(children: [
-        // Active warnings stack on the right edge, under the connection
-        // status, where no theme draws (the dashboard is centred).
-        Positioned(
-          top: 28,
-          right: 14,
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            for (final w in _active)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 3),
-                child: Icon(warningIcon(w), color: _color(w), size: 24),
-              ),
-          ]),
-        ),
-        if (popping != null)
-          Center(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.75),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: _color(popping), width: 2),
-              ),
-              child: Column(mainAxisSize: MainAxisSize.min, children: [
-                Icon(warningIcon(popping), color: _color(popping), size: 64),
-                const SizedBox(height: 6),
-                Text(warningLabel(l10n, popping), style: TextStyle(color: _color(popping), fontSize: 16, fontWeight: FontWeight.bold)),
-              ]),
-            ),
+      child: LayoutBuilder(
+        builder: (context, constraints) => Stack(children: [
+          // Active warnings stack on the right edge, under the connection
+          // status, where no theme draws (the dashboard is centred). The one
+          // flying there appears when it lands.
+          Positioned(
+            top: WarningOverlay.columnTop,
+            right: WarningOverlay.columnRight,
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              for (final w in _active)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 3),
+                  child: Opacity(
+                    opacity: w == flying ? 0 : 1,
+                    child: Icon(warningIcon(w), color: _color(w), size: WarningOverlay.iconSize),
+                  ),
+                ),
+            ]),
           ),
+          if (popping != null) Center(child: _popup(l10n, popping)),
+          if (flying != null) _flight(l10n, flying, constraints.biggest),
+        ]),
+      ),
+    );
+  }
+
+  /// The popup moving from the middle to the column icon of [w], shrinking
+  /// to its size while the frame and the name fade out.
+  Widget _flight(AppLocalizations l10n, VehicleWarning w, Size size) {
+    final index = _active.indexOf(w);
+    final start = size.center(Offset.zero);
+    final end = Offset(
+      size.width - WarningOverlay.columnRight - WarningOverlay.iconSize / 2,
+      WarningOverlay.columnTop + WarningOverlay.rowHeight * index + WarningOverlay.rowHeight / 2,
+    );
+    return AnimatedBuilder(
+      animation: _fly,
+      builder: (context, _) {
+        final t = Curves.easeInOutCubic.transform(_fly.value);
+        final fade = (1 - _fly.value * 2.5).clamp(0.0, 1.0);
+        final scale = 1 + (WarningOverlay.iconSize / WarningOverlay.popIconSize - 1) * t;
+        return Center(
+          child: Transform.translate(
+            offset: (end - start) * t,
+            child: Transform.scale(scale: scale, child: _popup(l10n, w, frame: fade)),
+          ),
+        );
+      },
+    );
+  }
+
+  /// Big icon with the name of the warning; [frame] fades the box and the
+  /// name (1 = fully shown) while it flies.
+  Widget _popup(AppLocalizations l10n, VehicleWarning w, {double frame = 1}) {
+    final color = _color(w);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.75 * frame),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: color.withValues(alpha: frame), width: 2),
+      ),
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Icon(warningIcon(w), color: color, size: WarningOverlay.popIconSize),
+        const SizedBox(height: 6),
+        Opacity(
+          opacity: frame,
+          child: Text(warningLabel(l10n, w), style: TextStyle(color: color, fontSize: 16, fontWeight: FontWeight.bold)),
+        ),
       ]),
     );
   }
