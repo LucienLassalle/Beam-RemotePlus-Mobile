@@ -45,6 +45,9 @@ longer maintained.
 - **Electric cars**, **second screen** (dashboard only, next to a wheel or a
   gamepad) and **local multiplayer** (one phone per player).
 - **Automatic connection** on the local network, or pairing code / QR code.
+- **Safe disconnection**: when the phone loses the Wi-Fi for a second or the
+  player leaves, the car no longer accelerates and brakes for 5 seconds
+  (with the mod).
 - **English and French** ([TRANSLATING.md](TRANSLATING.md)).
 - **Update check**: the home screen says when a newer app is out, and once
   connected the app says whether the app or the mod should be updated (they
