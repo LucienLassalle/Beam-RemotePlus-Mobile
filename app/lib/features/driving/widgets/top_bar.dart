@@ -7,34 +7,98 @@ import '../../../l10n/generated/app_localizations.dart';
 import '../driving_controller.dart';
 import 'hold_button.dart';
 
-/// Previous / next vehicle, small, top left.
+/// Previous / next vehicle, small, top left. Each one must be held for
+/// [holdDelay] (a ring fills up): a thumb resting there while driving never
+/// switches the car by mistake.
 class VehicleSwitchButtons extends StatelessWidget {
   final DrivingController controller;
   final Color color;
   const VehicleSwitchButtons({super.key, required this.controller, required this.color});
 
+  static const holdDelay = Duration(milliseconds: 600);
+  static const double size = 30;
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final enabled = controller.commandsEnabled;
     return Row(mainAxisSize: MainAxisSize.min, children: [
-      HoldButton(
+      _HoldToSwitch(
+        controller: controller,
         icon: Icons.skip_previous,
         tooltip: l10n.vehiclePrev,
+        command: ModCommand.prevVehicle,
         color: color,
-        enabled: enabled,
-        size: 34,
-        onPressed: () => controller.press(ModCommand.prevVehicle),
       ),
-      HoldButton(
+      _HoldToSwitch(
+        controller: controller,
         icon: Icons.skip_next,
         tooltip: l10n.vehicleNext,
+        command: ModCommand.nextVehicle,
         color: color,
-        enabled: enabled,
-        size: 34,
-        onPressed: () => controller.press(ModCommand.nextVehicle),
       ),
     ]);
+  }
+}
+
+class _HoldToSwitch extends StatefulWidget {
+  final DrivingController controller;
+  final IconData icon;
+  final String tooltip;
+  final String command;
+  final Color color;
+
+  const _HoldToSwitch({
+    required this.controller,
+    required this.icon,
+    required this.tooltip,
+    required this.command,
+    required this.color,
+  });
+
+  @override
+  State<_HoldToSwitch> createState() => _HoldToSwitchState();
+}
+
+class _HoldToSwitchState extends State<_HoldToSwitch> with SingleTickerProviderStateMixin {
+  late final AnimationController _progress = AnimationController(vsync: this, duration: VehicleSwitchButtons.holdDelay)
+    ..addStatusListener((status) {
+      if (status != AnimationStatus.completed) return;
+      HapticFeedback.mediumImpact();
+      widget.controller.press(widget.command);
+      _progress.reset();
+    });
+
+  @override
+  void dispose() {
+    _progress.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const size = VehicleSwitchButtons.size;
+    return AnimatedBuilder(
+      animation: _progress,
+      builder: (context, child) => Stack(alignment: Alignment.center, children: [
+        child!,
+        if (_progress.value > 0)
+          IgnorePointer(
+            child: SizedBox(
+              width: size + 4,
+              height: size + 4,
+              child: CircularProgressIndicator(value: _progress.value, strokeWidth: 2.5, color: widget.color),
+            ),
+          ),
+      ]),
+      child: HoldButton(
+        icon: widget.icon,
+        tooltip: widget.tooltip,
+        color: widget.color,
+        enabled: widget.controller.commandsEnabled,
+        size: size,
+        onHold: (pressed) => pressed ? _progress.forward(from: 0) : _progress.reset(),
+      ),
+    );
   }
 }
 
