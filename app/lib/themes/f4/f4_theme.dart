@@ -7,8 +7,9 @@ import '../kit/kit.dart';
 /// oil and water temperatures below, a big gear in a blue box, and a red
 /// blinking banner for "WATER TEMP HI", "OIL TEMP HI" and "FUEL LEVEL LOW".
 /// Laid out in the original 320x220 pixel space and scaled to the phone.
-/// The DRS (CF26, FR17), Push-to-Pass (CF26) and pit limiter (F4, CF26) of
-/// the vehicle mods that have them get a button.
+/// The pit limiter (F4, CF26) of the vehicle mods that have one gets a
+/// button; their DRS (CF26, FR17) and Push-to-Pass (CF26) are on the volume
+/// buttons.
 class F4Theme extends ControlTheme {
   const F4Theme();
 
@@ -22,8 +23,12 @@ class F4Theme extends ControlTheme {
   ThemeStyle get style => const ThemeStyle(
         brakeColor: Color(0xFFFF3D00),
         throttleColor: Color(0xFF00E676),
-        // Race controls of the vehicle mods that have them (shown only then).
-        actions: {VehicleAction.drs, VehicleAction.pushToPass, VehicleAction.pitLimiter},
+        // Pit limiter of the vehicle mods that have one (shown only then); DRS
+        // and Push-to-Pass are on the volume buttons, not repeated on screen.
+        actions: {VehicleAction.pitLimiter},
+        // No horn nor headlights on these cars: the wheel buttons instead.
+        volumeUp: VolumeKeyAction.drs,
+        volumeDown: VolumeKeyAction.pushToPass,
       );
 
   static const Size design = Size(320, 220);

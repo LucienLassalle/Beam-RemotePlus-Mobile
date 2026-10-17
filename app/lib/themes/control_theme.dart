@@ -69,6 +69,24 @@ enum GearFlash { up, down }
 /// race controls of vehicle mods) only show on vehicles fitted with them.
 enum VehicleAction { signals, hazard, horn, highBeam, lights, flashers, siren, parkingBrake, starter, driveMode, cruise, drs, pushToPass, pitLimiter }
 
+/// What a volume button does while driving. A theme picks them (see
+/// [ThemeStyle.volumeUp]), so they never change with the vehicle.
+enum VolumeKeyAction {
+  /// Horn while held.
+  horn,
+
+  /// High beams while held.
+  headlightFlash,
+
+  /// Opens / closes the DRS of the vehicle mods that have one; nothing on
+  /// other vehicles.
+  drs,
+
+  /// Starts / stops the Push-to-Pass of the vehicle mods that have one;
+  /// nothing on other vehicles.
+  pushToPass,
+}
+
 /// Look of the app-drawn controls over a theme.
 class ThemeStyle {
   final Color background;
@@ -85,6 +103,10 @@ class ThemeStyle {
   /// theme stays clean, a "road" theme can offer them all).
   final Set<VehicleAction> actions;
 
+  /// The volume buttons (each one can be switched off in the settings).
+  final VolumeKeyAction volumeUp;
+  final VolumeKeyAction volumeDown;
+
   const ThemeStyle({
     this.background = Colors.black,
     this.brakeColor = Colors.redAccent,
@@ -92,5 +114,7 @@ class ThemeStyle {
     this.buttonColor = Colors.white70,
     this.visiblePedals = false,
     this.actions = const {},
+    this.volumeUp = VolumeKeyAction.horn,
+    this.volumeDown = VolumeKeyAction.headlightFlash,
   });
 }

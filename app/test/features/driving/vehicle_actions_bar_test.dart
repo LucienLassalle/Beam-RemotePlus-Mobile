@@ -1,5 +1,6 @@
 import 'package:beam_remoteplus/core/protocol/telemetry.dart';
 import 'package:beam_remoteplus/features/driving/widgets/vehicle_actions_bar.dart';
+import 'package:beam_remoteplus/themes/control_theme.dart';
 import 'package:beam_remoteplus/themes/theme_registry.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -106,10 +107,21 @@ void _emergencyTests() {
 }
 
 void _raceTests() {
-  testWidgets('F4: DRS button on vehicle mods that have one only', (tester) async {
+  testWidgets('F4: no DRS nor Push-to-Pass button, they are on the volume buttons', (tester) async {
     final link = FakeLink();
     addTearDown(link.dispose);
     await pumpDrivingView(tester, theme: themeByName('F4'), link: link);
+    link.telemetry_.add(const Telemetry(hasDrs: true, hasPushToPass: true, pushToPassLeft: 5));
+    await tester.pump();
+    await tester.pump();
+    expect(find.text('DRS'), findsNothing);
+    expect(find.text('P2P'), findsNothing);
+  });
+
+  testWidgets('a theme offering it: DRS button on vehicle mods that have one only', (tester) async {
+    final link = FakeLink();
+    addTearDown(link.dispose);
+    await pumpDrivingView(tester, theme: const _RaceButtonsTheme(), link: link);
     expect(find.text('DRS'), findsNothing);
 
     link.telemetry_.add(const Telemetry(hasDrs: true, drsOpen: false));
@@ -131,10 +143,10 @@ void _raceTests() {
 }
 
 void _pushToPassTests() {
-  testWidgets('F4: Push-to-Pass with the boost left, dim once used up', (tester) async {
+  testWidgets('a theme offering it: Push-to-Pass with the boost left, dim once used up', (tester) async {
     final link = FakeLink();
     addTearDown(link.dispose);
-    await pumpDrivingView(tester, theme: themeByName('F4'), link: link);
+    await pumpDrivingView(tester, theme: const _RaceButtonsTheme(), link: link);
     expect(find.text('P2P'), findsNothing);
 
     link.telemetry_.add(const Telemetry(hasPushToPass: true, pushToPass: false, pushToPassLeft: 5));
@@ -164,4 +176,22 @@ void _pitLimiterTests() {
     await tester.tap(find.byTooltip('Pit limiter'));
     expect(link.commands, ['pit_limiter']);
   });
+}
+
+/// A theme offering the DRS and Push-to-Pass buttons (no shipped theme does:
+/// the F4 one has them on the volume buttons).
+class _RaceButtonsTheme extends ControlTheme {
+  const _RaceButtonsTheme();
+
+  @override
+  String get name => 'Race buttons';
+
+  @override
+  String get author => 'test';
+
+  @override
+  ThemeStyle get style => const ThemeStyle(actions: {VehicleAction.drs, VehicleAction.pushToPass});
+
+  @override
+  Widget buildDashboard(BuildContext context, DashboardData data) => const SizedBox.expand();
 }

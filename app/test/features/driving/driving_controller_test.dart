@@ -53,6 +53,26 @@ void main() {
     expect(link.commands, ['highbeam|1', 'highbeam|0']);
   });
 
+  test('on the F4 theme, volume up opens the DRS and volume down starts the Push-to-Pass', () async {
+    controller.settings = const AppSettings(themeName: 'F4');
+    link.telemetry_.add(const Telemetry(hasDrs: true, hasPushToPass: true));
+    await Future<void>.delayed(Duration.zero);
+    controller.onHardwareKey(HardwareKey.volumeUp, true);
+    controller.onHardwareKey(HardwareKey.volumeUp, false);
+    controller.onHardwareKey(HardwareKey.volumeDown, true);
+    controller.onHardwareKey(HardwareKey.volumeDown, false);
+    expect(link.commands, ['drs', 'push_to_pass']);
+  });
+
+  test('on the F4 theme, the volume buttons do nothing on a car without DRS nor Push-to-Pass', () async {
+    controller.settings = const AppSettings(themeName: 'F4');
+    link.telemetry_.add(const Telemetry(hasPitLimiter: true));
+    await Future<void>.delayed(Duration.zero);
+    controller.onHardwareKey(HardwareKey.volumeUp, true);
+    controller.onHardwareKey(HardwareKey.volumeDown, true);
+    expect(link.commands, isEmpty);
+  });
+
   test('read-only releases holds, centres the controls and blocks inputs', () {
     controller.hold('horn', pressed: true);
     controller.throttle(1);

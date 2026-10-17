@@ -34,7 +34,7 @@ longer maintained.
 - **Vehicle buttons**: indicators, hazards, horn, lights, parking brake,
   ignition, drive mode (in the game's color), cruise control, camera,
   vehicle switching, reset. Volume buttons for the horn and the headlight
-  flash. On the Road theme, indicators and hazards are pressed right on the
+  flash (on the F4 theme: DRS and Push-to-Pass). On the Road theme, indicators and hazards are pressed right on the
   dashboard, and police cars, ambulances, fire trucks and pace cars get
   their emergency lights and siren.
 - **Warning lights** like a real car (engine, oil, temperature, fuel or
@@ -56,14 +56,15 @@ longer maintained.
 ### Optional vehicle mods
 
 When you drive one of these vehicle mods (BeamNG.drive repository), the
-**F4** theme adds its race controls; nothing changes with other vehicles and
-none of these mods is needed:
+**F4** theme adds its race controls: the pit limiter on screen (PIT), the DRS
+on volume up and the Push-to-Pass on volume down; nothing changes with other
+vehicles and none of these mods is needed:
 
-| Vehicle mod | Buttons |
+| Vehicle mod | Controls |
 |---|---|
-| **CF26** (add-on of the F4, its F3 configurations) | DRS, Push-to-Pass (P2P), pit limiter (PIT) |
+| **CF26** (add-on of the F4, its F3 configurations) | DRS (volume up), Push-to-Pass (volume down), pit limiter (PIT) |
 | **Carbonworks F4** by LucasBE (fr04) | pit limiter (PIT) |
-| **FR17** | DRS |
+| **FR17** | DRS (volume up) |
 
 With a tyre thermals mod, the damage view also shows the temperature and
 wear of each tyre: **Tyre Wear and Thermals Redux** (maintained) or the

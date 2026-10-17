@@ -127,11 +127,11 @@ void main() {
     expect(settings.settings.hapticKerbs, isFalse);
   });
 
-  testWidgets('controls tab disables the horn on the volume button', (tester) async {
+  testWidgets('controls tab disables the volume up button', (tester) async {
     await open(tester);
     await tester.tap(find.text('Controls'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Disable the horn on the volume button'));
+    await tester.tap(find.text('Disable the volume up button'));
     await tester.pumpAndSettle();
     expect(settings.settings.hornOnVolume, isFalse);
     expect(settings.settings.flashOnVolume, isTrue);
