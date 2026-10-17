@@ -31,7 +31,8 @@ longer maintained.
 - **Steering** by tilting the phone like a wheel (with the gyroscope when
   the phone has one, quicker and steadier), with a touch bar, or with a
   wheel turned by a thumb.
-- **Analog pedals** with both thumbs.
+- **Analog pedals** with both thumbs (sides swappable for left-handed
+  players).
 - **Dashboard themes**, easy to make: [THEMES.md](THEMES.md).
 - **Vehicle buttons**: indicators, hazards, horn, lights, parking brake,
   ignition, drive mode (in the game's color), cruise control, camera,
