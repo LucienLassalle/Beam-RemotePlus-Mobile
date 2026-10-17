@@ -57,7 +57,7 @@ class _DrivingScreenState extends State<DrivingScreen> with WidgetsBindingObserv
       link: widget.connection,
       settings: settings,
       onLimiter: HapticFeedback.mediumImpact,
-      onPulse: (p) => unawaited(Vibrator.pulse(p.durationMs, p.amplitude)),
+      onPulse: (p) => unawaited(Vibrator.pulse(p.durationMs, p.amplitude, primitive: p.primitive?.name)),
     );
     _debug = DebugMonitor(widget.connection);
     widget.connection.setDebugAcks(settings.debugMode);

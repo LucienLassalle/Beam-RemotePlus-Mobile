@@ -1,13 +1,29 @@
 import '../../core/protocol/telemetry.dart';
 
-/// One vibration: duration and strength (1..255, Android amplitude).
+/// Short vibration shapes of Android 11+ phones with a good vibration motor
+/// (VibrationEffect primitives): each road event feels different. Phones
+/// without them play the plain [Pulse] instead (see MainActivity).
+enum HapticPrimitive {
+  /// Sharp tick: ABS pulsing.
+  tick,
+
+  /// Soft low tick: kerbs, rough road.
+  lowTick,
+
+  /// Heavy thump: impacts, landings.
+  thud,
+}
+
+/// One vibration: duration and strength (1..255, Android amplitude), and the
+/// richer [primitive] played instead when the phone has it.
 class Pulse {
   final int durationMs;
   final int amplitude;
-  const Pulse(this.durationMs, this.amplitude);
+  final HapticPrimitive? primitive;
+  const Pulse(this.durationMs, this.amplitude, [this.primitive]);
 
   @override
-  String toString() => 'Pulse($durationMs ms, $amplitude)';
+  String toString() => 'Pulse($durationMs ms, $amplitude${primitive == null ? '' : ', ${primitive!.name}'})';
 }
 
 /// Road-feel vibrations, each one can be switched off in the settings.
@@ -49,7 +65,7 @@ class HapticsEngine {
 
   /// One ABS pulse; repeated at most every [minGap] while the ABS works,
   /// which gives the ~10 Hz pulsing of a real pedal.
-  static const Pulse absPulse = Pulse(30, 170);
+  static const Pulse absPulse = Pulse(30, 170, HapticPrimitive.tick);
 
   Pulse? update(Telemetry t, DateTime now, {Set<HapticKind> enabled = all}) {
     final pulse = _compute(t, enabled);
@@ -59,7 +75,7 @@ class HapticsEngine {
     if (pulse == null || strength <= 0) return null;
     if (pulse.durationMs < 100 && now.difference(_last) < minGap) return null;
     _last = now;
-    return Pulse(pulse.durationMs, (pulse.amplitude * strength).round().clamp(1, 255));
+    return Pulse(pulse.durationMs, (pulse.amplitude * strength).round().clamp(1, 255), pulse.primitive);
   }
 
   static Pulse _slipPulse(double slip) {
@@ -73,7 +89,7 @@ class HapticsEngine {
         gx != null && gy != null && gz != null && _gx != null && _gy != null && _gz != null) {
       final dx = gx - _gx!, dy = gy - _gy!, dz = gz - _gz!;
       final jolt = dx * dx + dy * dy + dz * dz;
-      if (jolt > impactThreshold * impactThreshold) return const Pulse(140, 255);
+      if (jolt > impactThreshold * impactThreshold) return const Pulse(140, 255, HapticPrimitive.thud);
     }
     if (t.absActive == true && enabled.contains(HapticKind.abs)) return absPulse;
     final lock = t.wheelLock ?? 0;
@@ -86,7 +102,7 @@ class HapticsEngine {
       if (slip > slipThreshold) return _slipPulse(slip);
     }
     if (enabled.contains(HapticKind.kerb) && gz != null && ((gz.abs() - 9.81).abs() > rumbleThreshold)) {
-      return const Pulse(18, 70);
+      return const Pulse(18, 70, HapticPrimitive.lowTick);
     }
     return null;
   }
