@@ -50,6 +50,8 @@
   "settingsSensorAuto": "Auto",
   "settingsSensorGyroscope": "Gyroscope",
   "settingsSensorAccelerometer": "Accéléromètre",
+  "settingsCenterPrecisionTitle": "Précision au centre",
+  "settingsCenterPrecisionSubtitle": "Direction plus fine autour du centre, braquage maximal au même endroit. 0 % = linéaire.",
   "settingsSmoothingTitle": "Atténuation des tremblements",
   "settingsSmoothingSubtitle": "Atténue les tremblements de l'accéléromètre (léger délai en échange) ; le gyroscope n'en a pas besoin",
   "settingsUnitTitle": "Unité de mesure",

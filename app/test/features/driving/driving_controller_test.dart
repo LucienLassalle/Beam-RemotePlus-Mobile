@@ -73,6 +73,13 @@ void main() {
     expect(link.commands, isEmpty);
   });
 
+  test('steering goes through the centre precision setting', () {
+    controller.settings = const AppSettings(steeringCenterPrecision: 1);
+    controller.steer(0.75);
+    expect(link.steering, lessThan(0.75));
+    expect(link.steering, greaterThan(0.5));
+  });
+
   test('read-only releases holds, centres the controls and blocks inputs', () {
     controller.hold('horn', pressed: true);
     controller.throttle(1);

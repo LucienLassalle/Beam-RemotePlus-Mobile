@@ -72,6 +72,8 @@
   "settingsSensorAuto": "Auto",
   "settingsSensorGyroscope": "Gyroscope",
   "settingsSensorAccelerometer": "Accelerometer",
+  "settingsCenterPrecisionTitle": "Centre precision",
+  "settingsCenterPrecisionSubtitle": "Finer steering around the centre, full lock at the same place. 0 % = linear.",
   "settingsSmoothingTitle": "Shake reduction",
   "settingsSmoothingSubtitle": "Reduces the jitter of the accelerometer (adds a small delay); the gyroscope needs none",
   "settingsUnitTitle": "Speed unit",

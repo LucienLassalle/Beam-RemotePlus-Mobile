@@ -48,6 +48,9 @@ class AppSettings {
 
   final SteeringSensor steeringSensor;
 
+  /// Finer steering around the centre, 0 (linear) .. 1 (see SteeringCurve).
+  final double steeringCenterPrecision;
+
   /// Filters the accelerometer jitter ("shake reduction").
   final bool steeringSmoothing;
   final bool pitchGearShift;
@@ -101,6 +104,7 @@ class AppSettings {
     this.rotationRangeDeg = 900,
     this.invertSteering = true,
     this.steeringSensor = SteeringSensor.auto,
+    this.steeringCenterPrecision = 0,
     this.steeringSmoothing = true,
     this.pitchGearShift = false,
     this.hapticSpin = true,
@@ -145,6 +149,7 @@ class AppSettings {
     double? rotationRangeDeg,
     bool? invertSteering,
     SteeringSensor? steeringSensor,
+    double? steeringCenterPrecision,
     bool? steeringSmoothing,
     bool? pitchGearShift,
     bool? hapticSpin,
@@ -177,6 +182,7 @@ class AppSettings {
       rotationRangeDeg: rotationRangeDeg ?? this.rotationRangeDeg,
       invertSteering: invertSteering ?? this.invertSteering,
       steeringSensor: steeringSensor ?? this.steeringSensor,
+      steeringCenterPrecision: steeringCenterPrecision ?? this.steeringCenterPrecision,
       steeringSmoothing: steeringSmoothing ?? this.steeringSmoothing,
       pitchGearShift: pitchGearShift ?? this.pitchGearShift,
       hapticSpin: hapticSpin ?? this.hapticSpin,
@@ -211,6 +217,7 @@ class AppSettings {
         'rotationRangeDeg': rotationRangeDeg,
         'invertSteering': invertSteering,
         'steeringSensor': steeringSensor.name,
+        'steeringCenterPrecision': steeringCenterPrecision,
         'steeringSmoothing': steeringSmoothing,
         'pitchGearShift': pitchGearShift,
         'hapticSpin': hapticSpin,
@@ -244,6 +251,7 @@ class AppSettings {
     final volumeKeys = pick('volumeKeys', true);
     final roadHaptics = pick('roadHaptics', true);
     final strength = json['hapticStrength'];
+    final precision = json['steeringCenterPrecision'];
     return AppSettings(
       themeName: pick('themeName', d.themeName),
       localeCode: json['localeCode'] is String ? json['localeCode'] as String : null,
@@ -260,6 +268,7 @@ class AppSettings {
       rotationRangeDeg: rotation,
       invertSteering: pick('invertSteering', d.invertSteering),
       steeringSensor: enumByName(SteeringSensor.values, json['steeringSensor'], d.steeringSensor),
+      steeringCenterPrecision: precision is num && precision >= 0 && precision <= 1 ? precision.toDouble() : d.steeringCenterPrecision,
       steeringSmoothing: pick('steeringSmoothing', d.steeringSmoothing),
       pitchGearShift: pick('pitchGearShift', d.pitchGearShift),
       hapticSpin: pick('hapticSpin', roadHaptics),
