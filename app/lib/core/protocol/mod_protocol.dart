@@ -108,6 +108,14 @@ class ModCommand {
   // (older mods ignore it and time the phone out).
   static const leave = 'leave';
 
+  // "More" sheet: lists the vehicle's commands (answered by an actions
+  // message), presses one, or holds one down then releases it; the
+  // argument is the command id.
+  static const actions = 'actions';
+  static const action = 'action';
+  static const actionDown = 'action_down';
+  static const actionUp = 'action_up';
+
   // Hold commands: send with "1" on press and "0" on release
   static const horn = 'horn';
   static const highBeam = 'highbeam';
