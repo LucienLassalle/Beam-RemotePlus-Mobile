@@ -37,6 +37,7 @@ class DrivingController extends ChangeNotifier {
   GearFlash? _gearFlash;
   Telemetry _telemetry = Telemetry.empty;
   Map<String, String>? _optionalMods;
+  int? _playerColor;
 
   static const flashDuration = Duration(milliseconds: 300);
 
@@ -75,6 +76,10 @@ class DrivingController extends ChangeNotifier {
   AppSettings get settings => _settings;
   Set<String> get heldCommands => Set.unmodifiable(_heldCommands);
 
+  /// 0xRRGGBB colour the game gives this phone's player, null when the mod
+  /// does not tell (older mod, unassigned).
+  int? get playerColor => _playerColor;
+
   /// State of each optional mod in the game by id, null while unknown.
   Map<String, String>? get optionalMods => _optionalMods;
 
@@ -97,6 +102,10 @@ class DrivingController extends ChangeNotifier {
     if (message is SkeletonMessage && _skeleton.onChunk(message.chunk)) notifyListeners();
     if (message is SessionMessage && message.optionalMods != null) {
       _optionalMods = message.optionalMods;
+      notifyListeners();
+    }
+    if (message is SessionMessage) {
+      _playerColor = message.playerColor;
       notifyListeners();
     }
   }

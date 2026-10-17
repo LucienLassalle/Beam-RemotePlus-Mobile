@@ -46,6 +46,7 @@ sealed class ModMessage {
                     if (e.key is String && e.value is String) e.key as String: e.value as String,
                 }
               : null,
+          playerColor: parseHexColor(json['playerColor']),
         );
       case 'skeleton':
         final chunk = SkeletonChunk.fromJson(json);
@@ -81,7 +82,12 @@ class SessionMessage extends ModMessage {
   /// which do not tell.
   final Map<String, String>? optionalMods;
 
-  const SessionMessage({this.modVersion, this.player, this.commands = const [], this.optionalMods});
+  /// 0xRRGGBB colour the game gives the player (its name tag above the car
+  /// in local multiplayer); null for older mods, a second screen or while
+  /// unassigned.
+  final int? playerColor;
+
+  const SessionMessage({this.modVersion, this.player, this.commands = const [], this.optionalMods, this.playerColor});
 }
 
 /// The player kicked this phone from the mod's in-game panel: the session
@@ -94,4 +100,12 @@ class KickedMessage extends ModMessage {
 class SkeletonMessage extends ModMessage {
   final SkeletonChunk chunk;
   const SkeletonMessage(this.chunk);
+}
+
+/// "#rrggbb" (or "rrggbb") to 0xRRGGBB, null for anything else.
+int? parseHexColor(Object? value) {
+  if (value is! String) return null;
+  final hex = value.startsWith('#') ? value.substring(1) : value;
+  if (!RegExp(r'^[0-9a-fA-F]{6}$').hasMatch(hex)) return null;
+  return int.parse(hex, radix: 16);
 }
