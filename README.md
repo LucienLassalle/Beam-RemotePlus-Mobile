@@ -46,7 +46,8 @@ longer maintained.
 - **Radar and damage view**: the cars around, and the real structure of your
   vehicle with its bent parts, tyres and brakes.
 - **Electric cars**, **second screen** (dashboard only, next to a wheel or a
-  gamepad) and **local multiplayer** (one phone per player).
+  gamepad) and **local multiplayer** (one phone per player), each player with
+  their colour on the phone and in the game panel.
 - **Automatic connection** on the local network, or pairing code / QR code
   (the QR code of the mod's in-game panel also gives the PC address).
 - **Safe disconnection**: when the phone loses the Wi-Fi for a second or the
