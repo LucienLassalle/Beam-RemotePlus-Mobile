@@ -48,6 +48,14 @@ void main() {
     expect(await c.onQrScanned('https://x#54321'), isNotNull);
   });
 
+  test('the panel QR code connects to the PC address it holds', () async {
+    final connection = _FakeConnection();
+    final c = PairingController(newConnection: () => connection);
+    expect(await c.onQrScanned('beamremoteplus://pair?code=54688&host=192.168.1.20#54688'), same(connection));
+    expect(connection.code, '54688');
+    expect(connection.host, '192.168.1.20');
+  });
+
   test('maps a timeout and other failures', () async {
     final timeout = PairingController(newConnection: () => _FakeConnection(TimeoutException('t')));
     await timeout.submitCode('12345');
