@@ -20,6 +20,8 @@
   "statusError": "Erreur",
   "statusIdle": "Déconnecté",
   "statusKicked": "Exclu",
+  "statusSignalLost": "Signal perdu",
+  "signalLostToast": "Signal perdu : la voiture freine",
   "kickedByHost": "Le PC a retiré ce téléphone de la partie. Reconnectez-vous quand le joueur l'autorise.",
   "modMissingBanner": "Installez le mod Beam-RemotePlus dans BeamNG.drive pour avoir les pédales progressives, le tableau de bord et les boutons du véhicule.",
   "settingsTitle": "Paramètres",

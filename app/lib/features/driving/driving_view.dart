@@ -118,7 +118,13 @@ class DrivingView extends StatelessWidget {
                 ),
               ],
               Positioned(top: 4, right: 8, child: hostButtons),
-              Positioned(top: 54, right: 16, child: IgnorePointer(child: StatusChip(state: controller.linkState))),
+              Positioned(
+                top: 54,
+                right: 16,
+                child: IgnorePointer(
+                  child: StatusChip(state: controller.linkState, latencyMs: controller.latencyMs, signalLost: controller.signalLost),
+                ),
+              ),
               if (settings.warningPopups)
                 Positioned(top: topBarHeight, left: 0, right: 0, bottom: bottom, child: WarningOverlay(telemetry: t, resetCount: controller.resetCount)),
               if (_display)

@@ -34,6 +34,10 @@ class ModProtocol {
   /// Nothing received from the mod for this long: it is considered gone and
   /// the app falls back to the native channel until it answers again.
   static const Duration modSilenceTimeout = Duration(seconds: 6);
+
+  /// Nothing received from the mod for this long while it was answering:
+  /// the link is lost (pongs come at least every 2 s).
+  static const Duration signalLostAfter = Duration(seconds: 3);
   static const int controlIntervalMs = 16; // ~60 Hz
 
   /// [display]: second-screen phone, telemetry only (no virtual device).
