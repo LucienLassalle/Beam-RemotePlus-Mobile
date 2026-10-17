@@ -342,6 +342,9 @@ class BeamngConnection implements RemoteLink {
 
   @override
   Future<void> disconnect() async {
+    // Leaving on purpose: the mod brakes the car instead of letting it run
+    // on the last throttle until the phone times out.
+    if (_modActive) sendCommand(ModCommand.leave);
     _controlTimer?.cancel();
     _modPingTimer?.cancel();
     _controlTimer = _modPingTimer = null;

@@ -100,6 +100,10 @@ class ModCommand {
   static const cruiseUp = 'cruise_up';
   static const cruiseDown = 'cruise_down';
 
+  // The player leaves: the mod stops the car, then closes the session
+  // (older mods ignore it and time the phone out).
+  static const leave = 'leave';
+
   // Hold commands: send with "1" on press and "0" on release
   static const horn = 'horn';
   static const highBeam = 'highbeam';
