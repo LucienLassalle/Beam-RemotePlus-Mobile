@@ -70,4 +70,19 @@ void main() {
       expect(p.update(-30, t0.add(const Duration(milliseconds: 1300))), 0); // cooldown
     });
   });
+
+  test('the gyroscope-based samples are smoothed less, so they follow faster', () {
+    double firstStep({required bool fused}) {
+      final s = TiltSteering(rotationRangeDeg: 360, smoothing: true, fused: fused);
+      for (var i = 0; i < TiltSteering.calibrationSamples; i++) {
+        final (x, y, z) = _rolled(0);
+        s.steering(x, y, z);
+      }
+      s.steering(0, 0, 9.81); // first smoothed sample at rest
+      final (x, y, z) = _rolled(30);
+      return 0.5 - s.steering(x, y, z);
+    }
+
+    expect(firstStep(fused: true), greaterThan(firstStep(fused: false) * 1.5));
+  });
 }

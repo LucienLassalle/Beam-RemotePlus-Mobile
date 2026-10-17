@@ -67,6 +67,11 @@
     }
   },
   "settingsInvertTitle": "Invert steering",
+  "settingsSensorTitle": "Motion sensor",
+  "settingsSensorSubtitle": "The gyroscope steers quicker and steadier. Auto uses it when the phone has one, otherwise the accelerometer.",
+  "settingsSensorAuto": "Auto",
+  "settingsSensorGyroscope": "Gyroscope",
+  "settingsSensorAccelerometer": "Accelerometer",
   "settingsSmoothingTitle": "Shake reduction",
   "settingsSmoothingSubtitle": "Reduces sensor jitter (adds a small delay)",
   "settingsUnitTitle": "Speed unit",

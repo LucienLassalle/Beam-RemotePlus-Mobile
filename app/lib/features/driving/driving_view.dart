@@ -201,6 +201,7 @@ class DrivingView extends StatelessWidget {
       rotationRangeDeg: settings.rotationRangeDeg,
       invert: settings.invertSteering,
       smoothing: settings.steeringSmoothing,
+      sensor: settings.steeringSensor,
       recalibrateCounter: recalibrateCounter,
       accelerometer: accelerometer,
       onPitchShift: settings.pitchGearShift ? (direction) => controller.shift(up: direction > 0) : null,

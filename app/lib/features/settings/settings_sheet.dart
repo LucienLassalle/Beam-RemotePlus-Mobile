@@ -326,6 +326,23 @@ class _GameplayTab extends StatelessWidget {
         ]),
       ),
       _switch(l10n.settingsInvertTitle, null, s.invertSteering, (v) => _set(context, (s) => s.copyWith(invertSteering: v))),
+      ListTile(
+        enabled: s.tiltSteering,
+        title: Text(l10n.settingsSensorTitle),
+        subtitle: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(l10n.settingsSensorSubtitle),
+          const SizedBox(height: 6),
+          SegmentedButton<SteeringSensor>(
+            segments: [
+              ButtonSegment(value: SteeringSensor.auto, label: Text(l10n.settingsSensorAuto)),
+              ButtonSegment(value: SteeringSensor.gyroscope, label: Text(l10n.settingsSensorGyroscope)),
+              ButtonSegment(value: SteeringSensor.accelerometer, label: Text(l10n.settingsSensorAccelerometer)),
+            ],
+            selected: {s.steeringSensor},
+            onSelectionChanged: s.tiltSteering ? (v) => _set(context, (s) => s.copyWith(steeringSensor: v.first)) : null,
+          ),
+        ]),
+      ),
       _switch(l10n.settingsSmoothingTitle, l10n.settingsSmoothingSubtitle, s.steeringSmoothing,
           s.tiltSteering ? (v) => _set(context, (s) => s.copyWith(steeringSmoothing: v)) : null),
       _switch(l10n.settingsPitchGearTitle, l10n.settingsPitchGearSubtitle, s.pitchGearShift,

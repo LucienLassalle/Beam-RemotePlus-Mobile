@@ -13,6 +13,7 @@ void main() {
         hornOnVolume: false,
         hapticKerbs: false,
         hapticLimiter: true,
+        steeringSensor: SteeringSensor.accelerometer,
       );
       final back = AppSettings.fromJson(s.toJson());
       expect(back.themeName, 'Civetta');
@@ -22,6 +23,7 @@ void main() {
       expect(back.flashOnVolume, isTrue);
       expect(back.hapticKerbs, isFalse);
       expect(back.hapticLimiter, isTrue);
+      expect(back.steeringSensor, SteeringSensor.accelerometer);
     });
 
     test('keeps the vibration strength between 10 and 100 %', () {
@@ -36,6 +38,7 @@ void main() {
       expect(s.rotationRangeDeg, 900);
       expect(s.themeName, 'Default');
       expect(s.localeCode, isNull);
+      expect(AppSettings.fromJson({'steeringSensor': 'lidar'}).steeringSensor, SteeringSensor.auto);
     });
 
     test('copyWith can reset the language to the phone language', () {

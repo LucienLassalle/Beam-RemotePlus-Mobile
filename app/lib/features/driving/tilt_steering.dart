@@ -14,6 +14,10 @@ import 'dart:math' as math;
 class TiltSteering {
   static const int calibrationSamples = 20;
   static const double emaAlpha = 0.35;
+
+  /// Lighter smoothing for the gyroscope-based gravity ([fused]): it has
+  /// no jitter to filter, only a little noise, so it keeps reacting fast.
+  static const double fusedEmaAlpha = 0.7;
   static const double centerDeadZoneDeg = 0.6;
   static const double shakeSoftDeviation = 2.0; // m/s²
   static const double shakeHardDeviation = 6.0; // m/s²
@@ -27,13 +31,17 @@ class TiltSteering {
   bool invert;
   bool smoothing;
 
+  /// Samples come from the gyroscope fused with the accelerometer
+  /// (GravitySensor) instead of the raw accelerometer.
+  bool fused;
+
   int _count = 0;
   double _sumX = 0, _sumY = 0, _sumZ = 0;
   double _restX = 0, _restY = 0, _restMag = 9.81;
   bool _calibrated = false;
   double? _smoothedRoll;
 
-  TiltSteering({this.rotationRangeDeg = 900, this.invert = false, this.smoothing = true});
+  TiltSteering({this.rotationRangeDeg = 900, this.invert = false, this.smoothing = true, this.fused = false});
 
   bool get calibrated => _calibrated;
 
@@ -73,7 +81,7 @@ class TiltSteering {
         : deviation >= shakeHardDeviation
             ? shakeMinConfidence
             : 1.0 - (deviation - shakeSoftDeviation) / (shakeHardDeviation - shakeSoftDeviation) * (1.0 - shakeMinConfidence);
-    final alpha = (smoothing ? emaAlpha : 1.0) * confidence;
+    final alpha = (smoothing ? (fused ? fusedEmaAlpha : emaAlpha) : 1.0) * confidence;
     _smoothedRoll = _smoothedRoll == null ? roll : _smoothedRoll! + alpha * (roll - _smoothedRoll!);
     roll = _smoothedRoll!;
     if (roll.abs() < centerDeadZoneDeg) roll = 0;
