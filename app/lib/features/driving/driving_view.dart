@@ -9,9 +9,11 @@ import '../vehicle_status/widgets/vehicle_panel.dart';
 import '../vehicle_status/widgets/warning_overlay.dart';
 import 'driving_controller.dart';
 import 'pedal_mapping.dart';
+import 'tilt_steering.dart';
 import 'widgets/pedal_zones.dart';
 import 'widgets/steering_control.dart';
 import 'widgets/top_bar.dart';
+import 'widgets/touch_wheel.dart';
 import 'widgets/vehicle_actions_bar.dart';
 
 /// Composition of the driving screen, without any platform side effect
@@ -35,6 +37,8 @@ class DrivingView extends StatelessWidget {
   static const double topBarHeight = 52;
   static const double bottomBarHeight = 60;
   static const double touchSteeringHeight = 72;
+  /// Thumb wheel, bottom left (the pedals are then both on the right).
+  static const double touchWheelSize = 150;
 
   const DrivingView({
     super.key,
@@ -49,6 +53,12 @@ class DrivingView extends StatelessWidget {
   });
 
   bool get _display => settings.secondScreen;
+
+  /// Room the touch steering takes under the buttons (none when tilting).
+  double get _touchSteeringHeight => settings.tiltSteering || settings.touchWheel ? 0 : touchSteeringHeight;
+
+  PedalMapping get _pedalMapping =>
+      settings.tiltSteering ? PedalMapping.wide : (settings.touchWheel ? PedalMapping.rightThumb : PedalMapping.sides);
 
   @override
   Widget build(BuildContext context) {
@@ -70,7 +80,7 @@ class DrivingView extends StatelessWidget {
         final actions = settings.showActionsBar && !_display
             ? style.actions.where((a) => !settings.hiddenActions.contains(a.name)).toSet()
             : const <VehicleAction>{};
-        final bottom = _display ? 8.0 : (settings.tiltSteering ? bottomBarHeight : bottomBarHeight + touchSteeringHeight);
+        final bottom = _display ? 8.0 : bottomBarHeight + _touchSteeringHeight;
         return ColoredBox(
           color: style.background,
           child: Stack(
@@ -80,7 +90,7 @@ class DrivingView extends StatelessWidget {
                   child: IgnorePointer(
                     ignoring: controller.readOnly,
                     child: PedalZones(
-                      mapping: settings.tiltSteering ? PedalMapping.wide : PedalMapping.sides,
+                      mapping: _pedalMapping,
                       onBrake: controller.brake,
                       onThrottle: controller.throttle,
                       visible: style.visiblePedals,
@@ -171,7 +181,7 @@ class DrivingView extends StatelessWidget {
               if (debugOverlay != null) Positioned(top: 78, right: 12, child: IgnorePointer(child: debugOverlay)),
               if (!_display)
                 Positioned(
-                  bottom: settings.tiltSteering ? 6 : 76,
+                  bottom: 6 + _touchSteeringHeight,
                   left: 0,
                   right: 0,
                   child: Center(
@@ -207,6 +217,23 @@ class DrivingView extends StatelessWidget {
       onPitchShift: settings.pitchGearShift ? (direction) => controller.shift(up: direction > 0) : null,
     );
     if (settings.tiltSteering) return Positioned(left: 0, top: 0, child: steering);
+    if (settings.touchWheel) {
+      // Under the left thumb, where the brake usually is: the pedals move
+      // to the right thumb (PedalMapping.rightThumb).
+      return Positioned(
+        bottom: 12,
+        left: 20,
+        child: IgnorePointer(
+          ignoring: controller.readOnly,
+          child: TouchWheel(
+            onSteering: controller.steer,
+            maxAngleDeg: TiltSteering.maxTiltDegFor(settings.rotationRangeDeg),
+            color: theme.style.buttonColor,
+            size: touchWheelSize,
+          ),
+        ),
+      );
+    }
     final width = MediaQuery.of(context).size.width;
     return Positioned(
       bottom: 12,

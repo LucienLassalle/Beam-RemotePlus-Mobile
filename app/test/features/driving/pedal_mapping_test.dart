@@ -20,6 +20,17 @@ void main() {
     });
   });
 
+  group('PedalMapping.rightThumb (thumb wheel)', () {
+    const m = PedalMapping.rightThumb;
+    test('brake then throttle side by side on the right, the left free for the wheel', () {
+      expect(m.pedalAt(100, 1000), isNull);
+      expect(m.pedalAt(500, 1000), isNull);
+      expect(m.pedalAt(650, 1000), Pedal.brake);
+      expect(m.pedalAt(850, 1000), Pedal.throttle);
+      expect(m.pedalAt(1000, 1000), Pedal.throttle);
+    });
+  });
+
   group('PedalMapping.sides (touch steering)', () {
     const m = PedalMapping.sides;
     test('leaves the middle free for the steering bar', () {

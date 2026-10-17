@@ -124,10 +124,15 @@ class _PedalPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final zone = size.width * mapping.zoneFraction;
-    _paintZone(canvas, size, Rect.fromLTWH(0, 0, zone, size.height), brake, brakeColor, brakeLabel, leftEdge: true);
-    _paintZone(canvas, size, Rect.fromLTWH(size.width - zone, 0, zone, size.height), throttle, throttleColor, throttleLabel,
-        leftEdge: false);
+    Rect zoneOf(Pedal pedal) {
+      final (from, to) = mapping.spanOf(pedal);
+      return Rect.fromLTRB(size.width * from, 0, size.width * to, size.height);
+    }
+
+    // The brake bar and label sit on the left of its zone, the throttle's
+    // on the right: on the screen edges, or around the gap between them.
+    _paintZone(canvas, size, zoneOf(Pedal.brake), brake, brakeColor, brakeLabel, leftEdge: true);
+    _paintZone(canvas, size, zoneOf(Pedal.throttle), throttle, throttleColor, throttleLabel, leftEdge: false);
   }
 
   void _paintZone(Canvas canvas, Size size, Rect zone, double value, Color color, String label, {required bool leftEdge}) {
@@ -149,7 +154,7 @@ class _PedalPainter extends CustomPainter {
       }
     }
     // Edge bar: always drawn, it is how invisible pedals show their position.
-    final barX = leftEdge ? 0.0 : size.width - edgeBarWidth;
+    final barX = leftEdge ? zone.left : zone.right - edgeBarWidth;
     canvas.drawRect(Rect.fromLTWH(barX, top, edgeBarWidth, bottom - top), Paint()..color = color.withValues(alpha: 0.12));
     if (value > 0) {
       canvas.drawRect(Rect.fromLTRB(barX, fillTop, barX + edgeBarWidth, bottom), Paint()..color = color.withValues(alpha: 0.85));
@@ -167,7 +172,7 @@ class _PedalPainter extends CustomPainter {
       ),
       textDirection: TextDirection.ltr,
     )..layout();
-    final dx = leftEdge ? edgeBarWidth + 10 : size.width - edgeBarWidth - 10 - text.width;
+    final dx = leftEdge ? zone.left + edgeBarWidth + 10 : zone.right - edgeBarWidth - 10 - text.width;
     text.paint(canvas, Offset(dx, size.height - text.height - 10));
   }
 

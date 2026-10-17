@@ -29,6 +29,8 @@ Future<void> showHelpSheet(BuildContext context, {Map<String, String>? optionalM
             _HelpRow(Icons.swipe_up, Colors.greenAccent, l10n.helpThrottle, l10n.helpThrottleDesc),
             if (settings.tiltSteering)
               _HelpRow(Icons.screen_rotation, Colors.blueAccent, l10n.helpSteeringTilt, l10n.helpSteeringTiltDesc)
+            else if (settings.touchWheel)
+              _HelpRow(Icons.trip_origin, Colors.blueAccent, l10n.helpSteeringWheel, l10n.helpSteeringWheelDesc)
             else
               _HelpRow(Icons.drag_handle, Colors.blueAccent, l10n.helpSteeringTouch, l10n.helpSteeringTouchDesc),
             if (settings.tiltSteering && settings.pitchGearShift)

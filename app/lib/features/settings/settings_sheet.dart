@@ -278,6 +278,15 @@ class ThemePreview extends StatelessWidget {
       );
 }
 
+/// The three steering modes, stored as tiltSteering + touchWheel.
+enum _SteeringMode {
+  tilt,
+  bar,
+  wheel;
+
+  static _SteeringMode of(AppSettings s) => s.tiltSteering ? tilt : (s.touchWheel ? wheel : bar);
+}
+
 class _GameplayTab extends StatelessWidget {
   const _GameplayTab();
 
@@ -297,13 +306,19 @@ class _GameplayTab extends StatelessWidget {
     return _Tab([
       ListTile(
         title: Text(l10n.settingsDrivingModeTitle),
-        trailing: SegmentedButton<bool>(
+        trailing: SegmentedButton<_SteeringMode>(
           segments: [
-            ButtonSegment(value: true, icon: const Icon(Icons.screen_rotation), label: Text(l10n.settingsDrivingModeTilt)),
-            ButtonSegment(value: false, icon: const Icon(Icons.swipe), label: Text(l10n.settingsDrivingModeSlide)),
+            ButtonSegment(
+                value: _SteeringMode.tilt, icon: const Icon(Icons.screen_rotation), label: Text(l10n.settingsDrivingModeTilt)),
+            ButtonSegment(value: _SteeringMode.bar, icon: const Icon(Icons.swipe), label: Text(l10n.settingsDrivingModeSlide)),
+            ButtonSegment(
+                value: _SteeringMode.wheel, icon: const Icon(Icons.trip_origin), label: Text(l10n.settingsDrivingModeWheel)),
           ],
-          selected: {s.tiltSteering},
-          onSelectionChanged: (v) => _set(context, (s) => s.copyWith(tiltSteering: v.first)),
+          selected: {_SteeringMode.of(s)},
+          onSelectionChanged: (v) => _set(
+            context,
+            (s) => s.copyWith(tiltSteering: v.first == _SteeringMode.tilt, touchWheel: v.first == _SteeringMode.wheel),
+          ),
         ),
       ),
       ListTile(
@@ -329,7 +344,9 @@ class _GameplayTab extends StatelessWidget {
               style: const TextStyle(fontSize: 11, color: Colors.white38)),
         ]),
       ),
-      _switch(l10n.settingsInvertTitle, null, s.invertSteering, (v) => _set(context, (s) => s.copyWith(invertSteering: v))),
+      // Tilt only: the touch bar and the thumb wheel follow the finger.
+      _switch(l10n.settingsInvertTitle, null, s.invertSteering,
+          s.tiltSteering ? (v) => _set(context, (s) => s.copyWith(invertSteering: v)) : null),
       ListTile(
         enabled: s.tiltSteering,
         title: Text(l10n.settingsSensorTitle),

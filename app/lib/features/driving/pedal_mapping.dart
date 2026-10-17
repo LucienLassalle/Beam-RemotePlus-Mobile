@@ -13,7 +13,11 @@ class PedalMapping {
   /// With the defaults the pedal travel uses 80% of the screen height.
   final double bottomDeadZone;
 
-  const PedalMapping({this.zoneFraction = 0.4, this.topDeadZone = 0.15, this.bottomDeadZone = 0.05});
+  /// Both pedals side by side on the right (brake inside, throttle at the
+  /// edge), for the right thumb, when the left one turns the wheel.
+  final bool bothRight;
+
+  const PedalMapping({this.zoneFraction = 0.4, this.topDeadZone = 0.15, this.bottomDeadZone = 0.05, this.bothRight = false});
 
   /// Tilt steering: 40% of the width on each side, the middle 20% is free.
   static const wide = PedalMapping();
@@ -21,10 +25,22 @@ class PedalMapping {
   /// Touch steering: narrower strips leave room for the steering bar.
   static const sides = PedalMapping(zoneFraction: 0.32);
 
+  /// Thumb wheel on the left: brake and throttle under the right thumb.
+  static const rightThumb = PedalMapping(zoneFraction: 0.2, bothRight: true);
+
+  /// Horizontal span of a pedal zone, in fractions of the width.
+  (double, double) spanOf(Pedal pedal) => switch ((pedal, bothRight)) {
+        (Pedal.brake, false) => (0, zoneFraction),
+        (Pedal.brake, true) => (1 - 2 * zoneFraction, 1 - zoneFraction),
+        (Pedal.throttle, _) => (1 - zoneFraction, 1),
+      };
+
   Pedal? pedalAt(double x, double width) {
     if (width <= 0) return null;
-    if (x < width * zoneFraction) return Pedal.brake;
-    if (x >= width * (1 - zoneFraction)) return Pedal.throttle;
+    for (final pedal in Pedal.values) {
+      final (from, to) = spanOf(pedal);
+      if (x >= width * from && (x < width * to || to == 1)) return pedal;
+    }
     return null;
   }
 
