@@ -25,6 +25,8 @@ longer maintained.
 | ![Civetta theme](docs/screenshots/civetta.png) | ![F4 theme](docs/screenshots/f4.png) |
 | **Radar & damage panel** | **Second screen** |
 | ![Radar and damage panel](docs/screenshots/vehicle-panel.png) | ![Second screen mode](docs/screenshots/second-screen.png) |
+| **Drift** | |
+| ![Drift theme](docs/screenshots/drift.png) | |
 
 ## Features
 
