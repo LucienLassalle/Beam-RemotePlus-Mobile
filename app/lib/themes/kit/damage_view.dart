@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/protocol/telemetry.dart';
 import '../../core/protocol/vehicle_skeleton.dart';
+import 'color_vision.dart';
 import 'dash_format.dart';
 import 'simple_damage_view.dart';
 
@@ -64,31 +65,38 @@ class DamageView extends StatelessWidget {
   static const Color brokenColor = Color(0xFFFF3B30);
   static const Color unknownColor = Color(0xFF5A6068);
 
-  static Color partColor(PartState s) => switch (s) {
+  /// Green, or blue in colour-blind mode (see [ColorVision]).
+  static Color fineColor({bool colorBlind = false}) => colorBlind ? ColorVision.fine : okColor;
+
+  static Color partColor(PartState s, {bool colorBlind = false}) => switch (s) {
         PartState.unknown => unknownColor,
-        PartState.ok => okColor,
+        PartState.ok => fineColor(colorBlind: colorBlind),
         PartState.warning => warningColor,
         PartState.broken => brokenColor,
       };
 
   /// Skeleton beam, as in the game's detailed damage app: hue from green
-  /// (barely bent, level 1) to red (level 9).
-  static Color beamColor(int level) => HSLColor.fromAHSL(1, (1 - level / 9) * 120, 1, 0.5).toColor();
+  /// (barely bent, level 1) to red (level 9); from blue through purple in
+  /// colour-blind mode.
+  static Color beamColor(int level, {bool colorBlind = false}) =>
+      HSLColor.fromAHSL(1, (1 - level / 9) * (colorBlind ? 220 : 120), 1, 0.5).toColor();
 
   /// Tyre temperature (tyre mod): blue = cold, green = working, red = hot.
-  static Color heatColor(double? heat) {
-    if (heat == null) return okColor;
-    if (heat < 0) return Color.lerp(okColor, Colors.lightBlueAccent, -heat)!;
-    return Color.lerp(okColor, brokenColor, heat)!;
+  static Color heatColor(double? heat, {bool colorBlind = false}) {
+    final fine = fineColor(colorBlind: colorBlind);
+    if (heat == null) return fine;
+    if (heat < 0) return Color.lerp(fine, colorBlind ? Colors.white : Colors.lightBlueAccent, -heat)!;
+    return Color.lerp(fine, brokenColor, heat)!;
   }
 
   /// Brake: green while cool, amber from 300 °C, red from ~550 °C or when
   /// fading.
-  static Color brakeColor(double? temp, {bool fading = false}) {
+  static Color brakeColor(double? temp, {bool fading = false, bool colorBlind = false}) {
+    final fine = fineColor(colorBlind: colorBlind);
     if (fading) return brokenColor;
-    if (temp == null) return okColor;
-    if (temp <= 300) return okColor;
-    if (temp <= 450) return Color.lerp(okColor, warningColor, (temp - 300) / 150)!;
+    if (temp == null) return fine;
+    if (temp <= 300) return fine;
+    if (temp <= 450) return Color.lerp(fine, warningColor, (temp - 300) / 150)!;
     return Color.lerp(warningColor, brokenColor, ((temp - 450) / 100).clamp(0.0, 1.0))!;
   }
 
@@ -133,6 +141,7 @@ class DamageView extends StatelessWidget {
           skeletonLevels,
           carParts: showCarParts,
           wheelParts: showWheelParts,
+          colorBlind: ColorVision.colorBlindOf(context),
         ),
       ),
     );
@@ -261,7 +270,8 @@ class _DamagePainter extends CustomPainter {
   final Uint8List? levels;
   final bool carParts;
   final bool wheelParts;
-  _DamagePainter(this.t, this.temperatureUnit, this.pressureUnit, this.layout, this.levels, {this.carParts = true, this.wheelParts = true});
+  final bool colorBlind;
+  _DamagePainter(this.t, this.temperatureUnit, this.pressureUnit, this.layout, this.levels, {this.carParts = true, this.wheelParts = true, this.colorBlind = false});
 
   static const double width = 164;
   static const double height = 200;
@@ -346,7 +356,7 @@ class _DamagePainter extends CustomPainter {
         PointMode.lines,
         points[level],
         Paint()
-          ..color = level == 0 ? Colors.white.withValues(alpha: 0.16) : DamageView.beamColor(level)
+          ..color = level == 0 ? Colors.white.withValues(alpha: 0.16) : DamageView.beamColor(level, colorBlind: colorBlind)
           ..strokeWidth = level == 0 ? 0.6 : 1.4
           ..strokeCap = StrokeCap.round,
       );
@@ -394,7 +404,7 @@ class _DamagePainter extends CustomPainter {
         final targetY = name.endsWith('_F') ? layout.frontAxleY : layout.rearAxleY;
         final fromY = engineY + (targetY > engineY ? 12 : -12);
         final top = math.min(fromY, targetY), bottom = math.max(fromY, targetY);
-        _part(canvas, _rrect(Rect.fromLTRB(cx - 2.5, top, cx + 2.5, bottom), 2), DamageView.partColor(_shaftState(name)));
+        _part(canvas, _rrect(Rect.fromLTRB(cx - 2.5, top, cx + 2.5, bottom), 2), DamageView.partColor(_shaftState(name), colorBlind: colorBlind));
       }
     }
     final diffs = <int>{};
@@ -405,11 +415,11 @@ class _DamagePainter extends CustomPainter {
       final r = tyre.center.dx < cx
           ? Rect.fromLTRB(tyre.right + 7, y - 2.6, cx - 5, y + 2.6)
           : Rect.fromLTRB(cx + 5, y - 2.6, tyre.left - 7, y + 2.6);
-      if (r.width > 0) _part(canvas, _rrect(r, 2), DamageView.partColor(_shaftState(name)));
+      if (r.width > 0) _part(canvas, _rrect(r, 2), DamageView.partColor(_shaftState(name), colorBlind: colorBlind));
       diffs.add(y.round());
     }
     for (final y in diffs) {
-      _part(canvas, Path()..addOval(Rect.fromCircle(center: Offset(cx, y.toDouble()), radius: 6.5)), DamageView.okColor);
+      _part(canvas, Path()..addOval(Rect.fromCircle(center: Offset(cx, y.toDouble()), radius: 6.5)), DamageView.fineColor(colorBlind: colorBlind));
     }
   }
 
@@ -418,7 +428,7 @@ class _DamagePainter extends CustomPainter {
   /// Car radiator at the nose: header tanks top and bottom, fins between.
   void _radiator(Canvas canvas) {
     if (t.waterTemp == null && DamageView.radiatorState(t) == PartState.ok) return;
-    final color = DamageView.partColor(DamageView.radiatorState(t));
+    final color = DamageView.partColor(DamageView.radiatorState(t), colorBlind: colorBlind);
     canvas.save();
     // Drawn for a nose at y = 3.
     canvas.translate(0, layout.noseY - 3);
@@ -440,7 +450,7 @@ class _DamagePainter extends CustomPainter {
   /// its filler cap, intake on the left, fan on the right, sump below.
   void _engine(Canvas canvas) {
     if (!_hasEngine) return;
-    final color = DamageView.partColor(DamageView.engineState(t));
+    final color = DamageView.partColor(DamageView.engineState(t), colorBlind: colorBlind);
     if (t.isElectric) return _motor(canvas, color);
     final x = layout.engine.dx, y = layout.engine.dy;
     final shape = Path()
@@ -483,12 +493,12 @@ class _DamagePainter extends CustomPainter {
     if (state == PartState.unknown && t.fuel == null) return;
     if (t.isElectric) {
       final mid = Offset(cx, (layout.frontAxleY + layout.rearAxleY) / 2);
-      return _scaled(canvas, mid, () => _battery(canvas, DamageView.partColor(state)));
+      return _scaled(canvas, mid, () => _battery(canvas, DamageView.partColor(state, colorBlind: colorBlind)));
     }
     final top = layout.rearEngine
         ? layout.frontAxleY + 10
         : math.min(layout.rearAxleY + 9, layout.tailY - 31);
-    _scaled(canvas, Offset(cx, top + 14), () => _jerrycan(canvas, top, DamageView.partColor(state)));
+    _scaled(canvas, Offset(cx, top + 14), () => _jerrycan(canvas, top, DamageView.partColor(state, colorBlind: colorBlind)));
   }
 
   void _jerrycan(Canvas canvas, double top, Color color) {
@@ -583,7 +593,7 @@ class _DamagePainter extends CustomPainter {
           ? DamageView.brokenColor
           : low.contains(name)
               ? DamageView.warningColor
-              : DamageView.heatColor(heat);
+              : DamageView.heatColor(heat, colorBlind: colorBlind);
       final radius = math.min(4.0, r.shortestSide / 2);
       _part(canvas, _rrect(r, radius), tyreColor);
       // Tread lines.
@@ -613,7 +623,7 @@ class _DamagePainter extends CustomPainter {
           ? DamageView.unknownColor
           : molten
               ? DamageView.brokenColor
-              : DamageView.brakeColor(temp, fading: t.hotBrakes.contains(name));
+              : DamageView.brakeColor(temp, fading: t.hotBrakes.contains(name), colorBlind: colorBlind);
       _part(canvas, _rrect(brake, 1.5), brakeColor);
       if (molten) {
         final x = Paint()

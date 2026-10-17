@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 
+import 'color_vision.dart';
+
 /// Row of round shift LEDs lighting up from the left as RPM approaches the
-/// limiter: green, then red, then everything blinks blue at the shift point.
+/// limiter: green, then red, then everything blinks blue at the shift point
+/// (blue, orange, then white in colour-blind mode, see [ColorVision]).
 class ShiftLights extends StatelessWidget {
   final double? rpm;
   final double? maxRpm;
@@ -30,16 +33,19 @@ class ShiftLights extends StatelessWidget {
     return (ratio * count).round();
   }
 
-  Color _colorFor(int index) {
-    if (shiftNow) return Colors.lightBlueAccent;
+  /// Colour of the LED at [index] (pure, unit-tested).
+  Color colorFor(int index, {bool colorBlind = false}) {
+    if (shiftNow) return colorBlind ? Colors.white : Colors.lightBlueAccent;
     final position = index / count;
-    if (position < 0.4) return Colors.greenAccent;
-    if (position < 0.75) return Colors.redAccent;
+    if (position < 0.4) return colorBlind ? ColorVision.throttle : Colors.greenAccent;
+    if (position < 0.75) return colorBlind ? ColorVision.brake : Colors.redAccent;
     return Colors.purpleAccent;
   }
 
   @override
   Widget build(BuildContext context) {
+    final colorBlind = ColorVision.colorBlindOf(context);
+    Color colorAt(int i) => colorFor(i, colorBlind: colorBlind);
     final lit = shiftNow ? count : litCount(rpm, maxRpm, count, startRatio);
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -51,8 +57,8 @@ class ShiftLights extends StatelessWidget {
             margin: EdgeInsets.symmetric(horizontal: size * 0.15),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: i < lit ? _colorFor(i) : Colors.white10,
-              boxShadow: i < lit ? [BoxShadow(color: _colorFor(i).withValues(alpha: 0.7), blurRadius: size / 3)] : null,
+              color: i < lit ? colorAt(i) : Colors.white10,
+              boxShadow: i < lit ? [BoxShadow(color: colorAt(i).withValues(alpha: 0.7), blurRadius: size / 3)] : null,
             ),
           ),
       ],
