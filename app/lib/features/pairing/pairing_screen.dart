@@ -11,6 +11,7 @@ import '../../core/settings/settings_scope.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../driving/driving_screen.dart';
 import '../optional_mods/optional_mods_sheet.dart';
+import '../tutorial/tutorial_screen.dart';
 import 'pairing_controller.dart';
 import 'widgets/connect_panel.dart';
 import 'widgets/qr_scan_overlay.dart';
@@ -36,7 +37,13 @@ class _PairingScreenState extends State<PairingScreen> {
     super.initState();
     // Free orientation here: portrait is handier to aim at the PC screen.
     unawaited(SystemChrome.setPreferredOrientations(DeviceOrientation.values));
-    unawaited(_requestCamera());
+    // First launch of a fresh install: the tutorial first, then the camera
+    // permission for the QR code.
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      if (!SettingsScope.read(context).settings.tutorialSeen) await showTutorial(context);
+      if (mounted) await _requestCamera();
+    });
   }
 
   Future<void> _requestCamera() async {
@@ -91,6 +98,11 @@ class _PairingScreenState extends State<PairingScreen> {
       appBar: AppBar(
         title: Text(l10n.appTitle),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.school),
+            tooltip: l10n.settingsTutorialTitle,
+            onPressed: () => unawaited(showTutorial(context)),
+          ),
           IconButton(
             icon: const Icon(Icons.extension),
             tooltip: l10n.optionalModsTitle,
