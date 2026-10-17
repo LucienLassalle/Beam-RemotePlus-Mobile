@@ -26,4 +26,21 @@ void main() {
     expect(find.byIcon(Icons.car_repair), findsWidgets);
     await tester.pump(const Duration(seconds: 3));
   });
+
+  testWidgets('a new warning pops in the middle, then flies to its icon on the right', (tester) async {
+    await tester.pumpWidget(_app(Telemetry.empty, 0));
+    await tester.pumpWidget(_app(const Telemetry(checkEngine: true), 0));
+    expect(find.text('Check engine'), findsOneWidget);
+    final popped = tester.getCenter(find.byIcon(Icons.car_repair).last);
+
+    await tester.pump(WarningOverlay.popDuration);
+    await tester.pump(WarningOverlay.flyDuration ~/ 2);
+    final halfway = tester.getCenter(find.byIcon(Icons.car_repair).last);
+    expect(halfway.dx, greaterThan(popped.dx));
+    expect(halfway.dy, lessThan(popped.dy));
+
+    await tester.pump(WarningOverlay.flyDuration);
+    expect(find.text('Check engine'), findsNothing);
+    expect(find.byIcon(Icons.car_repair), findsOneWidget, reason: 'only the column icon stays');
+  });
 }
