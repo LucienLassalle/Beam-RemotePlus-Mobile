@@ -138,7 +138,11 @@ class DrivingView extends StatelessWidget {
                   right: 16,
                   child: IgnorePointer(
                     child: Row(mainAxisSize: MainAxisSize.min, children: [
-                      if (!_display && t.player != null) ...[PlayerBadge(player: t.player!), const SizedBox(width: 6)],
+                      // Only with the colour the game gives the player: never a guess.
+                      if (!_display && t.player != null && controller.playerColor != null) ...[
+                        PlayerBadge(player: t.player!, color: controller.playerColor!),
+                        const SizedBox(width: 6),
+                      ],
                       StatusChip(state: controller.linkState, latencyMs: controller.latencyMs, signalLost: controller.signalLost),
                     ]),
                   ),
