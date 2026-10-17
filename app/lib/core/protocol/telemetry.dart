@@ -23,6 +23,11 @@ class Telemetry {
   final double? waterTemp; // °C
   final double? oilTemp; // °C
   final double? envTemp; // °C
+
+  /// Degrees from where the car points to where it goes, counter-clockwise
+  /// seen from above (positive: it goes to the left of its nose); null
+  /// when slow or with an older mod.
+  final double? driftAngle;
   final double? boost;
   final bool? engineRunning;
   final int? ignitionLevel;
@@ -177,6 +182,7 @@ class Telemetry {
     this.waterTemp,
     this.oilTemp,
     this.envTemp,
+    this.driftAngle,
     this.boost,
     this.engineRunning,
     this.ignitionLevel,
@@ -388,6 +394,7 @@ class Telemetry {
       waterTemp: _num(j['waterTemp']),
       oilTemp: _num(j['oilTemp']),
       envTemp: _num(j['envTemp']),
+      driftAngle: _num(j['driftAngle']),
       boost: _num(j['boost']),
       engineRunning: _bool(j['engineRunning']),
       ignitionLevel: _int(j['ignitionLevel']),

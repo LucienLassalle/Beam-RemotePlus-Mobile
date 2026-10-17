@@ -14,6 +14,7 @@ const sampleTelemetry = Telemetry(
   waterTemp: 92,
   oilTemp: 104,
   envTemp: 21,
+  driftAngle: -32,
   boost: 2.4,
   engineRunning: true,
   ignitionLevel: 2,

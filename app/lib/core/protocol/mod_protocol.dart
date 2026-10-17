@@ -121,12 +121,13 @@ class ModCommand {
   static const highBeam = 'highbeam';
   static const starter = 'starter';
   static const recover = 'recover';
+  static const handbrake = 'handbrake';
   static const debug = 'debug';
 
   // Asks for the vehicle skeleton (allowed on a second screen too)
   static const skeleton = 'skeleton';
 
-  static const Set<String> holds = {horn, highBeam, starter, recover, debug};
+  static const Set<String> holds = {horn, highBeam, starter, recover, handbrake, debug};
 }
 
 /// Analog control packet sent to the mod: 12 bytes, three little-endian
