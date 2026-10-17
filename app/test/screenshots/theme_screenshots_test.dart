@@ -9,6 +9,7 @@ import 'package:beam_remoteplus/core/settings/settings_scope.dart';
 import 'package:beam_remoteplus/core/settings/settings_store.dart';
 import 'package:beam_remoteplus/features/settings/settings_sheet.dart';
 import 'package:beam_remoteplus/features/tutorial/tutorial_screen.dart';
+import 'package:beam_remoteplus/features/vehicle_status/widgets/warning_overlay.dart';
 import 'package:beam_remoteplus/l10n/generated/app_localizations.dart';
 import 'package:beam_remoteplus/themes/kit/kit.dart';
 import 'package:beam_remoteplus/themes/theme_registry.dart';
@@ -36,7 +37,8 @@ void main() {
       await pumpDrivingView(tester, theme: themeByName(settings.themeName), link: link, settings: settings);
       link.telemetry_.add(sampleTelemetry);
       await tester.pump();
-      await tester.pump(const Duration(seconds: 3)); // let the warning pop fade
+      await tester.pump(const Duration(seconds: 3)); // let the warning pop...
+      await tester.pump(WarningOverlay.flyDuration); // ...and fly to its icon
       await tester.pump();
       await expectLater(find.byType(MaterialApp), matchesGoldenFile('goldens/$name.png'));
       link.dispose();
@@ -193,7 +195,8 @@ void main() {
       await pumpDrivingView(tester, theme: theme, link: link, settings: const AppSettings(debugMode: false));
       link.telemetry_.add(sampleTelemetry);
       await tester.pump();
-      await tester.pump(const Duration(seconds: 3)); // let the warning pop fade
+      await tester.pump(const Duration(seconds: 3)); // let the warning pop...
+      await tester.pump(WarningOverlay.flyDuration); // ...and fly to its icon
       await tester.pump();
       final pressed = await tester.startGesture(const Offset(700, 140)); // show the throttle feedback
       await tester.pump();
