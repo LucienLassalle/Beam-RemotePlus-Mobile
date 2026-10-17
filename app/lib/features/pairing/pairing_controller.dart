@@ -69,7 +69,8 @@ class PairingController extends ChangeNotifier {
       _set(PairingStatus.idle, error: PairingError.invalidQr);
       return Future.value();
     }
-    return connect(code.securityCode);
+    // The panel QR code also gives the PC address: tried before broadcasts.
+    return connect(code.securityCode, knownHost: code.host);
   }
 
   Future<BeamngConnection?> connect(String code, {String? knownHost}) async {

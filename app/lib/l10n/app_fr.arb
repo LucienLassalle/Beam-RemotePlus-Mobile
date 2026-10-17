@@ -3,7 +3,7 @@
   "appTitle": "Beam-RemotePlus",
   "cameraPermissionMessage": "L'autorisation caméra est nécessaire pour scanner le QR code affiché par BeamNG.drive.",
   "cameraPermissionButton": "Autoriser la caméra",
-  "scanHint": "Ou scannez le QR code : BeamNG.drive > Options > Contrôles > Matériel",
+  "scanHint": "Ou scannez le QR code : bouton QR du panneau Beam-RemotePlus dans le jeu, ou BeamNG.drive > Options > Contrôles > Matériel",
   "invalidQr": "QR code non reconnu. Essayez plutôt la connexion automatique.",
   "autoConnectButton": "Connexion automatique",
   "autoConnectSearching": "Recherche de BeamNG.drive sur le réseau…",
