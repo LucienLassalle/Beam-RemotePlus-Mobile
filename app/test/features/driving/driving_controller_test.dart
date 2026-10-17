@@ -1,6 +1,7 @@
 import 'package:beam_remoteplus/core/platform/hardware_keys.dart';
 import 'package:beam_remoteplus/core/protocol/mod_message.dart';
 import 'package:beam_remoteplus/core/protocol/telemetry.dart';
+import 'package:beam_remoteplus/core/protocol/vehicle_command.dart';
 import 'package:beam_remoteplus/core/protocol/vehicle_skeleton.dart';
 import 'package:beam_remoteplus/core/settings/app_settings.dart';
 import 'package:beam_remoteplus/features/driving/driving_controller.dart';
@@ -78,6 +79,14 @@ void main() {
     controller.steer(0.75);
     expect(link.steering, lessThan(0.75));
     expect(link.steering, greaterThan(0.5));
+  });
+
+  test('a held More command is released with the other holds', () {
+    const crane = VehicleCommand(id: 'v:crane', hold: true);
+    controller.holdMore(crane, pressed: true);
+    controller.holdMore(crane, pressed: true); // repeated: ignored
+    controller.releaseAllHolds();
+    expect(link.commands, ['action_down|v:crane', 'action_up|v:crane']);
   });
 
   test('read-only releases holds, centres the controls and blocks inputs', () {

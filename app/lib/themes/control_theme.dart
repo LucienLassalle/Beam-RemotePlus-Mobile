@@ -107,6 +107,10 @@ class ThemeStyle {
   final VolumeKeyAction volumeUp;
   final VolumeKeyAction volumeDown;
 
+  /// A "More" button opening every other command of the vehicle (fog
+  /// lights, 4WD, trailer, vehicle mods...), see more_sheet.dart.
+  final bool moreButton;
+
   const ThemeStyle({
     this.background = Colors.black,
     this.brakeColor = Colors.redAccent,
@@ -116,5 +120,6 @@ class ThemeStyle {
     this.actions = const {},
     this.volumeUp = VolumeKeyAction.horn,
     this.volumeDown = VolumeKeyAction.headlightFlash,
+    this.moreButton = false,
   });
 }
