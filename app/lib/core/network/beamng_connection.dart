@@ -27,6 +27,7 @@ class BeamngConnection implements RemoteLink {
   final _modActiveChanges = StreamController<bool>.broadcast();
   final _telemetry = StreamController<Telemetry>.broadcast();
   final _events = StreamController<ModMessage>.broadcast();
+  final _quality = StreamController<void>.broadcast();
 
   LinkState _state = LinkState.idle;
   bool _modActive = false;
@@ -44,6 +45,12 @@ class BeamngConnection implements RemoteLink {
   InternetAddress? _host;
 
   DateTime _lastModMessage = DateTime.fromMillisecondsSinceEpoch(0);
+
+  // Link quality: round trip of the keep-alive pings, and whether the mod
+  // went silent.
+  DateTime? _pingSentAt;
+  int? _latencyMs;
+  bool _signalLost = false;
 
   /// Handshake prefixes the pings use: both until the mod answers (mods up
   /// to 0.0.3 only know the legacy one), then the one of its answer.
@@ -82,6 +89,23 @@ class BeamngConnection implements RemoteLink {
   Stream<Telemetry> get telemetry => _telemetry.stream;
   @override
   Stream<ModMessage> get events => _events.stream;
+  @override
+  int? get latencyMs => _latencyMs;
+  @override
+  bool get signalLost => _signalLost;
+  @override
+  Stream<void> get qualityChanges => _quality.stream;
+
+  void _qualityChanged() {
+    if (!_quality.isClosed) _quality.add(null);
+  }
+
+  void _setSignalLost(bool lost) {
+    if (_signalLost == lost) return;
+    _signalLost = lost;
+    DebugLog.log(lost ? 'signal lost' : 'signal back');
+    _qualityChanged();
+  }
 
   void _setState(LinkState s) {
     _state = s;
@@ -230,6 +254,7 @@ class BeamngConnection implements RemoteLink {
   void _startModPings(RawDatagramSocket socket, String code, String deviceName) {
     final host = _host!;
     void ping() {
+      if (_modActive) _pingSentAt = DateTime.now();
       for (final p in _pings(code, deviceName)) {
         socket.send(p, host, ModProtocol.hostPort);
       }
@@ -239,6 +264,10 @@ class BeamngConnection implements RemoteLink {
     var ticks = 0;
     _modPingTimer = Timer.periodic(const Duration(milliseconds: ModProtocol.pingRetryMs), (_) {
       ticks++;
+      // Still lost once the app fell back to the native channel, until the
+      // mod answers again.
+      final heard = _lastModMessage.millisecondsSinceEpoch > 0;
+      _setSignalLost(heard && DateTime.now().difference(_lastModMessage) > ModProtocol.signalLostAfter);
       if (_modActive && DateTime.now().difference(_lastModMessage) > ModProtocol.modSilenceTimeout) {
         DebugLog.log('mod silent, back to the native channel until it answers again');
         _setModActive(false);
@@ -266,6 +295,13 @@ class BeamngConnection implements RemoteLink {
       final version = ModProtocol.parsePong(answer, code);
       if (version == null) return;
       _lastModMessage = DateTime.now();
+      final sentAt = _pingSentAt;
+      if (sentAt != null) {
+        _pingSentAt = null;
+        _latencyMs = _lastModMessage.difference(sentAt).inMilliseconds;
+        _qualityChanged();
+      }
+      _setSignalLost(false);
       if (_modActive) return;
       _keepPrefixOf(answer);
       _protocolVersion = version;
@@ -276,6 +312,7 @@ class BeamngConnection implements RemoteLink {
     }
     if (!_modActive) return;
     _lastModMessage = DateTime.now();
+    _setSignalLost(false);
     try {
       final message = ModMessage.decode(dg.data, _protocolVersion);
       if (message is TelemetryMessage) {
@@ -357,6 +394,10 @@ class BeamngConnection implements RemoteLink {
     _protocolVersion = 0;
     _pingPrefixes = ModProtocol.prefixes;
     if (_state != LinkState.idle) _setState(LinkState.idle);
+    _pingSentAt = null;
+    _latencyMs = null;
+    _signalLost = false;
+    _lastModMessage = DateTime.fromMillisecondsSinceEpoch(0);
   }
 
   @override
@@ -366,5 +407,6 @@ class BeamngConnection implements RemoteLink {
     _modActiveChanges.close();
     _telemetry.close();
     _events.close();
+    _quality.close();
   }
 }

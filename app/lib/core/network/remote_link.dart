@@ -1,4 +1,5 @@
 import '../protocol/mod_message.dart';
+import '../protocol/mod_protocol.dart';
 import '../protocol/telemetry.dart';
 
 /// [kicked]: the player removed this phone from the game; the connection is
@@ -18,6 +19,16 @@ abstract class RemoteLink {
 
   /// Negotiated mod protocol version (0 while the mod is not detected).
   int get protocolVersion;
+
+  /// Round trip to the mod (keep-alive ping to pong), null until measured.
+  int? get latencyMs;
+
+  /// Nothing received from the mod for [ModProtocol.signalLostAfter]: the
+  /// mod has not heard from this phone either, so it brakes the car.
+  bool get signalLost;
+
+  /// Fires when [latencyMs] or [signalLost] changes.
+  Stream<void> get qualityChanges;
 
   Stream<Telemetry> get telemetry;
 

@@ -35,6 +35,14 @@ class FakeLink implements RemoteLink {
   Stream<ModMessage> get events => events_.stream;
 
   @override
+  int? latencyMs;
+  @override
+  bool signalLost = false;
+  final quality_ = StreamController<void>.broadcast();
+  @override
+  Stream<void> get qualityChanges => quality_.stream;
+
+  @override
   void sendCommand(String name, [String? arg]) => commands.add(arg == null ? name : '$name|$arg');
 
   @override
@@ -53,5 +61,6 @@ class FakeLink implements RemoteLink {
     modActive_.close();
     telemetry_.close();
     events_.close();
+    quality_.close();
   }
 }
