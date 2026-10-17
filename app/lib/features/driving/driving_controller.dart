@@ -13,6 +13,7 @@ import '../../themes/control_theme.dart';
 import '../../themes/theme_registry.dart';
 import '../vehicle_status/haptics_engine.dart';
 import '../vehicle_status/skeleton_tracker.dart';
+import 'steering_curve.dart';
 
 /// Logic of the driving screen (the view is driving_screen.dart): routes the
 /// inputs to the game, tracks held commands, gear-change flashes, read-only
@@ -129,8 +130,10 @@ class DrivingController extends ChangeNotifier {
 
   // Analog inputs ---------------------------------------------------------------
 
+  /// [value]: 0 (full right) .. 1 (full left), shaped by the centre
+  /// precision setting.
   void steer(double value) {
-    if (!_readOnly) link.updateControls(steering: value);
+    if (!_readOnly) link.updateControls(steering: SteeringCurve.apply(value, _settings.steeringCenterPrecision));
   }
 
   void brake(double value) {

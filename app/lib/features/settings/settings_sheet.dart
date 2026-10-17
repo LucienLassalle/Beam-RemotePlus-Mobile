@@ -347,6 +347,19 @@ class _GameplayTab extends StatelessWidget {
           ),
         ]),
       ),
+      ListTile(
+        title: Text(l10n.settingsCenterPrecisionTitle),
+        subtitle: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(l10n.settingsCenterPrecisionSubtitle),
+          Slider(
+            value: s.steeringCenterPrecision,
+            divisions: 10,
+            label: '${(s.steeringCenterPrecision * 100).round()} %',
+            onChanged: (v) => _set(context, (s) => s.copyWith(steeringCenterPrecision: v)),
+          ),
+        ]),
+        trailing: Text('${(s.steeringCenterPrecision * 100).round()} %'),
+      ),
       // Only the accelerometer shakes: the gyroscope needs no smoothing.
       FutureBuilder<bool>(
         future: _gyroscope,
