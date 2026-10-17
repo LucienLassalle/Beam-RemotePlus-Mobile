@@ -86,15 +86,17 @@ class _TouchWheelState extends State<TouchWheel> with SingleTickerProviderStateM
         onPanCancel: _up,
         child: CustomPaint(
           size: Size.square(widget.size),
-          painter: _WheelPainter(angleDeg: _wheel.angleDeg, color: widget.color),
+          painter: SteeringWheelPainter(angleDeg: _wheel.angleDeg, color: widget.color),
         ),
       );
 }
 
-class _WheelPainter extends CustomPainter {
+/// A steering wheel turned by [angleDeg] (clockwise), with an amber top
+/// marker; also drawn by the tutorial.
+class SteeringWheelPainter extends CustomPainter {
   final double angleDeg;
   final Color color;
-  _WheelPainter({required this.angleDeg, required this.color});
+  SteeringWheelPainter({required this.angleDeg, required this.color});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -125,5 +127,5 @@ class _WheelPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_WheelPainter old) => old.angleDeg != angleDeg || old.color != color;
+  bool shouldRepaint(SteeringWheelPainter old) => old.angleDeg != angleDeg || old.color != color;
 }

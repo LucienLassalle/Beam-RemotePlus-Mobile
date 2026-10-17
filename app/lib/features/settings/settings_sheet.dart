@@ -12,6 +12,7 @@ import '../../themes/kit/sample_telemetry.dart';
 import '../../themes/theme_registry.dart';
 import '../driving/tilt_steering.dart';
 import '../driving/widgets/vehicle_actions_bar.dart';
+import '../tutorial/tutorial_screen.dart';
 
 /// Opens the settings sheet of the driving screen: the two actions used
 /// while driving on top (recalibrate, pause the controls), then one tab per
@@ -522,6 +523,12 @@ class _AdvancedTab extends StatelessWidget {
       _switch(l10n.settingsDebugTitle, l10n.settingsDebugSubtitle, s.debugMode, (v) => _set(context, (s) => s.copyWith(debugMode: v))),
       _switch(l10n.settingsCheckUpdatesTitle, l10n.settingsCheckUpdatesSubtitle, s.checkUpdates,
           (v) => _set(context, (s) => s.copyWith(checkUpdates: v))),
+      ListTile(
+        leading: const Icon(Icons.school),
+        title: Text(l10n.settingsTutorialTitle),
+        subtitle: Text(l10n.settingsTutorialSubtitle),
+        onTap: () => unawaited(showTutorial(context, lockLandscape: false)),
+      ),
     ]);
   }
 }

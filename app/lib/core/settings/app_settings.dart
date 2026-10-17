@@ -92,6 +92,10 @@ class AppSettings {
   /// Looks for new releases of the app and of the mod on GitHub at launch.
   final bool checkUpdates;
 
+  /// The tutorial was shown (or skipped). False only on a fresh install: an
+  /// update keeps its saved settings, so its players never see it again.
+  final bool tutorialSeen;
+
   /// Presets offered next to a custom value.
   static const List<double> rotationRanges = [360, 540, 720, 900];
   static const double minRotationRange = 90;
@@ -132,6 +136,7 @@ class AppSettings {
     this.hiddenActions = const {},
     this.debugMode = false,
     this.checkUpdates = true,
+    this.tutorialSeen = false,
   });
 
   /// Some road-feel vibration is enabled.
@@ -180,6 +185,7 @@ class AppSettings {
     Set<String>? hiddenActions,
     bool? debugMode,
     bool? checkUpdates,
+    bool? tutorialSeen,
   }) {
     return AppSettings(
       themeName: themeName ?? this.themeName,
@@ -216,6 +222,7 @@ class AppSettings {
       hiddenActions: hiddenActions ?? this.hiddenActions,
       debugMode: debugMode ?? this.debugMode,
       checkUpdates: checkUpdates ?? this.checkUpdates,
+      tutorialSeen: tutorialSeen ?? this.tutorialSeen,
     );
   }
 
@@ -254,6 +261,7 @@ class AppSettings {
         'hiddenActions': hiddenActions.toList()..sort(),
         'debugMode': debugMode,
         'checkUpdates': checkUpdates,
+        'tutorialSeen': tutorialSeen,
       };
 
   /// Missing or wrongly typed values fall back to the defaults, so settings
@@ -310,6 +318,8 @@ class AppSettings {
           : d.hiddenActions,
       debugMode: pick('debugMode', d.debugMode),
       checkUpdates: pick('checkUpdates', d.checkUpdates),
+      // Saved settings without the key: an update from an older version.
+      tutorialSeen: pick('tutorialSeen', json.isNotEmpty),
     );
   }
 }

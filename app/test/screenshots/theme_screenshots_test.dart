@@ -8,6 +8,7 @@ import 'package:beam_remoteplus/core/settings/settings_controller.dart';
 import 'package:beam_remoteplus/core/settings/settings_scope.dart';
 import 'package:beam_remoteplus/core/settings/settings_store.dart';
 import 'package:beam_remoteplus/features/settings/settings_sheet.dart';
+import 'package:beam_remoteplus/features/tutorial/tutorial_screen.dart';
 import 'package:beam_remoteplus/l10n/generated/app_localizations.dart';
 import 'package:beam_remoteplus/themes/kit/kit.dart';
 import 'package:beam_remoteplus/themes/theme_registry.dart';
@@ -154,6 +155,35 @@ void main() {
     await tester.tap(find.text('Jouabilité'));
     await tester.pumpAndSettle();
     await expectLater(find.byType(MaterialApp), matchesGoldenFile('goldens/Settings - gameplay.png'));
+  });
+
+  testWidgets('tutorial previews', (tester) async {
+    tester.view.physicalSize = phoneSize * 2;
+    tester.view.devicePixelRatio = 2;
+    addTearDown(tester.view.reset);
+    final settings = SettingsController(MemorySettingsStore());
+    await tester.pumpWidget(SettingsScope(
+      controller: settings,
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        locale: const Locale('fr'),
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        theme: ThemeData(
+          brightness: Brightness.dark,
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.orangeAccent, brightness: Brightness.dark),
+        ),
+        home: const TutorialScreen(accelerometer: Stream.empty()),
+      ),
+    ));
+    await tester.pumpAndSettle();
+    for (var page = 1; page <= TutorialScreen.pageCount; page++) {
+      await expectLater(find.byType(MaterialApp), matchesGoldenFile('goldens/Tutorial - $page.png'));
+      if (page < TutorialScreen.pageCount) {
+        await tester.tap(find.text('Suivant'));
+        await tester.pumpAndSettle();
+      }
+    }
   });
 
   for (final theme in availableThemes) {

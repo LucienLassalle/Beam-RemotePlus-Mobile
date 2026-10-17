@@ -38,6 +38,9 @@ void main() {
       expect(s.rotationRangeDeg, 900);
       expect(s.themeName, 'Default');
       expect(s.localeCode, isNull);
+      expect(s.tutorialSeen, isTrue, reason: 'saved settings: an update, not a fresh install');
+      expect(AppSettings.fromJson(const {}).tutorialSeen, isFalse, reason: 'fresh install');
+      expect(AppSettings.fromJson(const AppSettings().toJson()).tutorialSeen, isFalse);
       expect(AppSettings.fromJson({'steeringSensor': 'lidar'}).steeringSensor, SteeringSensor.auto);
     });
 

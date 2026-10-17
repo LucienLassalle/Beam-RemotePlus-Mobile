@@ -60,6 +60,8 @@ longer maintained.
   player leaves, the car no longer accelerates and brakes for 5 seconds
   (with the mod).
 - **Colour-blind mode**: orange and blue instead of red and green.
+- **Tutorial** on the first launch, to try the controls without a PC (again
+  from the settings at any time).
 - **English and French** ([TRANSLATING.md](TRANSLATING.md)).
 - **Update check**: the home screen says when a newer app is out, and once
   connected the app says whether the app or the mod should be updated (they
