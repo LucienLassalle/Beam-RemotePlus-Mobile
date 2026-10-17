@@ -46,6 +46,9 @@ class AppSettings {
 
   /// Without tilt: a wheel to turn with a thumb instead of the touch bar.
   final bool touchWheel;
+
+  /// Throttle on the left, brake on the right (left-handed players).
+  final bool swapPedals;
   final double rotationRangeDeg;
   final bool invertSteering;
 
@@ -105,6 +108,7 @@ class AppSettings {
     this.secondScreen = false,
     this.tiltSteering = true,
     this.touchWheel = false,
+    this.swapPedals = false,
     this.rotationRangeDeg = 900,
     this.invertSteering = true,
     this.steeringSensor = SteeringSensor.auto,
@@ -151,6 +155,7 @@ class AppSettings {
     bool? secondScreen,
     bool? tiltSteering,
     bool? touchWheel,
+    bool? swapPedals,
     double? rotationRangeDeg,
     bool? invertSteering,
     SteeringSensor? steeringSensor,
@@ -185,6 +190,7 @@ class AppSettings {
       secondScreen: secondScreen ?? this.secondScreen,
       tiltSteering: tiltSteering ?? this.tiltSteering,
       touchWheel: touchWheel ?? this.touchWheel,
+      swapPedals: swapPedals ?? this.swapPedals,
       rotationRangeDeg: rotationRangeDeg ?? this.rotationRangeDeg,
       invertSteering: invertSteering ?? this.invertSteering,
       steeringSensor: steeringSensor ?? this.steeringSensor,
@@ -221,6 +227,7 @@ class AppSettings {
         'secondScreen': secondScreen,
         'tiltSteering': tiltSteering,
         'touchWheel': touchWheel,
+        'swapPedals': swapPedals,
         'rotationRangeDeg': rotationRangeDeg,
         'invertSteering': invertSteering,
         'steeringSensor': steeringSensor.name,
@@ -273,6 +280,7 @@ class AppSettings {
       secondScreen: pick('secondScreen', d.secondScreen),
       tiltSteering: pick('tiltSteering', d.tiltSteering),
       touchWheel: pick('touchWheel', d.touchWheel),
+      swapPedals: pick('swapPedals', d.swapPedals),
       rotationRangeDeg: rotation,
       invertSteering: pick('invertSteering', d.invertSteering),
       steeringSensor: enumByName(SteeringSensor.values, json['steeringSensor'], d.steeringSensor),

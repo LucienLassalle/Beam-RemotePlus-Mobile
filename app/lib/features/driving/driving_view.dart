@@ -96,6 +96,7 @@ class DrivingView extends StatelessWidget {
                       visible: style.visiblePedals,
                       brakeColor: style.brakeColor,
                       throttleColor: style.throttleColor,
+                      swapped: settings.swapPedals,
                     ),
                   ),
                 ),
@@ -220,9 +221,11 @@ class DrivingView extends StatelessWidget {
     if (settings.touchWheel) {
       // Under the left thumb, where the brake usually is: the pedals move
       // to the right thumb (PedalMapping.rightThumb).
+      // Mirrored for left-handed players (Throttle on the left setting).
       return Positioned(
         bottom: 12,
-        left: 20,
+        left: settings.swapPedals ? null : 20,
+        right: settings.swapPedals ? 20 : null,
         child: IgnorePointer(
           ignoring: controller.readOnly,
           child: TouchWheel(

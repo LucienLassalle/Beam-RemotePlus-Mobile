@@ -158,6 +158,22 @@ void main() {
     expect(link.commands, ['recover|1', 'recover|0']);
   });
 
+  testWidgets('left-handed players get the throttle on the left, the brake on the right', (tester) async {
+    final link = FakeLink();
+    addTearDown(link.dispose);
+    await pumpDrivingView(tester, theme: availableThemes.first, link: link, settings: const AppSettings(swapPedals: true));
+    var gesture = await tester.startGesture(Offset(phoneSize.width * 0.1, phoneSize.height * 0.5));
+    await tester.pump();
+    expect(link.throttle, greaterThan(0));
+    expect(link.brake, 0);
+    await gesture.up();
+    gesture = await tester.startGesture(Offset(phoneSize.width * 0.9, phoneSize.height * 0.5));
+    await tester.pump();
+    expect(link.brake, greaterThan(0));
+    expect(link.throttle, 0);
+    await gesture.up();
+  });
+
   testWidgets('read-only mode ignores the pedals', (tester) async {
     final link = FakeLink();
     addTearDown(link.dispose);

@@ -480,6 +480,8 @@ class _ControlsTab extends StatelessWidget {
     final s = SettingsScope.of(context).settings;
     final actions = themeByName(s.themeName).style.actions;
     return _Tab([
+      _switch(l10n.settingsSwapPedalsTitle, l10n.settingsSwapPedalsSubtitle, s.swapPedals,
+          (v) => _set(context, (s) => s.copyWith(swapPedals: v))),
       _switch(l10n.settingsHornVolumeTitle, l10n.settingsHornVolumeSubtitle, !s.hornOnVolume,
           (v) => _set(context, (s) => s.copyWith(hornOnVolume: !v))),
       _switch(l10n.settingsFlashVolumeTitle, l10n.settingsFlashVolumeSubtitle, !s.flashOnVolume,
