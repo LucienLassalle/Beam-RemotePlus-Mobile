@@ -73,7 +73,7 @@
   "settingsSensorGyroscope": "Gyroscope",
   "settingsSensorAccelerometer": "Accelerometer",
   "settingsSmoothingTitle": "Shake reduction",
-  "settingsSmoothingSubtitle": "Reduces sensor jitter (adds a small delay)",
+  "settingsSmoothingSubtitle": "Reduces the jitter of the accelerometer (adds a small delay); the gyroscope needs none",
   "settingsUnitTitle": "Speed unit",
   "settingsTemperatureUnitTitle": "Temperature",
   "settingsPressureUnitTitle": "Tyre pressure",

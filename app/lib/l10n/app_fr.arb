@@ -51,7 +51,7 @@
   "settingsSensorGyroscope": "Gyroscope",
   "settingsSensorAccelerometer": "Accéléromètre",
   "settingsSmoothingTitle": "Atténuation des tremblements",
-  "settingsSmoothingSubtitle": "Atténue les tremblements du capteur (léger délai en échange)",
+  "settingsSmoothingSubtitle": "Atténue les tremblements de l'accéléromètre (léger délai en échange) ; le gyroscope n'en a pas besoin",
   "settingsUnitTitle": "Unité de mesure",
   "settingsTemperatureUnitTitle": "Température",
   "settingsPressureUnitTitle": "Pression des pneus",

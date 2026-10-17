@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../core/platform/gravity_sensor.dart';
 import '../../core/platform/vibrator.dart';
 import '../../core/settings/app_settings.dart';
 import '../../core/settings/settings_scope.dart';
@@ -280,6 +281,9 @@ class ThemePreview extends StatelessWidget {
 class _GameplayTab extends StatelessWidget {
   const _GameplayTab();
 
+  /// Whether the phone has the gyroscope (asked once).
+  static final Future<bool> _gyroscope = GravitySensor.available();
+
   Future<void> _customRange(BuildContext context, double current) async {
     final value = await showDialog<double>(context: context, builder: (_) => _RotationRangeDialog(current: current));
     if (value != null && context.mounted) _set(context, (s) => s.copyWith(rotationRangeDeg: value));
@@ -343,8 +347,16 @@ class _GameplayTab extends StatelessWidget {
           ),
         ]),
       ),
-      _switch(l10n.settingsSmoothingTitle, l10n.settingsSmoothingSubtitle, s.steeringSmoothing,
-          s.tiltSteering ? (v) => _set(context, (s) => s.copyWith(steeringSmoothing: v)) : null),
+      // Only the accelerometer shakes: the gyroscope needs no smoothing.
+      FutureBuilder<bool>(
+        future: _gyroscope,
+        builder: (context, gyro) {
+          final accelerometer = s.steeringSensor == SteeringSensor.accelerometer ||
+              (s.steeringSensor == SteeringSensor.auto && gyro.data != true);
+          return _switch(l10n.settingsSmoothingTitle, l10n.settingsSmoothingSubtitle, s.steeringSmoothing,
+              s.tiltSteering && accelerometer ? (v) => _set(context, (s) => s.copyWith(steeringSmoothing: v)) : null);
+        },
+      ),
       _switch(l10n.settingsPitchGearTitle, l10n.settingsPitchGearSubtitle, s.pitchGearShift,
           s.tiltSteering ? (v) => _set(context, (s) => s.copyWith(pitchGearShift: v)) : null),
       ExpansionTile(

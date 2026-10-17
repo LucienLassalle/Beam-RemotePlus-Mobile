@@ -71,7 +71,7 @@ void main() {
     });
   });
 
-  test('the gyroscope-based samples are smoothed less, so they follow faster', () {
+  test('the gyroscope-based samples are never smoothed: no delay', () {
     double firstStep({required bool fused}) {
       final s = TiltSteering(rotationRangeDeg: 360, smoothing: true, fused: fused);
       for (var i = 0; i < TiltSteering.calibrationSamples; i++) {
@@ -83,6 +83,7 @@ void main() {
       return 0.5 - s.steering(x, y, z);
     }
 
-    expect(firstStep(fused: true), greaterThan(firstStep(fused: false) * 1.5));
+    expect(firstStep(fused: true), closeTo(0.5 * 30 / 75, 1e-6), reason: '30° of a 360° range (75° tilt)');
+    expect(firstStep(fused: false), lessThan(firstStep(fused: true)));
   });
 }
