@@ -1,6 +1,7 @@
 import 'civetta/civetta_theme.dart';
 import 'control_theme.dart';
 import 'default/default_theme.dart';
+import 'drift/drift_theme.dart';
 import 'f4/f4_theme.dart';
 import 'road/road_theme.dart';
 
@@ -13,6 +14,7 @@ const List<ControlTheme> availableThemes = [
   CivettaTheme(),
   F4Theme(),
   RoadTheme(),
+  DriftTheme(),
 ];
 
 /// Theme by name, falling back to the first one (e.g. a theme removed in a

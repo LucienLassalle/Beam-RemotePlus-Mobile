@@ -129,6 +129,7 @@
   "actionPitLimiter": "Limiteur de stand",
   "actionPushToPassLeft": "Push-to-Pass : {seconds} s de boost restantes",
   "actionParkingBrake": "Frein à main",
+  "actionHandbrake": "Frein à main (maintenir)",
   "actionStarter": "Contact",
   "actionEscMode": "Mode de conduite / ESC",
   "actionDriveModeCaption": "MODE",

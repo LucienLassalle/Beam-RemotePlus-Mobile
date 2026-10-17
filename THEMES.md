@@ -121,6 +121,8 @@ nothing.
 
 With `moreButton: true` (the Road theme), a **MORE** button opens every
 other command of the vehicle, as the mod lists them.
+With `handbrakeButton: true` (the Drift theme), a big handbrake button sits
+at the bottom left, above the brake: the handbrake works while it is held.
 
 The app always adds the vehicle switch (top left), hold-to-reset (top
 centre), camera buttons (bottom centre), settings and warning lights.

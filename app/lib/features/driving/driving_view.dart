@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 
+import '../../core/protocol/mod_protocol.dart';
 import '../../core/settings/app_settings.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../themes/control_theme.dart';
@@ -119,6 +120,21 @@ class DrivingView extends StatelessWidget {
                   child: DashboardTouchFilter(child: theme.buildDashboard(context, data)),
                 ),
                 if (!_display) _steering(context),
+                // Drift themes: the handbrake under the left thumb, above the brake.
+                if (!_display && style.handbrakeButton)
+                  Positioned(
+                    left: 28,
+                    bottom: 40 + _touchSteeringHeight,
+                    child: HoldButton(
+                      icon: Icons.local_parking,
+                      tooltip: AppLocalizations.of(context).actionHandbrake,
+                      color: Colors.redAccent,
+                      size: 72,
+                      enabled: controller.commandsEnabled,
+                      active: controller.heldCommands.contains(ModCommand.handbrake),
+                      onHold: (pressed) => controller.hold(ModCommand.handbrake, pressed: pressed),
+                    ),
+                  ),
                 if (controller.gearFlash != null)
                   Positioned.fill(
                     child: IgnorePointer(
