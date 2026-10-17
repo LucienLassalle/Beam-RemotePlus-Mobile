@@ -20,15 +20,18 @@ String? directedBroadcast(String address, int prefixLength) {
 }
 
 /// Every address worth broadcasting discovery/handshake packets to: the
-/// Wi-Fi broadcast, the hotspot interface broadcast (phone as access point)
-/// and the global broadcast as a last resort.
+/// Wi-Fi broadcast, the hotspot interface broadcast (phone as access point),
+/// the USB tethering ones (PC connected to the phone by cable) and the
+/// global broadcast as a last resort.
 Future<List<String>> broadcastTargets() async {
   // Some Android versions prefix the address with '/'.
   final wifi = (await NetworkInfo().getWifiBroadcast())?.replaceFirst('/', '');
   final hotspot = await HotspotNetworkInfo.getLikelyHotspotBroadcast();
+  final usb = await HotspotNetworkInfo.getUsbTetheringBroadcasts();
   return <String>{
     if (wifi != null) wifi,
     if (hotspot != null) hotspot,
+    ...usb,
     '255.255.255.255',
   }.toList();
 }

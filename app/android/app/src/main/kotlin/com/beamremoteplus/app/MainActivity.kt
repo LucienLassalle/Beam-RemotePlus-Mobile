@@ -23,6 +23,7 @@ import java.util.Collections
  * Native helpers for the Flutter app:
  *  - gesture_exclusion: keeps Android edge/back gestures away from the pedals
  *  - network_info: finds the hotspot interface address (phone as access point)
+ *    and the USB tethering ones
  *  - hardware_keys: captures the volume buttons while driving (horn / flash)
  *  - vibrator: variable-strength pulses for the road-feel haptics
  *  - sensors / gravity: gravity seen by the phone, from the gyroscope fused
@@ -46,6 +47,31 @@ class MainActivity : FlutterActivity() {
         val a0 = b[0].toInt() and 0xFF
         val a1 = b[1].toInt() and 0xFF
         return a0 == 10 || (a0 == 172 && a1 in 16..31) || (a0 == 192 && a1 == 168)
+    }
+
+    // Interfaces of USB tethering (phone sharing its connection over the
+    // cable): the PC is on their subnet, which the Wi-Fi broadcasts miss.
+    private val usbTetheringPrefixes = listOf("usb", "rndis", "ncm")
+
+    private fun findUsbTetheringAddresses(): List<Map<String, Any>> {
+        val interfaces = try {
+            Collections.list(NetworkInterface.getNetworkInterfaces())
+        } catch (e: Exception) {
+            Log.w(logTag, "getNetworkInterfaces failed", e)
+            return emptyList()
+        }
+        val found = mutableListOf<Map<String, Any>>()
+        for (iface in interfaces) {
+            val name = iface.name.lowercase()
+            if (usbTetheringPrefixes.none { name.startsWith(it) } || !iface.isUp) continue
+            for (ifaceAddr in iface.interfaceAddresses) {
+                val addr = ifaceAddr.address
+                if (addr is Inet4Address && isPrivateIPv4(addr)) {
+                    found.add(mapOf("address" to (addr.hostAddress ?: continue), "prefixLength" to ifaceAddr.networkPrefixLength.toInt()))
+                }
+            }
+        }
+        return found
     }
 
     // In hotspot mode WifiManager only knows the station connection, which
@@ -99,9 +125,14 @@ class MainActivity : FlutterActivity() {
         }
 
         MethodChannel(messenger, "com.beamremoteplus.app/network_info").setMethodCallHandler { call, result ->
-            if (call.method != "getLikelyHotspotAddress") return@setMethodCallHandler result.notImplemented()
-            val found = findLikelyHotspotAddress()
-            result.success(found?.let { mapOf("address" to it.first, "prefixLength" to it.second) })
+            when (call.method) {
+                "getLikelyHotspotAddress" -> {
+                    val found = findLikelyHotspotAddress()
+                    result.success(found?.let { mapOf("address" to it.first, "prefixLength" to it.second) })
+                }
+                "getUsbTetheringAddresses" -> result.success(findUsbTetheringAddresses())
+                else -> result.notImplemented()
+            }
         }
 
         MethodChannel(messenger, "com.beamremoteplus.app/vibrator").setMethodCallHandler { call, result ->

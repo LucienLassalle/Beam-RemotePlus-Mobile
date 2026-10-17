@@ -11,6 +11,23 @@ class HotspotNetworkInfo {
 
   static const _channel = MethodChannel('com.beamremoteplus.app/network_info');
 
+  /// Directed broadcast addresses of the USB tethering interfaces (phone
+  /// sharing its connection with the PC over the cable), empty without.
+  static Future<List<String>> getUsbTetheringBroadcasts() async {
+    try {
+      final result = await _channel.invokeListMethod<Object?>('getUsbTetheringAddresses');
+      return [
+        for (final entry in result ?? const <Object?>[])
+          if (entry is Map && entry['address'] is String && entry['prefixLength'] is int)
+            if (directedBroadcast(entry['address'] as String, entry['prefixLength'] as int) case final b?) b,
+      ];
+    } on PlatformException {
+      return const [];
+    } on MissingPluginException {
+      return const [];
+    }
+  }
+
   static Future<String?> getLikelyHotspotBroadcast() async {
     try {
       final result = await _channel.invokeMapMethod<String, Object?>('getLikelyHotspotAddress');
