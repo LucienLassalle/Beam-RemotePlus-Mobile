@@ -86,4 +86,75 @@ void main() {
     expect(firstStep(fused: true), closeTo(0.5 * 30 / 75, 1e-6), reason: '30° of a 360° range (75° tilt)');
     expect(firstStep(fused: false), lessThan(firstStep(fused: true)));
   });
+
+  group('full rotation', () {
+    // Turns a calibrated phone from [from] to [to] degrees in 5° steps, as
+    // the sensor would report a continuous rotation; returns the last value.
+    double turn(TiltSteering s, double from, double to, (double, double, double) Function(double) at) {
+      var value = 0.5;
+      final step = to > from ? 5.0 : -5.0;
+      for (var a = from; step > 0 ? a <= to : a >= to; a += step) {
+        final (x, y, z) = at(a);
+        value = s.steering(x, y, z);
+      }
+      return value;
+    }
+
+    TiltSteering rest(TiltSteering s, (double, double, double) Function(double) at) {
+      for (var i = 0; i < TiltSteering.calibrationSamples; i++) {
+        final (x, y, z) = at(0);
+        s.steering(x, y, z);
+      }
+      return s;
+    }
+
+    // Phone held upright like a wheel, screen towards the player: gravity
+    // along x at rest, turning moves it towards y.
+    (double, double, double) upright(double deg) {
+      final r = deg * math.pi / 180;
+      return (9.81 * math.cos(r), 9.81 * math.sin(r), 0);
+    }
+
+    test('keeps turning past 90° instead of folding back', () {
+      final s = rest(TiltSteering(rotationRangeDeg: 900, smoothing: false), _rolled);
+      final at90 = turn(s, 0, 90, _rolled);
+      final at150 = turn(s, 95, 150, _rolled);
+      expect(at150, lessThan(at90), reason: 'further from the centre, not back towards it');
+    });
+
+    test('reaches full lock with the 900° range (187.5° of tilt)', () {
+      final s = rest(TiltSteering(rotationRangeDeg: 900, smoothing: false), _rolled);
+      expect(turn(s, 0, 185, _rolled), greaterThan(0.005));
+      expect(turn(s, 185, 190, _rolled), closeTo(0, 1e-9));
+    });
+
+    test('real wheel: 450° each way for 900°, through the ±180° seam', () {
+      final s = rest(TiltSteering(rotationRangeDeg: 900, smoothing: false, realWheel: true), upright);
+      expect(turn(s, 0, 225, upright), closeTo(0.25, 1e-6));
+      expect(turn(s, 230, 450, upright), closeTo(0, 1e-6));
+      expect(turn(s, 445, 0, upright), closeTo(0.5, 1e-6), reason: 'back to the centre');
+      expect(turn(s, -5, -450, upright), closeTo(1, 1e-6));
+    });
+
+    test('a phone held along the steering axis keeps its last angle', () {
+      final s = rest(TiltSteering(rotationRangeDeg: 360, smoothing: false), _rolled);
+      final before = turn(s, 0, 30, _rolled);
+      expect(s.steering(9.81, 0, 0), before, reason: 'gravity along x: no roll to read');
+    });
+
+    test('turning the phone never reads as a pitch gesture', () {
+      final s = rest(TiltSteering(rotationRangeDeg: 900, smoothing: false, realWheel: true), upright);
+      for (final deg in [30.0, 90.0, 200.0]) {
+        final (x, y, z) = upright(deg);
+        expect(s.pitch(x, y, z).abs(), lessThan(1e-6), reason: '$deg°');
+      }
+      // Tipping the top of the upright phone towards the player is a pitch.
+      expect(s.pitch(9.81 * math.cos(0.5), 0, 9.81 * math.sin(0.5)).abs(), greaterThan(25));
+    });
+
+    test('full lock angle of each mode', () {
+      expect(TiltSteering.fullLockDegFor(900), 187.5);
+      expect(TiltSteering.fullLockDegFor(900, realWheel: true), 450);
+    });
+  });
 }
