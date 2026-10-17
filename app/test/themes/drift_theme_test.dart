@@ -12,7 +12,7 @@ void main() {
     final link = FakeLink();
     addTearDown(link.dispose);
     await pumpDrivingView(tester, theme: themeByName('Drift'), link: link);
-    link.telemetry_.add(const Telemetry(driftAngle: -41.6));
+    link.telemetry_.add(const Telemetry(driftAngle: -41.6, speed: 20));
     await tester.pump();
     await tester.pump();
     expect(find.text('42°'), findsOneWidget);
@@ -36,6 +36,13 @@ void main() {
     addTearDown(link.dispose);
     await pumpDrivingView(tester, theme: themeByName('Road'), link: link);
     expect(find.byTooltip('Handbrake (hold)'), findsNothing);
+  });
+
+  test('no angle when it means nothing: too slow, in reverse, going backwards', () {
+    expect(DriftTheme.shownAngle(const Telemetry(driftAngle: 30, speed: 20)), 30);
+    expect(DriftTheme.shownAngle(const Telemetry(driftAngle: 30, speed: 3)), isNull);
+    expect(DriftTheme.shownAngle(const Telemetry(driftAngle: 30, speed: 20, gear: 'R')), isNull);
+    expect(DriftTheme.shownAngle(const Telemetry(driftAngle: -170, speed: 20)), isNull);
   });
 
   test('the angle turns amber, then red, as the slide grows', () {

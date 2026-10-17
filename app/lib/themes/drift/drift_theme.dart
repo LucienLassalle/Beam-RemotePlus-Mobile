@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 
 import '../kit/kit.dart';
@@ -19,6 +17,21 @@ class DriftTheme extends ControlTheme {
   @override
   ThemeStyle get style => const ThemeStyle(handbrakeButton: true);
 
+  /// Below this speed (m/s, 20 km/h) the direction of travel is too noisy
+  /// for a meaningful angle.
+  static const double minSpeed = 20 / 3.6;
+
+  /// Beyond this the car goes backwards (reversing, spinning): no drift.
+  static const double maxAngle = 100;
+
+  /// The drift angle worth showing, null when it means nothing: too slow,
+  /// in reverse, or going backwards.
+  static double? shownAngle(Telemetry t) {
+    final angle = t.driftAngle;
+    if (angle == null || (t.speed ?? 0) < minSpeed || t.gearLabel == 'R' || angle.abs() > maxAngle) return null;
+    return angle;
+  }
+
   /// Colour of the angle: white while gripping, then amber and red as the
   /// slide grows.
   static Color angleColor(double? angle) {
@@ -34,7 +47,7 @@ class DriftTheme extends ControlTheme {
       return const Center(child: Icon(Icons.rotate_90_degrees_ccw, size: 72, color: Colors.white12));
     }
     final t = data.telemetry;
-    final angle = t.driftAngle;
+    final angle = shownAngle(t);
     return Center(
       child: FittedBox(
         child: Padding(
@@ -86,9 +99,11 @@ class _SlipPictogram extends StatelessWidget {
         child: Stack(alignment: Alignment.center, children: [
           const Positioned(top: 0, child: Icon(Icons.arrow_upward, color: Colors.white24, size: 28)),
           // A positive angle: the car goes to the left of its nose, so the
-          // nose points right of the travel arrow.
-          Transform.rotate(
-            angle: (angle ?? 0) * math.pi / 180,
+          // nose points right of the travel arrow. Animated, so the 30 Hz
+          // telemetry turns it smoothly instead of in jerks.
+          AnimatedRotation(
+            turns: (angle ?? 0) / 360,
+            duration: const Duration(milliseconds: 150),
             child: Icon(Icons.directions_car_filled, color: DriftTheme.angleColor(angle), size: 72),
           ),
         ]),
