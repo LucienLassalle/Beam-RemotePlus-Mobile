@@ -21,6 +21,10 @@ class PedalZones extends StatefulWidget {
   final Color brakeColor;
   final Color throttleColor;
 
+  /// Mirrored layout for left-handed players: throttle on the left, brake
+  /// on the right (with the thumb wheel, both pedals on the left).
+  final bool swapped;
+
   const PedalZones({
     super.key,
     required this.mapping,
@@ -29,6 +33,7 @@ class PedalZones extends StatefulWidget {
     this.visible = false,
     this.brakeColor = Colors.redAccent,
     this.throttleColor = Colors.greenAccent,
+    this.swapped = false,
   });
 
   @override
@@ -41,7 +46,9 @@ class _PedalZonesState extends State<PedalZones> {
   double _throttle = 0;
 
   void _track(PointerEvent e, Size size) {
-    final pedal = widget.mapping.pedalAt(e.localPosition.dx, size.width);
+    // Swapped: the layout is mirrored, so is the touch.
+    final x = widget.swapped ? size.width - e.localPosition.dx : e.localPosition.dx;
+    final pedal = widget.mapping.pedalAt(x, size.width);
     if (pedal == null) {
       _pointers.remove(e.pointer);
     } else {
@@ -94,6 +101,7 @@ class _PedalZonesState extends State<PedalZones> {
               throttleColor: widget.throttleColor,
               brakeLabel: l10n.pedalBrake,
               throttleLabel: l10n.pedalThrottle,
+              swapped: widget.swapped,
             ),
           ),
         ),
@@ -108,6 +116,7 @@ class _PedalPainter extends CustomPainter {
   final bool visible;
   final Color brakeColor, throttleColor;
   final String brakeLabel, throttleLabel;
+  final bool swapped;
 
   _PedalPainter({
     required this.mapping,
@@ -118,21 +127,25 @@ class _PedalPainter extends CustomPainter {
     required this.throttleColor,
     required this.brakeLabel,
     required this.throttleLabel,
+    this.swapped = false,
   });
 
   static const double edgeBarWidth = 6;
 
   @override
   void paint(Canvas canvas, Size size) {
+    // Swapped: the whole layout mirrored (left-handed players).
     Rect zoneOf(Pedal pedal) {
       final (from, to) = mapping.spanOf(pedal);
-      return Rect.fromLTRB(size.width * from, 0, size.width * to, size.height);
+      final (l, r) = swapped ? (1 - to, 1 - from) : (from, to);
+      return Rect.fromLTRB(size.width * l, 0, size.width * r, size.height);
     }
 
-    // The brake bar and label sit on the left of its zone, the throttle's
-    // on the right: on the screen edges, or around the gap between them.
-    _paintZone(canvas, size, zoneOf(Pedal.brake), brake, brakeColor, brakeLabel, leftEdge: true);
-    _paintZone(canvas, size, zoneOf(Pedal.throttle), throttle, throttleColor, throttleLabel, leftEdge: false);
+    // The brake bar and label sit on the outer side of its zone (left when
+    // not swapped), the throttle's on the other side: on the screen edges,
+    // or around the gap between them.
+    _paintZone(canvas, size, zoneOf(Pedal.brake), brake, brakeColor, brakeLabel, leftEdge: !swapped);
+    _paintZone(canvas, size, zoneOf(Pedal.throttle), throttle, throttleColor, throttleLabel, leftEdge: swapped);
   }
 
   void _paintZone(Canvas canvas, Size size, Rect zone, double value, Color color, String label, {required bool leftEdge}) {
@@ -178,5 +191,5 @@ class _PedalPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_PedalPainter oldDelegate) =>
-      oldDelegate.brake != brake || oldDelegate.throttle != throttle || oldDelegate.visible != visible || oldDelegate.mapping != mapping;
+      oldDelegate.brake != brake || oldDelegate.throttle != throttle || oldDelegate.visible != visible || oldDelegate.mapping != mapping || oldDelegate.swapped != swapped;
 }

@@ -25,8 +25,8 @@ Future<void> showHelpSheet(BuildContext context, {Map<String, String>? optionalM
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Center(child: Text(l10n.helpTitle, style: Theme.of(context).textTheme.titleMedium)),
             const SizedBox(height: 12),
-            _HelpRow(Icons.swipe_up, Colors.redAccent, l10n.helpBrake, l10n.helpBrakeDesc),
-            _HelpRow(Icons.swipe_up, Colors.greenAccent, l10n.helpThrottle, l10n.helpThrottleDesc),
+            _HelpRow(Icons.swipe_up, Colors.redAccent, l10n.helpBrake, settings.swapPedals ? l10n.helpBrakeDescSwapped : l10n.helpBrakeDesc),
+            _HelpRow(Icons.swipe_up, Colors.greenAccent, l10n.helpThrottle, settings.swapPedals ? l10n.helpThrottleDescSwapped : l10n.helpThrottleDesc),
             if (settings.tiltSteering)
               _HelpRow(Icons.screen_rotation, Colors.blueAccent, l10n.helpSteeringTilt, l10n.helpSteeringTiltDesc)
             else if (settings.touchWheel)
