@@ -28,6 +28,10 @@ class Telemetry {
   /// seen from above (positive: it goes to the left of its nose); null
   /// when slow or with an older mod.
   final double? driftAngle;
+
+  /// Steering wheel rotation giving full lock in this vehicle, degrees each
+  /// way (null with an older mod).
+  final double? steeringLock;
   final double? boost;
   final bool? engineRunning;
   final int? ignitionLevel;
@@ -183,6 +187,7 @@ class Telemetry {
     this.oilTemp,
     this.envTemp,
     this.driftAngle,
+    this.steeringLock,
     this.boost,
     this.engineRunning,
     this.ignitionLevel,
@@ -395,6 +400,7 @@ class Telemetry {
       oilTemp: _num(j['oilTemp']),
       envTemp: _num(j['envTemp']),
       driftAngle: _num(j['driftAngle']),
+      steeringLock: _num(j['steeringLock']),
       boost: _num(j['boost']),
       engineRunning: _bool(j['engineRunning']),
       ignitionLevel: _int(j['ignitionLevel']),

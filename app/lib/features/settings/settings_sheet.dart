@@ -343,8 +343,7 @@ class _GameplayTab extends StatelessWidget {
               onSelected: (_) => unawaited(_customRange(context, s.rotationRangeDeg)),
             ),
           ]),
-          Text(l10n.settingsRotationRangeHint(
-              TiltSteering.fullLockDegFor(s.rotationRangeDeg, realWheel: s.realWheel).round()),
+          Text(s.realWheel ? l10n.settingsRealWheelHint : l10n.settingsRotationRangeHint(TiltSteering.maxTiltDegFor(s.rotationRangeDeg).round()),
               style: const TextStyle(fontSize: 11, color: Colors.white38)),
         ]),
       ),
