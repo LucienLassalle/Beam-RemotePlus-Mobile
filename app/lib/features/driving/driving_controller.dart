@@ -10,6 +10,7 @@ import '../../core/protocol/telemetry.dart';
 import '../../core/protocol/vehicle_skeleton.dart';
 import '../../core/settings/app_settings.dart';
 import '../../themes/control_theme.dart';
+import '../../themes/theme_registry.dart';
 import '../vehicle_status/haptics_engine.dart';
 import '../vehicle_status/skeleton_tracker.dart';
 
@@ -179,12 +180,24 @@ class DrivingController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Volume up = horn, volume down = headlight flash, while held (each one
-  /// can be disabled in the settings).
+  /// What the volume buttons do comes from the theme: horn and headlight
+  /// flash while held by default, DRS and Push-to-Pass on the F4 theme.
+  /// Each button can be disabled in the settings.
   void onHardwareKey(HardwareKey key, bool pressed) {
     final up = key == HardwareKey.volumeUp;
     if (up ? !_settings.hornOnVolume : !_settings.flashOnVolume) return;
-    hold(up ? ModCommand.horn : ModCommand.highBeam, pressed: pressed);
+    final style = themeByName(_settings.themeName).style;
+    final t = _telemetry;
+    switch (up ? style.volumeUp : style.volumeDown) {
+      case VolumeKeyAction.horn:
+        hold(ModCommand.horn, pressed: pressed);
+      case VolumeKeyAction.headlightFlash:
+        hold(ModCommand.highBeam, pressed: pressed);
+      case VolumeKeyAction.drs:
+        if (pressed && t.hasDrs == true) press(ModCommand.drs);
+      case VolumeKeyAction.pushToPass:
+        if (pressed && t.hasPushToPass == true) press(ModCommand.pushToPass);
+    }
   }
 
   void setReadOnly(bool value) {

@@ -24,6 +24,9 @@ class F4Theme extends ControlTheme {
         throttleColor: Color(0xFF00E676),
         // Race controls of the vehicle mods that have them (shown only then).
         actions: {VehicleAction.drs, VehicleAction.pushToPass, VehicleAction.pitLimiter},
+        // No horn nor headlights on these cars: the wheel buttons instead.
+        volumeUp: VolumeKeyAction.drs,
+        volumeDown: VolumeKeyAction.pushToPass,
       );
 
   static const Size design = Size(320, 220);
