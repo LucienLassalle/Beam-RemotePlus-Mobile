@@ -136,6 +136,20 @@ void main() {
       expect(turn(s, -5, -450, upright), closeTo(1, 1e-6));
     });
 
+    test('real wheel: full lock as the vehicle steering wheel', () {
+      final s = rest(TiltSteering(rotationRangeDeg: 900, smoothing: false, realWheel: true, vehicleLockDeg: 270), upright);
+      expect(turn(s, 0, 135, upright), closeTo(0.25, 1e-6));
+      expect(turn(s, 140, 270, upright), closeTo(0, 1e-6));
+    });
+
+    test('turning past full lock does nothing: turning back steers back at once', () {
+      final s = rest(TiltSteering(rotationRangeDeg: 900, smoothing: false, realWheel: true, vehicleLockDeg: 540), upright);
+      // Ten turns to the right: held at full lock, not wound up.
+      expect(turn(s, 0, 3600, upright), closeTo(0, 1e-6));
+      // Half a lock back from there is half a lock, not nine turns more.
+      expect(turn(s, 3595, 3600 - 270, upright), closeTo(0.25, 1e-6));
+    });
+
     test('a phone held along the steering axis keeps its last angle', () {
       final s = rest(TiltSteering(rotationRangeDeg: 360, smoothing: false), _rolled);
       final before = turn(s, 0, 30, _rolled);
@@ -155,6 +169,7 @@ void main() {
     test('full lock angle of each mode', () {
       expect(TiltSteering.fullLockDegFor(900), 187.5);
       expect(TiltSteering.fullLockDegFor(900, realWheel: true), 450);
+      expect(TiltSteering.fullLockDegFor(900, realWheel: true, vehicleLockDeg: 540), 540);
     });
   });
 }

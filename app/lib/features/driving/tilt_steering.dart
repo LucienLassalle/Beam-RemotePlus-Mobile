@@ -28,10 +28,11 @@ class TiltSteering {
   static double maxTiltDegFor(double rotationRangeDeg) => rotationRangeDeg * (75.0 / 360.0);
 
   /// Phone rotation (degrees from rest) giving full lock: [maxTiltDegFor],
-  /// or half the range when the phone turns like a real wheel (900° range
-  /// -> 450° each way).
-  static double fullLockDegFor(double rotationRangeDeg, {bool realWheel = false}) =>
-      realWheel ? rotationRangeDeg / 2 : maxTiltDegFor(rotationRangeDeg);
+  /// or, when the phone turns like a real wheel, the steering wheel
+  /// rotation of the vehicle ([vehicleLockDeg], e.g. 450° each way), half
+  /// the range when unknown.
+  static double fullLockDegFor(double rotationRangeDeg, {bool realWheel = false, double? vehicleLockDeg}) =>
+      realWheel ? (vehicleLockDeg != null && vehicleLockDeg > 0 ? vehicleLockDeg : rotationRangeDeg / 2) : maxTiltDegFor(rotationRangeDeg);
 
   /// Below this part of gravity around the steering axis (m/s²: phone held
   /// nearly along the axis) the roll is unreliable: it is kept as it was.
@@ -44,6 +45,12 @@ class TiltSteering {
   /// Full lock at half the rotation range of phone rotation (1:1 with a
   /// real wheel), see [fullLockDegFor].
   bool realWheel;
+
+  /// Steering wheel rotation of the vehicle giving full lock, degrees each
+  /// way (from the mod), for [realWheel].
+  double? vehicleLockDeg;
+
+  double get _fullLockDeg => fullLockDegFor(rotationRangeDeg, realWheel: realWheel, vehicleLockDeg: vehicleLockDeg);
 
   /// Samples come from the gyroscope fused with the accelerometer
   /// (GravitySensor) instead of the raw accelerometer. They have no
@@ -70,6 +77,7 @@ class TiltSteering {
     this.smoothing = true,
     this.fused = false,
     this.realWheel = false,
+    this.vehicleLockDeg,
   });
 
   bool get calibrated => _calibrated;
@@ -88,7 +96,9 @@ class TiltSteering {
   double _rawRoll(double x, double y, double z) => math.atan2(y, x * _downX + z * _downZ) * 180 / math.pi;
 
   /// Adds the rotation since the last sample to the followed roll, through
-  /// the ±180° seam; a sample held along the axis changes nothing.
+  /// the ±180° seam, stopping at full lock like a real wheel: turning
+  /// further does nothing, turning back steers back at once. A sample held
+  /// along the axis changes nothing.
   void _follow(double x, double y, double z) {
     final h = x * _downX + z * _downZ;
     if (math.sqrt(y * y + h * h) < minPlanarGravity) return;
@@ -97,7 +107,8 @@ class TiltSteering {
     if (delta > 180) delta -= 360;
     if (delta < -180) delta += 360;
     _lastRaw = raw;
-    _roll += delta;
+    final lock = _fullLockDeg;
+    _roll = (_roll + delta).clamp(-lock, lock);
   }
 
   /// Steering value for this sample (0.5 while calibrating or for an
@@ -141,7 +152,7 @@ class TiltSteering {
     if (roll.abs() < centerDeadZoneDeg) roll = 0;
 
     final sign = invert ? 1.0 : -1.0;
-    final value = (sign * roll / fullLockDegFor(rotationRangeDeg, realWheel: realWheel) / 2).clamp(-0.5, 0.5) + 0.5;
+    final value = (sign * roll / _fullLockDeg / 2).clamp(-0.5, 0.5) + 0.5;
     return value.clamp(0.0, 1.0);
   }
 
