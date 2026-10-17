@@ -111,6 +111,9 @@ class ThemeStyle {
   /// lights, 4WD, trailer, vehicle mods...), see more_sheet.dart.
   final bool moreButton;
 
+  /// A big handbrake to hold at the bottom left, above the brake (drifting).
+  final bool handbrakeButton;
+
   const ThemeStyle({
     this.background = Colors.black,
     this.brakeColor = Colors.redAccent,
@@ -121,5 +124,6 @@ class ThemeStyle {
     this.volumeUp = VolumeKeyAction.horn,
     this.volumeDown = VolumeKeyAction.headlightFlash,
     this.moreButton = false,
+    this.handbrakeButton = false,
   });
 }
