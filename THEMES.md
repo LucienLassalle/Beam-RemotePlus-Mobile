@@ -119,6 +119,9 @@ theme does (`volumeUp: VolumeKeyAction.drs`, `volumeDown:
 VolumeKeyAction.pushToPass`); a button whose function the car lacks does
 nothing.
 
+With `moreButton: true` (the Road theme), a **MORE** button opens every
+other command of the vehicle, as the mod lists them.
+
 The app always adds the vehicle switch (top left), hold-to-reset (top
 centre), camera buttons (bottom centre), settings and warning lights.
 
