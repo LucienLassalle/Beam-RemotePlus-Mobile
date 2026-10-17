@@ -7,6 +7,7 @@ import '../../core/platform/hardware_keys.dart';
 import '../../core/protocol/mod_message.dart';
 import '../../core/protocol/mod_protocol.dart';
 import '../../core/protocol/telemetry.dart';
+import '../../core/protocol/vehicle_command.dart';
 import '../../core/protocol/vehicle_skeleton.dart';
 import '../../core/settings/app_settings.dart';
 import '../../themes/control_theme.dart';
@@ -38,6 +39,8 @@ class DrivingController extends ChangeNotifier {
   Telemetry _telemetry = Telemetry.empty;
   Map<String, String>? _optionalMods;
   int? _playerColor;
+  ActionsMessage? _moreCommands;
+  final Set<String> _heldMore = {};
 
   static const flashDuration = Duration(milliseconds: 300);
 
@@ -80,6 +83,10 @@ class DrivingController extends ChangeNotifier {
   /// does not tell (older mod, unassigned).
   int? get playerColor => _playerColor;
 
+  /// Commands of the "More" sheet for the current vehicle, null until the
+  /// mod answered [requestMoreCommands] (never with older mods).
+  ActionsMessage? get moreCommands => _moreCommands;
+
   /// State of each optional mod in the game by id, null while unknown.
   Map<String, String>? get optionalMods => _optionalMods;
 
@@ -100,6 +107,10 @@ class DrivingController extends ChangeNotifier {
 
   void _onEvent(ModMessage message) {
     if (message is SkeletonMessage && _skeleton.onChunk(message.chunk)) notifyListeners();
+    if (message is ActionsMessage) {
+      _moreCommands = message;
+      notifyListeners();
+    }
     if (message is SessionMessage && message.optionalMods != null) {
       _optionalMods = message.optionalMods;
       notifyListeners();
@@ -177,6 +188,32 @@ class DrivingController extends ChangeNotifier {
   void releaseAllHolds() {
     for (final command in List.of(_heldCommands)) {
       hold(command, pressed: false);
+    }
+    for (final command in List.of(_heldMore)) {
+      holdMore(VehicleCommand(id: command, hold: true), pressed: false);
+    }
+  }
+
+  // "More" sheet ---------------------------------------------------------------
+
+  /// Asks the mod for the commands of the current vehicle (answered by an
+  /// actions message, see [moreCommands]).
+  void requestMoreCommands() {
+    if (commandsEnabled) link.sendCommand(ModCommand.actions);
+  }
+
+  void pressMore(VehicleCommand command) {
+    if (commandsEnabled) link.sendCommand(ModCommand.action, command.id);
+  }
+
+  /// Press / release of a held command; a release is always sent if the
+  /// press was.
+  void holdMore(VehicleCommand command, {required bool pressed}) {
+    if (pressed) {
+      if (!commandsEnabled || !_heldMore.add(command.id)) return;
+      link.sendCommand(ModCommand.actionDown, command.id);
+    } else if (_heldMore.remove(command.id)) {
+      link.sendCommand(ModCommand.actionUp, command.id);
     }
   }
 

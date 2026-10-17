@@ -20,7 +20,7 @@ class RoadTheme extends ControlTheme {
   String get author => 'LucienLassalle';
 
   @override
-  ThemeStyle get style => const ThemeStyle(actions: {
+  ThemeStyle get style => const ThemeStyle(moreButton: true, actions: {
         VehicleAction.lights,
         VehicleAction.flashers,
         VehicleAction.siren,

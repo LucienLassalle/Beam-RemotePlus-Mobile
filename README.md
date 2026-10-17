@@ -40,6 +40,10 @@ longer maintained.
   flash (on the F4 theme: DRS and Push-to-Pass). On the Road theme, indicators and hazards are pressed right on the
   dashboard, and police cars, ambulances, fire trucks and pace cars get
   their emergency lights and siren.
+  Its **MORE** button lists every other command of the vehicle: fog
+  lights, 4WD, low range, differential lock, launch control, nitrous,
+  trailer coupler, and the vehicle's own actions (tailgate, crane, vehicle
+  mods).
 - **Warning lights** like a real car (engine, oil, temperature, fuel or
   battery, tyres, brakes, clutch, gearbox...).
 - **Vibrations**: wheelspin, locked wheels, impacts, kerbs, ABS, rev limiter.

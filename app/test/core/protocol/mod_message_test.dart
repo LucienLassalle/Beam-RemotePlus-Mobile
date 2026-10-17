@@ -38,6 +38,28 @@ void main() {
     expect(m.optionalMods, {'fr17': 'enabled', 'cf26': 'disabled'});
   });
 
+  test('decodes the commands of the More sheet, skipping malformed ones', () {
+    final m = ModMessage.decode(
+        _json({
+          'type': 'actions',
+          'vehicle': 'pickup',
+          'actions': [
+            {'id': 'g:four_wd', 'kind': 'press'},
+            {'id': 'v:crane', 'kind': 'hold', 'title': 'Crane up'},
+            {'kind': 'press'},
+            'junk',
+          ],
+        }),
+        2)! as ActionsMessage;
+    expect(m.vehicle, 'pickup');
+    expect(m.commands.map((c) => c.id), ['g:four_wd', 'v:crane']);
+    expect(m.commands.first.genericId, 'four_wd');
+    expect(m.commands.first.hold, isFalse);
+    expect(m.commands.last.hold, isTrue);
+    expect(m.commands.last.title, 'Crane up');
+    expect(m.commands.last.genericId, isNull);
+  });
+
   test('decodes the kicked event', () {
     expect(ModMessage.decode(_json({'type': 'kicked'}), 2), isA<KickedMessage>());
   });

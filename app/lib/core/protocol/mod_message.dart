@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'telemetry.dart';
+import 'vehicle_command.dart';
 import 'vehicle_skeleton.dart';
 
 /// A datagram received from the mod on [ModProtocol.clientPort].
@@ -53,6 +54,16 @@ sealed class ModMessage {
         return chunk == null ? null : SkeletonMessage(chunk);
       case 'kicked':
         return const KickedMessage();
+      case 'actions':
+        return ActionsMessage(
+          vehicle: json['vehicle'] is String ? json['vehicle']! as String : null,
+          commands: json['actions'] is List
+              ? [
+                  for (final c in json['actions']! as List<Object?>)
+                    if (VehicleCommand.fromJson(c) case final command?) command,
+                ]
+              : const [],
+        );
       default:
         return null;
     }
@@ -108,4 +119,12 @@ int? parseHexColor(Object? value) {
   final hex = value.startsWith('#') ? value.substring(1) : value;
   if (!RegExp(r'^[0-9a-fA-F]{6}$').hasMatch(hex)) return null;
   return int.parse(hex, radix: 16);
+}
+
+/// Answer to `cmd|actions`: the commands of the "More" sheet for the vehicle
+/// the phone drives.
+class ActionsMessage extends ModMessage {
+  final String? vehicle;
+  final List<VehicleCommand> commands;
+  const ActionsMessage({this.vehicle, this.commands = const []});
 }

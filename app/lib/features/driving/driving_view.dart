@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 
@@ -11,6 +13,8 @@ import '../vehicle_status/widgets/warning_overlay.dart';
 import 'driving_controller.dart';
 import 'pedal_mapping.dart';
 import 'tilt_steering.dart';
+import 'widgets/hold_button.dart';
+import 'widgets/more_sheet.dart';
 import 'widgets/pedal_zones.dart';
 import 'widgets/player_badge.dart';
 import 'widgets/steering_control.dart';
@@ -200,6 +204,16 @@ class DrivingView extends StatelessWidget {
                       child: FittedBox(
                         fit: BoxFit.scaleDown,
                         child: Row(mainAxisSize: MainAxisSize.min, children: [
+                          if (style.moreButton) ...[
+                            HoldButton(
+                              label: AppLocalizations.of(context).moreButton,
+                              tooltip: AppLocalizations.of(context).moreTitle,
+                              color: style.buttonColor,
+                              enabled: controller.commandsEnabled,
+                              onPressed: () => unawaited(showMoreSheet(context, controller)),
+                            ),
+                            const SizedBox(width: 12),
+                          ],
                           if (actions.isNotEmpty) ...[
                             VehicleActionsBar(controller: controller, actions: actions, color: style.buttonColor),
                             const SizedBox(width: 12),
