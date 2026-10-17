@@ -33,7 +33,8 @@ longer maintained.
   wheel turned by a thumb.
 - **Analog pedals** with both thumbs (sides swappable for left-handed
   players).
-- **Dashboard themes**, easy to make: [THEMES.md](THEMES.md).
+- **Dashboard themes**, easy to make: [THEMES.md](THEMES.md). The **Drift**
+  theme shows the drift angle in big and has a handbrake to hold.
 - **Vehicle buttons**: indicators, hazards, horn, lights, parking brake,
   ignition, drive mode (in the game's color), cruise control, camera,
   vehicle switching, reset. Volume buttons for the horn and the headlight
