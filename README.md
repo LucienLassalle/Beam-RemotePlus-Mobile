@@ -99,8 +99,9 @@ the game.
    `universal` if unsure.
 2. Install the [mod](https://github.com/LucienLassalle/Beam-RemotePlus-Mod)
    in BeamNG.drive and enable it in the mod manager.
-3. Put the phone on the same Wi-Fi as the PC (or share the phone's hotspot
-   with the PC), load a level and tap **Automatic connection**.
+3. Put the phone on the same Wi-Fi as the PC (or share the phone's
+   connection with the PC: Wi-Fi hotspot or USB tethering), load a level and
+   tap **Automatic connection**.
 
 ## Network
 
