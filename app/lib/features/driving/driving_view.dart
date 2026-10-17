@@ -4,6 +4,7 @@ import 'package:sensors_plus/sensors_plus.dart';
 import '../../core/settings/app_settings.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../themes/control_theme.dart';
+import '../../themes/kit/color_vision.dart';
 import '../../themes/kit/dashboard_button.dart';
 import '../vehicle_status/widgets/vehicle_panel.dart';
 import '../vehicle_status/widgets/warning_overlay.dart';
@@ -81,72 +82,88 @@ class DrivingView extends StatelessWidget {
             ? style.actions.where((a) => !settings.hiddenActions.contains(a.name)).toSet()
             : const <VehicleAction>{};
         final bottom = _display ? 8.0 : bottomBarHeight + _touchSteeringHeight;
-        return ColoredBox(
-          color: style.background,
-          child: Stack(
-            children: [
-              if (!_display)
-                Positioned.fill(
-                  child: IgnorePointer(
-                    ignoring: controller.readOnly,
-                    child: PedalZones(
-                      mapping: _pedalMapping,
-                      onBrake: controller.brake,
-                      onThrottle: controller.throttle,
-                      visible: style.visiblePedals,
-                      brakeColor: style.brakeColor,
-                      throttleColor: style.throttleColor,
-                      swapped: settings.swapPedals,
+        return ColorVision(
+          colorBlind: settings.colorBlind,
+          child: ColoredBox(
+            color: style.background,
+            child: Stack(
+              children: [
+                if (!_display)
+                  Positioned.fill(
+                    child: IgnorePointer(
+                      ignoring: controller.readOnly,
+                      child: PedalZones(
+                        mapping: _pedalMapping,
+                        onBrake: controller.brake,
+                        onThrottle: controller.throttle,
+                        visible: style.visiblePedals,
+                        brakeColor: settings.colorBlind ? ColorVision.brake : style.brakeColor,
+                        throttleColor: settings.colorBlind ? ColorVision.throttle : style.throttleColor,
+                        swapped: settings.swapPedals,
+                      ),
                     ),
                   ),
-                ),
-              // The dashboard gets the space between the button rows, so
-              // buttons never hide a gauge. In second-screen mode the vehicle
-              // panel takes the right third.
-              Positioned(
-                top: topBarHeight,
-                bottom: bottom,
-                left: 0,
-                right: _display ? MediaQuery.of(context).size.width * 0.34 : 0,
-                child: DashboardTouchFilter(child: theme.buildDashboard(context, data)),
-              ),
-              if (!_display) _steering(context),
-              if (controller.gearFlash != null)
-                Positioned.fill(
-                  child: IgnorePointer(
-                    child: ColoredBox(
-                      color: (controller.gearFlash == GearFlash.up ? Colors.cyanAccent : Colors.orangeAccent).withValues(alpha: 0.18),
-                    ),
-                  ),
-                ),
-              if (!_display) ...[
-                Positioned(top: 8, left: 12, child: VehicleSwitchButtons(controller: controller, color: style.buttonColor)),
+                // The dashboard gets the space between the button rows, so
+                // buttons never hide a gauge. In second-screen mode the vehicle
+                // panel takes the right third.
                 Positioned(
-                  top: 4,
+                  top: topBarHeight,
+                  bottom: bottom,
                   left: 0,
-                  right: 0,
-                  child: Center(child: RecoverButton(controller: controller, onRecovered: onRecovered)),
+                  right: _display ? MediaQuery.of(context).size.width * 0.34 : 0,
+                  child: DashboardTouchFilter(child: theme.buildDashboard(context, data)),
                 ),
-              ],
-              Positioned(top: 4, right: 8, child: hostButtons),
-              Positioned(
-                top: 54,
-                right: 16,
-                child: IgnorePointer(
-                  child: StatusChip(state: controller.linkState, latencyMs: controller.latencyMs, signalLost: controller.signalLost),
-                ),
-              ),
-              if (settings.warningPopups)
-                Positioned(top: topBarHeight, left: 0, right: 0, bottom: bottom, child: WarningOverlay(telemetry: t, resetCount: controller.resetCount)),
-              if (_display)
+                if (!_display) _steering(context),
+                if (controller.gearFlash != null)
+                  Positioned.fill(
+                    child: IgnorePointer(
+                      child: ColoredBox(
+                        color: (controller.gearFlash == GearFlash.up ? Colors.cyanAccent : Colors.orangeAccent).withValues(alpha: 0.18),
+                      ),
+                    ),
+                  ),
+                if (!_display) ...[
+                  Positioned(top: 8, left: 12, child: VehicleSwitchButtons(controller: controller, color: style.buttonColor)),
+                  Positioned(
+                    top: 4,
+                    left: 0,
+                    right: 0,
+                    child: Center(child: RecoverButton(controller: controller, onRecovered: onRecovered)),
+                  ),
+                ],
+                Positioned(top: 4, right: 8, child: hostButtons),
                 Positioned(
-                  top: topBarHeight + 24,
-                  right: 28,
-                  bottom: 12,
-                  width: MediaQuery.of(context).size.width * 0.3,
-                  child: FittedBox(
-                    child: VehiclePanel(
+                  top: 54,
+                  right: 16,
+                  child: IgnorePointer(
+                    child: StatusChip(state: controller.linkState, latencyMs: controller.latencyMs, signalLost: controller.signalLost),
+                  ),
+                ),
+                if (settings.warningPopups)
+                  Positioned(top: topBarHeight, left: 0, right: 0, bottom: bottom, child: WarningOverlay(telemetry: t, resetCount: controller.resetCount)),
+                if (_display)
+                  Positioned(
+                    top: topBarHeight + 24,
+                    right: 28,
+                    bottom: 12,
+                    width: MediaQuery.of(context).size.width * 0.3,
+                    child: FittedBox(
+                      child: VehiclePanel(
+                        telemetry: t,
+                        temperatureUnit: settings.temperatureUnit,
+                        pressureUnit: settings.pressureUnit,
+                        skeleton: controller.skeleton,
+                        skeletonLevels: controller.skeletonLevels,
+                        showCarParts: settings.damageCarParts,
+                        showWheelParts: settings.showsDamageWheelParts,
+                        simpleDamage: settings.simpleDamage,
+                      ),
+                    ),
+                  )
+                else if (settings.showVehiclePanel)
+                  Positioned(top: 48, left: 12, child: VehiclePanel(
                       telemetry: t,
+                      height: 160,
                       temperatureUnit: settings.temperatureUnit,
                       pressureUnit: settings.pressureUnit,
                       skeleton: controller.skeleton,
@@ -154,51 +171,38 @@ class DrivingView extends StatelessWidget {
                       showCarParts: settings.damageCarParts,
                       showWheelParts: settings.showsDamageWheelParts,
                       simpleDamage: settings.simpleDamage,
+                    )),
+                if (!controller.modActive)
+                  Positioned(
+                    top: 80,
+                    left: 16,
+                    right: 140,
+                    child: IgnorePointer(
+                      child: Text(AppLocalizations.of(context).modMissingBanner,
+                          style: const TextStyle(color: Colors.white38, fontSize: 11)),
                     ),
                   ),
-                )
-              else if (settings.showVehiclePanel)
-                Positioned(top: 48, left: 12, child: VehiclePanel(
-                    telemetry: t,
-                    height: 160,
-                    temperatureUnit: settings.temperatureUnit,
-                    pressureUnit: settings.pressureUnit,
-                    skeleton: controller.skeleton,
-                    skeletonLevels: controller.skeletonLevels,
-                    showCarParts: settings.damageCarParts,
-                    showWheelParts: settings.showsDamageWheelParts,
-                    simpleDamage: settings.simpleDamage,
-                  )),
-              if (!controller.modActive)
-                Positioned(
-                  top: 80,
-                  left: 16,
-                  right: 140,
-                  child: IgnorePointer(
-                    child: Text(AppLocalizations.of(context).modMissingBanner,
-                        style: const TextStyle(color: Colors.white38, fontSize: 11)),
-                  ),
-                ),
-              if (debugOverlay != null) Positioned(top: 78, right: 12, child: IgnorePointer(child: debugOverlay)),
-              if (!_display)
-                Positioned(
-                  bottom: 6 + _touchSteeringHeight,
-                  left: 0,
-                  right: 0,
-                  child: Center(
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Row(mainAxisSize: MainAxisSize.min, children: [
-                        if (actions.isNotEmpty) ...[
-                          VehicleActionsBar(controller: controller, actions: actions, color: style.buttonColor),
-                          const SizedBox(width: 12),
-                        ],
-                        CameraButtons(controller: controller, color: style.buttonColor),
-                      ]),
+                if (debugOverlay != null) Positioned(top: 78, right: 12, child: IgnorePointer(child: debugOverlay)),
+                if (!_display)
+                  Positioned(
+                    bottom: 6 + _touchSteeringHeight,
+                    left: 0,
+                    right: 0,
+                    child: Center(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Row(mainAxisSize: MainAxisSize.min, children: [
+                          if (actions.isNotEmpty) ...[
+                            VehicleActionsBar(controller: controller, actions: actions, color: style.buttonColor),
+                            const SizedBox(width: 12),
+                          ],
+                          CameraButtons(controller: controller, color: style.buttonColor),
+                        ]),
+                      ),
                     ),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
         );
       },

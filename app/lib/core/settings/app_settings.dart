@@ -23,6 +23,9 @@ class AppSettings {
   /// Real-car style warning lights popping on screen.
   final bool warningPopups;
 
+  /// Orange / blue instead of red / green (pedals, shift lights, damage).
+  final bool colorBlind;
+
   /// Radar + damage panel over the driving screen.
   final bool showVehiclePanel;
 
@@ -101,6 +104,7 @@ class AppSettings {
     this.temperatureUnit = TemperatureUnit.celsius,
     this.pressureUnit = PressureUnit.bar,
     this.warningPopups = true,
+    this.colorBlind = false,
     this.showVehiclePanel = false,
     this.simpleDamage = false,
     this.damageCarParts = false,
@@ -148,6 +152,7 @@ class AppSettings {
     TemperatureUnit? temperatureUnit,
     PressureUnit? pressureUnit,
     bool? warningPopups,
+    bool? colorBlind,
     bool? showVehiclePanel,
     bool? simpleDamage,
     bool? damageCarParts,
@@ -183,6 +188,7 @@ class AppSettings {
       temperatureUnit: temperatureUnit ?? this.temperatureUnit,
       pressureUnit: pressureUnit ?? this.pressureUnit,
       warningPopups: warningPopups ?? this.warningPopups,
+      colorBlind: colorBlind ?? this.colorBlind,
       showVehiclePanel: showVehiclePanel ?? this.showVehiclePanel,
       simpleDamage: simpleDamage ?? this.simpleDamage,
       damageCarParts: damageCarParts ?? this.damageCarParts,
@@ -220,6 +226,7 @@ class AppSettings {
         'temperatureUnit': temperatureUnit.name,
         'pressureUnit': pressureUnit.name,
         'warningPopups': warningPopups,
+        'colorBlind': colorBlind,
         'showVehiclePanel': showVehiclePanel,
         'simpleDamage': simpleDamage,
         'damageCarParts': damageCarParts,
@@ -273,6 +280,7 @@ class AppSettings {
       temperatureUnit: enumByName(TemperatureUnit.values, json['temperatureUnit'], d.temperatureUnit),
       pressureUnit: enumByName(PressureUnit.values, json['pressureUnit'], d.pressureUnit),
       warningPopups: pick('warningPopups', d.warningPopups),
+      colorBlind: pick('colorBlind', d.colorBlind),
       showVehiclePanel: pick('showVehiclePanel', d.showVehiclePanel),
       simpleDamage: pick('simpleDamage', d.simpleDamage),
       damageCarParts: pick('damageCarParts', d.damageCarParts),

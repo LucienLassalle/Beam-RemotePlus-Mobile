@@ -203,6 +203,8 @@ class _DisplayTab extends StatelessWidget {
       ),
       _switch(l10n.settingsWarningsTitle, l10n.settingsWarningsSubtitle, s.warningPopups,
           (v) => _set(context, (s) => s.copyWith(warningPopups: v))),
+      _switch(l10n.settingsColorBlindTitle, l10n.settingsColorBlindSubtitle, s.colorBlind,
+          (v) => _set(context, (s) => s.copyWith(colorBlind: v))),
       _switch(l10n.settingsVehiclePanelTitle, l10n.settingsVehiclePanelSubtitle, s.showVehiclePanel,
           (v) => _set(context, (s) => s.copyWith(showVehiclePanel: v))),
       _switch(l10n.settingsSimpleDamageTitle, l10n.settingsSimpleDamageSubtitle, s.simpleDamage,

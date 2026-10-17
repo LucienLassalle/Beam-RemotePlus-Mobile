@@ -164,6 +164,8 @@
   "settingsSecondScreenSubtitle": "S'applique à la prochaine connexion",
   "settingsWarningsTitle": "Voyants d'alerte",
   "settingsWarningsSubtitle": "Affiche les voyants moteur, huile, température, carburant, pneus… à l'écran",
+  "settingsColorBlindTitle": "Mode daltonien",
+  "settingsColorBlindSubtitle": "Orange et bleu au lieu de rouge et vert : pédales, voyants de passage de rapport, vue des dégâts",
   "settingsVehiclePanelTitle": "Panneau radar et dégâts",
   "settingsVehiclePanelSubtitle": "Véhicules proches, dégâts de carrosserie et mécaniques, températures des freins et des pneus (pneus : mod Tyre Thermals and Wear requis)",
   "settingsSimpleDamageTitle": "Dégâts simplifiés",
