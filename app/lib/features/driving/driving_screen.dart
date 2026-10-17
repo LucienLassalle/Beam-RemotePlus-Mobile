@@ -40,6 +40,10 @@ class _DrivingScreenState extends State<DrivingScreen> with WidgetsBindingObserv
   Timer? _immersiveTimer;
   late final StreamSubscription<LinkState> _linkStates;
   late final StreamSubscription<ModMessage> _modEvents;
+  late final StreamSubscription<void> _quality;
+
+  /// "Signal lost" notice, closed as soon as the mod answers again.
+  ScaffoldFeatureController<SnackBar, SnackBarClosedReason>? _signalLostNotice;
 
   /// Mod version the update notice was shown for: the mod sends a session
   /// message at every player change, the notice is shown once.
@@ -62,6 +66,7 @@ class _DrivingScreenState extends State<DrivingScreen> with WidgetsBindingObserv
       if (state == LinkState.kicked && mounted) Navigator.of(context).pop(true);
     });
     _modEvents = widget.connection.events.listen(_onModEvent);
+    _quality = widget.connection.qualityChanges.listen((_) => _onQuality());
     WidgetsBinding.instance.addObserver(this);
     unawaited(WakelockPlus.enable());
     unawaited(SystemChrome.setPreferredOrientations([DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight]));
@@ -104,6 +109,7 @@ class _DrivingScreenState extends State<DrivingScreen> with WidgetsBindingObserv
     _immersiveTimer?.cancel();
     unawaited(_linkStates.cancel());
     unawaited(_modEvents.cancel());
+    unawaited(_quality.cancel());
     unawaited(HardwareKeys.release());
     unawaited(WakelockPlus.disable());
     unawaited(SystemChrome.setPreferredOrientations(DeviceOrientation.values));
@@ -134,6 +140,21 @@ class _DrivingScreenState extends State<DrivingScreen> with WidgetsBindingObserv
       duration: const Duration(seconds: 8),
       behavior: SnackBarBehavior.floating,
     ));
+  }
+
+  void _onQuality() {
+    if (!mounted) return;
+    final lost = widget.connection.signalLost;
+    if (lost && _signalLostNotice == null) {
+      _signalLostNotice = ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(AppLocalizations.of(context).signalLostToast),
+        duration: const Duration(minutes: 1),
+        behavior: SnackBarBehavior.floating,
+      ));
+      unawaited(_signalLostNotice!.closed.then((_) => _signalLostNotice = null));
+    } else if (!lost) {
+      _signalLostNotice?.close();
+    }
   }
 
   void _showRecovered() {

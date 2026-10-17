@@ -54,10 +54,16 @@ class DrivingController extends ChangeNotifier {
     _subs.add(link.states.listen((_) => notifyListeners()));
     _subs.add(link.telemetry.listen(_onTelemetry));
     _subs.add(link.events.listen(_onEvent));
+    _subs.add(link.qualityChanges.listen((_) => notifyListeners()));
   }
 
   bool get modActive => link.modActive;
   LinkState get linkState => link.state;
+
+  /// Round trip to the mod in ms (null until measured), and whether the
+  /// mod went silent (it brakes the car meanwhile).
+  int? get latencyMs => link.latencyMs;
+  bool get signalLost => link.signalLost;
   bool get readOnly => _readOnly;
 
   /// Incremented each time a recovery started from the phone ends.

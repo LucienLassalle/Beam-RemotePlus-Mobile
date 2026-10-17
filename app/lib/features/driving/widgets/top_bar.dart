@@ -151,14 +151,29 @@ class CameraButtons extends StatelessWidget {
   }
 }
 
+/// Connection state, with the round trip to the mod while connected
+/// ("Connected · 12 ms", the dot turning amber then orange as it grows) and
+/// "Signal lost" while the mod is silent.
 class StatusChip extends StatelessWidget {
   final LinkState state;
-  const StatusChip({super.key, required this.state});
+  final int? latencyMs;
+  final bool signalLost;
+  const StatusChip({super.key, required this.state, this.latencyMs, this.signalLost = false});
+
+  /// Round trips (ms) above which the dot turns amber, then orange.
+  static const int slowMs = 60;
+  static const int verySlowMs = 150;
+
+  static Color latencyColor(int? ms) => ms == null || ms < slowMs
+      ? Colors.greenAccent
+      : (ms < verySlowMs ? Colors.amberAccent : Colors.orangeAccent);
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final (label, color) = switch (state) {
+      LinkState.connected when signalLost => (l10n.statusSignalLost, Colors.redAccent),
+      LinkState.connected when latencyMs != null => ('${l10n.statusConnected} · $latencyMs ms', latencyColor(latencyMs)),
       LinkState.connected => (l10n.statusConnected, Colors.greenAccent),
       LinkState.connecting => (l10n.statusConnecting, Colors.amberAccent),
       LinkState.timeout => (l10n.statusTimeout, Colors.orangeAccent),
