@@ -113,6 +113,12 @@ ThemeStyle get style => const ThemeStyle(
     );
 ```
 
+The volume buttons hold the horn (up) and the headlight flash (down). A theme
+for cars without them can give them another `VolumeKeyAction`, like the F4
+theme does (`volumeUp: VolumeKeyAction.drs`, `volumeDown:
+VolumeKeyAction.pushToPass`); a button whose function the car lacks does
+nothing.
+
 The app always adds the vehicle switch (top left), hold-to-reset (top
 centre), camera buttons (bottom centre), settings and warning lights.
 

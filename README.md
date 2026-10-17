@@ -34,7 +34,7 @@ longer maintained.
 - **Vehicle buttons**: indicators, hazards, horn, lights, parking brake,
   ignition, drive mode (in the game's color), cruise control, camera,
   vehicle switching, reset. Volume buttons for the horn and the headlight
-  flash. On the Road theme, indicators and hazards are pressed right on the
+  flash (on the F4 theme: DRS and Push-to-Pass). On the Road theme, indicators and hazards are pressed right on the
   dashboard, and police cars, ambulances, fire trucks and pace cars get
   their emergency lights and siren.
 - **Warning lights** like a real car (engine, oil, temperature, fuel or
@@ -56,8 +56,9 @@ longer maintained.
 ### Optional vehicle mods
 
 When you drive one of these vehicle mods (BeamNG.drive repository), the
-**F4** theme adds its race controls; nothing changes with other vehicles and
-none of these mods is needed:
+**F4** theme adds its race controls, and its volume buttons open the DRS
+(volume up) and start the Push-to-Pass (volume down); nothing changes with
+other vehicles and none of these mods is needed:
 
 | Vehicle mod | Buttons |
 |---|---|
