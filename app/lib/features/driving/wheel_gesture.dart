@@ -11,8 +11,9 @@ class WheelGesture {
 
   WheelGesture({required this.maxAngleDeg});
 
-  /// Steering value of the protocol: 0 (full right) .. 0.5 .. 1 (full left).
-  double get steering => (0.5 - angleDeg / (2 * maxAngleDeg)).clamp(0.0, 1.0);
+  /// Steering value sent to the game: turning the wheel clockwise steers
+  /// right, towards 1 (like the touch bar: left edge 0, right edge 1).
+  double get steering => (0.5 + angleDeg / (2 * maxAngleDeg)).clamp(0.0, 1.0);
 
   /// Finger put down at [fingerDeg] (screen angle around the centre,
   /// clockwise as the y axis points down): the wheel does not jump.

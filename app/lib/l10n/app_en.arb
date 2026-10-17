@@ -213,7 +213,7 @@
   "helpSteeringTouch": "Steering (touch)",
   "helpSteeringTouchDesc": "Drag your finger horizontally on the bar at the bottom",
   "helpSteeringWheel": "Steering (wheel)",
-  "helpSteeringWheelDesc": "Turn the wheel at the bottom with a thumb; let go and it comes back to the centre",
+  "helpSteeringWheelDesc": "Turn the wheel at the bottom left with the left thumb (let go: it comes back to the centre); brake and throttle are both under the right thumb",
   "helpGearPitch": "Gear shift",
   "helpGearPitchDesc": "Tilt forward = up · backward = down",
   "helpVehicle": "Switch vehicle",

@@ -344,7 +344,9 @@ class _GameplayTab extends StatelessWidget {
               style: const TextStyle(fontSize: 11, color: Colors.white38)),
         ]),
       ),
-      _switch(l10n.settingsInvertTitle, null, s.invertSteering, (v) => _set(context, (s) => s.copyWith(invertSteering: v))),
+      // Tilt only: the touch bar and the thumb wheel follow the finger.
+      _switch(l10n.settingsInvertTitle, null, s.invertSteering,
+          s.tiltSteering ? (v) => _set(context, (s) => s.copyWith(invertSteering: v)) : null),
       ListTile(
         enabled: s.tiltSteering,
         title: Text(l10n.settingsSensorTitle),

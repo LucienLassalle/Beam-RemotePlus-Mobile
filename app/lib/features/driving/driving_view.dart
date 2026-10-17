@@ -37,7 +37,8 @@ class DrivingView extends StatelessWidget {
   static const double topBarHeight = 52;
   static const double bottomBarHeight = 60;
   static const double touchSteeringHeight = 72;
-  static const double touchWheelHeight = 132;
+  /// Thumb wheel, bottom left (the pedals are then both on the right).
+  static const double touchWheelSize = 150;
 
   const DrivingView({
     super.key,
@@ -54,8 +55,10 @@ class DrivingView extends StatelessWidget {
   bool get _display => settings.secondScreen;
 
   /// Room the touch steering takes under the buttons (none when tilting).
-  double get _touchSteeringHeight =>
-      settings.tiltSteering ? 0 : (settings.touchWheel ? touchWheelHeight : touchSteeringHeight);
+  double get _touchSteeringHeight => settings.tiltSteering || settings.touchWheel ? 0 : touchSteeringHeight;
+
+  PedalMapping get _pedalMapping =>
+      settings.tiltSteering ? PedalMapping.wide : (settings.touchWheel ? PedalMapping.rightThumb : PedalMapping.sides);
 
   @override
   Widget build(BuildContext context) {
@@ -87,7 +90,7 @@ class DrivingView extends StatelessWidget {
                   child: IgnorePointer(
                     ignoring: controller.readOnly,
                     child: PedalZones(
-                      mapping: settings.tiltSteering ? PedalMapping.wide : PedalMapping.sides,
+                      mapping: _pedalMapping,
                       onBrake: controller.brake,
                       onThrottle: controller.throttle,
                       visible: style.visiblePedals,
@@ -215,18 +218,18 @@ class DrivingView extends StatelessWidget {
     );
     if (settings.tiltSteering) return Positioned(left: 0, top: 0, child: steering);
     if (settings.touchWheel) {
+      // Under the left thumb, where the brake usually is: the pedals move
+      // to the right thumb (PedalMapping.rightThumb).
       return Positioned(
-        bottom: 4,
-        left: 0,
-        right: 0,
-        child: Center(
-          child: IgnorePointer(
-            ignoring: controller.readOnly,
-            child: TouchWheel(
-              onSteering: controller.steer,
-              maxAngleDeg: TiltSteering.maxTiltDegFor(settings.rotationRangeDeg),
-              color: theme.style.buttonColor,
-            ),
+        bottom: 12,
+        left: 20,
+        child: IgnorePointer(
+          ignoring: controller.readOnly,
+          child: TouchWheel(
+            onSteering: controller.steer,
+            maxAngleDeg: TiltSteering.maxTiltDegFor(settings.rotationRangeDeg),
+            color: theme.style.buttonColor,
+            size: touchWheelSize,
           ),
         ),
       );

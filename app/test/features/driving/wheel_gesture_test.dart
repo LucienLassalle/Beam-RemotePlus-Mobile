@@ -14,7 +14,7 @@ void main() {
       expect(w.steering, 0.5);
       w.move(-45); // a quarter of the way clockwise: turning right
       expect(w.angleDeg, 45);
-      expect(w.steering, 0.25);
+      expect(w.steering, 0.75);
     });
 
     test('crosses the ±180° seam and stops at full lock', () {
@@ -27,7 +27,7 @@ void main() {
         ..move(0)
         ..move(90);
       expect(w.angleDeg, 90);
-      expect(w.steering, 0);
+      expect(w.steering, 1);
     });
 
     test('a new touch continues from the current angle', () {
@@ -37,7 +37,7 @@ void main() {
         ..end()
         ..start(100);
       expect(w.angleDeg, -30);
-      expect(w.steering, closeTo(0.5 + 30 / 180, 1e-9));
+      expect(w.steering, closeTo(0.5 - 30 / 180, 1e-9));
     });
   });
 
@@ -48,12 +48,13 @@ void main() {
         theme: themeByName('Default'), link: link, settings: const AppSettings(tiltSteering: false, touchWheel: true));
     final wheel = find.byType(TouchWheel);
     expect(wheel, findsOneWidget);
+    expect(tester.getCenter(wheel).dx, lessThan(phoneSize.width / 3), reason: 'under the left thumb');
     final centre = tester.getCenter(wheel);
     final gesture = await tester.startGesture(centre + const Offset(-50, 0)); // left of the hub
     await gesture.moveTo(centre + const Offset(-35, -35), timeStamp: const Duration(milliseconds: 20));
     await gesture.moveTo(centre + const Offset(0, -50), timeStamp: const Duration(milliseconds: 40));
     await tester.pump();
-    expect(link.steering, lessThan(0.5), reason: 'turned clockwise = right');
+    expect(link.steering, greaterThan(0.5), reason: 'turned clockwise = right, like the right of the touch bar');
     await gesture.up();
     await tester.pump();
     await tester.pump(TouchWheel.returnDuration);

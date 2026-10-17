@@ -128,7 +128,7 @@
   "helpSteeringTouch": "Direction (tactile)",
   "helpSteeringTouchDesc": "Glisser le doigt horizontalement sur la barre en bas",
   "helpSteeringWheel": "Direction (volant)",
-  "helpSteeringWheelDesc": "Tourner le volant en bas avec un pouce ; lâché, il revient au centre",
+  "helpSteeringWheelDesc": "Tourner le volant en bas à gauche avec le pouce gauche (lâché, il revient au centre) ; frein et accélérateur sont tous deux sous le pouce droit",
   "helpGearPitch": "Changement de rapport",
   "helpGearPitchDesc": "Incliner vers l'avant = monter · vers l'arrière = descendre",
   "helpVehicle": "Changer de véhicule",
