@@ -212,16 +212,19 @@ class _DisplayTab extends StatelessWidget {
       if (s.povVideo)
         ListTile(
           title: Text(l10n.settingsPovQualityTitle),
-          subtitle: Text(l10n.settingsPovQualitySubtitle),
-          trailing: SegmentedButton<PovQuality>(
-            segments: const [
-              ButtonSegment(value: PovQuality.low, label: Text('360p')),
-              ButtonSegment(value: PovQuality.medium, label: Text('540p')),
-              ButtonSegment(value: PovQuality.high, label: Text('720p')),
-            ],
-            selected: {s.povQuality},
-            onSelectionChanged: (v) => _set(context, (s) => s.copyWith(povQuality: v.first)),
-          ),
+          subtitle: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(l10n.settingsPovQualitySubtitle),
+            const SizedBox(height: 8),
+            SegmentedButton<PovQuality>(
+              segments: const [
+                ButtonSegment(value: PovQuality.hd60, label: Text('720p 60')),
+                ButtonSegment(value: PovQuality.fullHd30, label: Text('1080p 30')),
+                ButtonSegment(value: PovQuality.fullHd60, label: Text('1080p 60')),
+              ],
+              selected: {s.povQuality},
+              onSelectionChanged: (v) => _set(context, (s) => s.copyWith(povQuality: v.first)),
+            ),
+          ]),
         ),
       _switch(l10n.settingsSimpleDamageTitle, l10n.settingsSimpleDamageSubtitle, s.simpleDamage,
           (v) => _set(context, (s) => s.copyWith(simpleDamage: v))),

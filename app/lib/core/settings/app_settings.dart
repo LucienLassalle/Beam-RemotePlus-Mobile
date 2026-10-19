@@ -35,8 +35,8 @@ class AppSettings {
   /// BeamNG.drive 0.40 or newer). Costs the PC an extra render.
   final bool povVideo;
 
-  /// Image size and frame rate of that video: the higher, the lower the
-  /// frame rate of the game.
+  /// Image size and frame rate of that video (1080p 60 is heavy on the
+  /// Wi-Fi and the phone).
   final PovQuality povQuality;
 
   /// Damage schematic of the real vehicle structure (with the mod's
@@ -125,7 +125,7 @@ class AppSettings {
     this.colorBlind = false,
     this.showVehiclePanel = false,
     this.povVideo = false,
-    this.povQuality = PovQuality.medium,
+    this.povQuality = PovQuality.hd60,
     this.simpleDamage = false,
     this.damageCarParts = false,
     this.damageWheelParts = true,
