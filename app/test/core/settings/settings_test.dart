@@ -14,6 +14,7 @@ void main() {
         hapticKerbs: false,
         hapticLimiter: true,
         steeringSensor: SteeringSensor.accelerometer,
+        povVideo: true,
       );
       final back = AppSettings.fromJson(s.toJson());
       expect(back.themeName, 'Civetta');
@@ -24,6 +25,7 @@ void main() {
       expect(back.hapticKerbs, isFalse);
       expect(back.hapticLimiter, isTrue);
       expect(back.steeringSensor, SteeringSensor.accelerometer);
+      expect(back.povVideo, isTrue);
     });
 
     test('keeps the vibration strength between 10 and 100 %', () {
@@ -63,6 +65,7 @@ void main() {
       expect(s.hapticStrength, 1);
       expect(s.hornOnVolume && s.flashOnVolume, isTrue);
       expect(s.debugMode, isFalse);
+      expect(s.povVideo, isFalse);
       expect(s.showActionsBar, isTrue);
       expect(s.simpleDamage, isFalse);
       expect(s.damageCarParts, isFalse);

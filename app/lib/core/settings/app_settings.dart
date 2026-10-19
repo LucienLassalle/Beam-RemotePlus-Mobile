@@ -29,6 +29,10 @@ class AppSettings {
   /// Radar + damage panel over the driving screen.
   final bool showVehiclePanel;
 
+  /// Video of the view from the driver's seat behind the controls (mod on
+  /// BeamNG.drive 0.40 or newer). Costs the PC an extra render.
+  final bool povVideo;
+
   /// Damage schematic of the real vehicle structure (with the mod's
   /// skeleton): engine, radiator and fuel tank / battery pictograms, and
   /// brakes, tyres and axles ones. Hiding the first lets the user hide the
@@ -114,6 +118,7 @@ class AppSettings {
     this.warningPopups = true,
     this.colorBlind = false,
     this.showVehiclePanel = false,
+    this.povVideo = false,
     this.simpleDamage = false,
     this.damageCarParts = false,
     this.damageWheelParts = true,
@@ -164,6 +169,7 @@ class AppSettings {
     bool? warningPopups,
     bool? colorBlind,
     bool? showVehiclePanel,
+    bool? povVideo,
     bool? simpleDamage,
     bool? damageCarParts,
     bool? damageWheelParts,
@@ -202,6 +208,7 @@ class AppSettings {
       warningPopups: warningPopups ?? this.warningPopups,
       colorBlind: colorBlind ?? this.colorBlind,
       showVehiclePanel: showVehiclePanel ?? this.showVehiclePanel,
+      povVideo: povVideo ?? this.povVideo,
       simpleDamage: simpleDamage ?? this.simpleDamage,
       damageCarParts: damageCarParts ?? this.damageCarParts,
       damageWheelParts: damageWheelParts ?? this.damageWheelParts,
@@ -242,6 +249,7 @@ class AppSettings {
         'warningPopups': warningPopups,
         'colorBlind': colorBlind,
         'showVehiclePanel': showVehiclePanel,
+        'povVideo': povVideo,
         'simpleDamage': simpleDamage,
         'damageCarParts': damageCarParts,
         'damageWheelParts': damageWheelParts,
@@ -298,6 +306,7 @@ class AppSettings {
       warningPopups: pick('warningPopups', d.warningPopups),
       colorBlind: pick('colorBlind', d.colorBlind),
       showVehiclePanel: pick('showVehiclePanel', d.showVehiclePanel),
+      povVideo: pick('povVideo', d.povVideo),
       simpleDamage: pick('simpleDamage', d.simpleDamage),
       damageCarParts: pick('damageCarParts', d.damageCarParts),
       damageWheelParts: pick('damageWheelParts', d.damageWheelParts),
