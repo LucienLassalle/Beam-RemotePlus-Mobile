@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:beam_remoteplus/core/network/remote_link.dart';
 import 'package:beam_remoteplus/core/protocol/mod_message.dart';
+import 'package:beam_remoteplus/core/protocol/mod_protocol.dart';
 import 'package:beam_remoteplus/core/protocol/telemetry.dart';
 
 export 'package:beam_remoteplus/themes/kit/sample_telemetry.dart';
@@ -12,6 +13,7 @@ class FakeLink implements RemoteLink {
   final modActive_ = StreamController<bool>.broadcast();
   final telemetry_ = StreamController<Telemetry>.broadcast();
   final events_ = StreamController<ModMessage>.broadcast();
+  final povPictures_ = StreamController<PovPicture>.broadcast();
 
   @override
   LinkState state = LinkState.connected;
@@ -21,6 +23,8 @@ class FakeLink implements RemoteLink {
   int protocolVersion;
 
   final List<String> commands = [];
+  /// Every [setPovVideo] call, in order.
+  final List<PovQuality?> povRequests = [];
   double steering = 0.5, throttle = 0, brake = 0;
 
   FakeLink({this.modActive = true, this.protocolVersion = 2});
@@ -46,6 +50,12 @@ class FakeLink implements RemoteLink {
   void sendCommand(String name, [String? arg]) => commands.add(arg == null ? name : '$name|$arg');
 
   @override
+  Stream<PovPicture> get povPictures => povPictures_.stream;
+
+  @override
+  void setPovVideo(PovQuality? quality) => povRequests.add(quality);
+
+  @override
   void updateControls({double? steering, double? throttle, double? brake}) {
     if (steering != null) this.steering = steering;
     if (throttle != null) this.throttle = throttle;
@@ -62,5 +72,6 @@ class FakeLink implements RemoteLink {
     telemetry_.close();
     events_.close();
     quality_.close();
+    povPictures_.close();
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../core/protocol/telemetry.dart';
 import '../core/settings/units.dart';
+import 'kit/video_hud.dart';
 
 /// A driving screen theme. See THEMES.md for a step-by-step guide.
 ///
@@ -24,6 +25,13 @@ abstract class ControlTheme {
   /// Draws the dashboard. Called for every telemetry frame (~30 Hz): keep it
   /// cheap (no async work, no heavy allocations).
   Widget buildDashboard(BuildContext context, DashboardData data);
+
+  /// Draws the dashboard over the point of view video, in the same room as
+  /// [buildDashboard]. [inside]: a seat camera, the car's own dashboard is
+  /// in view. By default nothing then, else the light [VideoHud] on the
+  /// sides, so the video stays visible.
+  Widget buildVideoDashboard(BuildContext context, DashboardData data, {required bool inside}) =>
+      inside ? const SizedBox.shrink() : VideoHud(data: data);
 }
 
 /// Everything a dashboard may display. Telemetry values are nullable: null

@@ -18,6 +18,7 @@ import 'widgets/hold_button.dart';
 import 'widgets/more_sheet.dart';
 import 'widgets/pedal_zones.dart';
 import 'widgets/player_badge.dart';
+import 'widgets/pov_background.dart';
 import 'widgets/steering_control.dart';
 import 'widgets/top_bar.dart';
 import 'widgets/touch_wheel.dart';
@@ -26,6 +27,8 @@ import 'widgets/vehicle_actions_bar.dart';
 /// Composition of the driving screen, without any platform side effect
 /// (lifecycle lives in DrivingScreen), so tests can pump it. Layers, bottom
 /// to top:
+///   0. point of view video, when on (no touches); the theme then draws its
+///      video dashboard instead of its dashboard
 ///   1. pedal zones: every touch not taken by a layer above
 ///   2. theme dashboard: lets touches through, except on its DashboardButtons
 ///   3. steering bar, buttons and overlays: only the area they cover
@@ -61,6 +64,8 @@ class DrivingView extends StatelessWidget {
 
   bool get _display => settings.secondScreen;
 
+  bool get _video => settings.povVideo && controller.povAvailable;
+
   /// Room the touch steering takes under the buttons (none when tilting).
   double get _touchSteeringHeight => settings.tiltSteering || settings.touchWheel ? 0 : touchSteeringHeight;
 
@@ -94,6 +99,8 @@ class DrivingView extends StatelessWidget {
             color: style.background,
             child: Stack(
               children: [
+                if (_video && controller.povPicture != null && controller.povError == null)
+                  Positioned.fill(child: IgnorePointer(child: PovBackground(picture: controller.povPicture!))),
                 if (!_display)
                   Positioned.fill(
                     child: IgnorePointer(
@@ -117,7 +124,11 @@ class DrivingView extends StatelessWidget {
                   bottom: bottom,
                   left: 0,
                   right: _display ? MediaQuery.of(context).size.width * 0.34 : 0,
-                  child: DashboardTouchFilter(child: theme.buildDashboard(context, data)),
+                  child: DashboardTouchFilter(
+                    child: _video && controller.povInside != null
+                        ? theme.buildVideoDashboard(context, data, inside: controller.povInside!)
+                        : theme.buildDashboard(context, data),
+                  ),
                 ),
                 if (!_display) _steering(context),
                 // Drift themes: the handbrake under the left thumb, above the brake.
@@ -134,6 +145,13 @@ class DrivingView extends StatelessWidget {
                       active: controller.heldCommands.contains(ModCommand.handbrake),
                       onHold: (pressed) => controller.hold(ModCommand.handbrake, pressed: pressed),
                     ),
+                  ),
+                if (_video && controller.povError != null)
+                  Positioned(
+                    top: topBarHeight,
+                    left: 0,
+                    right: 0,
+                    child: IgnorePointer(child: PovErrorBanner(error: controller.povError!)),
                   ),
                 if (controller.gearFlash != null)
                   Positioned.fill(

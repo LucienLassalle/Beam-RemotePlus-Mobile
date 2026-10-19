@@ -12,4 +12,5 @@ export 'segment_bar.dart';
 export 'shift_lights.dart';
 export 'simple_damage_view.dart';
 export 'value_box.dart';
+export 'video_hud.dart';
 export 'warning_lamp.dart';

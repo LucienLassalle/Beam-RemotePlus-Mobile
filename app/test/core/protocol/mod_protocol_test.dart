@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:beam_remoteplus/core/protocol/mod_message.dart';
 import 'package:beam_remoteplus/core/protocol/mod_protocol.dart';
 import 'package:beam_remoteplus/core/protocol/native_protocol.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -85,6 +87,24 @@ void main() {
     test('native handshake strings', () {
       expect(NativeProtocol.handshake('Pixel', '1234'), 'beamng|Pixel|1234');
       expect(NativeProtocol.expectedAnswer('1234'), 'beamng|1234');
+    });
+  });
+
+  group('point of view video', () {
+    test('qualities the mod knows', () {
+      expect([for (final q in PovQuality.values) q.wire], ['720p60', '1080p30', '1080p60']);
+      expect(PovQuality.fullHd30.width, 1920);
+    });
+
+    test('reads the state of the video', () {
+      ModMessage? decode(String json) => ModMessage.decode(Uint8List.fromList(utf8.encode(json)), 2);
+      final live = decode('{"type":"pov","state":"live","inside":true,"quality":"720p60"}')! as PovMessage;
+      expect(live.state, PovMessage.live);
+      expect(live.inside, isTrue);
+      final failed = decode('{"type":"pov","state":"error","error":"encoder"}')! as PovMessage;
+      expect(failed.state, PovMessage.failed);
+      expect(failed.error, PovMessage.errorEncoder);
+      expect(failed.inside, isFalse);
     });
   });
 }

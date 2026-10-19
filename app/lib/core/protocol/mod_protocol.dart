@@ -11,6 +11,9 @@ class ModProtocol {
   /// The app listens here (phone side).
   static const int clientPort = 4447;
 
+  /// Point of view video arrives here (phone side): H.264 in MPEG-TS.
+  static const int povPort = 4448;
+
   /// Highest protocol version this app speaks.
   static const int version = 2;
 
@@ -127,6 +130,10 @@ class ModCommand {
   // Asks for the vehicle skeleton (allowed on a second screen too)
   static const skeleton = 'skeleton';
 
+  // Point of view video on (`1`) or off (`0`), offered by mods on BeamNG.drive
+  // 0.40 or newer (allowed on a second screen too)
+  static const pov = 'pov';
+
   static const Set<String> holds = {horn, highBeam, starter, recover, handbrake, debug};
 }
 
@@ -184,4 +191,20 @@ class DiscoveredHost {
       label: label.isEmpty ? defaultLabel : label,
     );
   }
+}
+
+/// Qualities of the point of view video (`cmd|pov|<wire>`), H.264 encoded
+/// by the PC's graphics card.
+enum PovQuality {
+  hd60('720p60', 1280, 720),
+  fullHd30('1080p30', 1920, 1080),
+
+  /// Heavy on both sides: 16 Mbit/s of Wi-Fi, and the phone decodes 1080p at
+  /// 60 frames per second.
+  fullHd60('1080p60', 1920, 1080);
+
+  final String wire;
+  final int width;
+  final int height;
+  const PovQuality(this.wire, this.width, this.height);
 }

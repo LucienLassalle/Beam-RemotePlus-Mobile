@@ -150,6 +150,10 @@ where the pedal underneath cannot be pressed.
   copied from the game or another copyrighted source (draw them in code or use
   your own assets).
 - `buildDashboard` is called ~30 times per second: no heavy work, no async.
+- Over the driver's view video the app calls `buildVideoDashboard` instead:
+  by default nothing from a seat camera, the light `VideoHud` from the
+  others. Override it only for what the video cannot show (the Road theme
+  keeps its indicator buttons).
 - Lay the dashboard out in a fixed design size wrapped in `FittedBox` (see
   `civetta/`) so it scales to every phone.
 - English code and comments; dashboard labels are free (real dashes use

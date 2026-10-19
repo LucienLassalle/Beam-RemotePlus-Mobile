@@ -41,6 +41,10 @@ class DrivingController extends ChangeNotifier {
   int? _playerColor;
   ActionsMessage? _moreCommands;
   final Set<String> _heldMore = {};
+  bool _povOffered = false;
+  PovQuality? _povSent; // quality asked for, null while the video is off
+  PovMessage? _povState;
+  PovPicture? _povPicture;
 
   static const flashDuration = Duration(milliseconds: 300);
 
@@ -56,11 +60,12 @@ class DrivingController extends ChangeNotifier {
     void Function(Pulse pulse)? onPulse,
   })  : onPulse = onPulse ?? _noPulse,
         _settings = settings {
-    _subs.add(link.modActiveChanges.listen((_) => notifyListeners()));
+    _subs.add(link.modActiveChanges.listen((_) => _onModActiveChanged()));
     _subs.add(link.states.listen((_) => notifyListeners()));
     _subs.add(link.telemetry.listen(_onTelemetry));
     _subs.add(link.events.listen(_onEvent));
     _subs.add(link.qualityChanges.listen((_) => notifyListeners()));
+    _subs.add(link.povPictures.listen(_onPovPicture));
   }
 
   bool get modActive => link.modActive;
@@ -95,11 +100,36 @@ class DrivingController extends ChangeNotifier {
   VehicleSkeleton? get skeleton => _skeleton.skeleton;
   Uint8List? get skeletonLevels => _skeleton.levels;
 
+  /// The mod can stream the view from the driver's seat (BeamNG.drive 0.40
+  /// or newer): the video button and setting apply.
+  bool get povAvailable => _povOffered;
+
+  /// The video shows a seat camera (the car's own dashboard is in view);
+  /// null until the video is live.
+  bool? get povInside => _povState?.state == PovMessage.live ? _povState!.inside : null;
+
+  /// What the phone's player draws, while the video is on.
+  PovPicture? get povPicture => _povPicture;
+
+  /// Why there is no video: [PovMessage.errorEncoder] (the PC's graphics
+  /// card has no usable video encoder), or [povErrorDecoder]. Null while
+  /// all is well or the video is off.
+  String? get povError {
+    if (_povSent == null) return null;
+    if (_povState?.state == PovMessage.failed) return _povState!.error ?? PovMessage.errorEncoder;
+    if (_povPicture?.error != null) return povErrorDecoder;
+    return null;
+  }
+
+  /// The phone could not decode the video.
+  static const povErrorDecoder = 'decoder';
+
   /// Commands (horn...) only reach the game with the mod and outside read-only.
   bool get commandsEnabled => modActive && !_readOnly;
 
   set settings(AppSettings value) {
     _settings = value;
+    _syncPov();
     notifyListeners();
   }
 
@@ -115,10 +145,46 @@ class DrivingController extends ChangeNotifier {
       _optionalMods = message.optionalMods;
       notifyListeners();
     }
-    if (message is SessionMessage) {
-      _playerColor = message.playerColor;
+    if (message is PovMessage) {
+      _povState = message;
       notifyListeners();
     }
+    if (message is SessionMessage) {
+      _playerColor = message.playerColor;
+      _povOffered = message.commands.contains(ModCommand.pov);
+      // A new session may be a restarted mod: ask again.
+      _syncPov(resend: true);
+      notifyListeners();
+    }
+  }
+
+  void _onModActiveChanged() {
+    if (!link.modActive) _povOffered = false;
+    _syncPov();
+    notifyListeners();
+  }
+
+  /// Point of view video on while the setting asks for it and the mod
+  /// offers it.
+  void _syncPov({bool resend = false}) {
+    final want = _settings.povVideo && _povOffered && link.modActive ? _settings.povQuality : null;
+    if (want != null && (want != _povSent || resend)) {
+      _povSent = want;
+      if (want != _povSent) _povState = null;
+      _povSent = want;
+      link.setPovVideo(want);
+    } else if (want == null && _povSent != null) {
+      _povSent = null;
+      link.setPovVideo(null);
+      _povState = null;
+      _povPicture = null;
+    }
+  }
+
+  void _onPovPicture(PovPicture picture) {
+    if (_povSent == null) return;
+    _povPicture = picture;
+    notifyListeners();
   }
 
   void _onTelemetry(Telemetry t) {
@@ -261,6 +327,7 @@ class DrivingController extends ChangeNotifier {
   @override
   void dispose() {
     releaseAllHolds();
+    if (_povSent != null) link.setPovVideo(null);
     _flashTimer?.cancel();
     for (final s in _subs) {
       s.cancel();

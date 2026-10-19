@@ -54,6 +54,12 @@ sealed class ModMessage {
         return chunk == null ? null : SkeletonMessage(chunk);
       case 'kicked':
         return const KickedMessage();
+      case 'pov':
+        return PovMessage(
+          state: json['state'] is String ? json['state']! as String : '?',
+          error: json['error'] is String ? json['error']! as String : null,
+          inside: json['inside'] == true,
+        );
       case 'actions':
         return ActionsMessage(
           vehicle: json['vehicle'] is String ? json['vehicle']! as String : null,
@@ -105,6 +111,25 @@ class SessionMessage extends ModMessage {
 /// is already closed on the PC side.
 class KickedMessage extends ModMessage {
   const KickedMessage();
+}
+
+/// State of the point of view video of this phone (mod 0.0.5+).
+class PovMessage extends ModMessage {
+  /// `starting`, `live` or `error` (no video, the mod stopped it).
+  final String state;
+
+  /// Why there is no video: `encoder`, the PC's graphics card could not
+  /// start its video encoder.
+  final String? error;
+
+  /// A seat camera: the car's own dashboard is in view.
+  final bool inside;
+
+  const PovMessage({required this.state, this.error, this.inside = false});
+
+  static const live = 'live';
+  static const failed = 'error';
+  static const errorEncoder = 'encoder';
 }
 
 /// One piece of the vehicle skeleton (answer to `cmd|skeleton`).

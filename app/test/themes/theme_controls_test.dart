@@ -1,4 +1,7 @@
+import 'package:beam_remoteplus/core/network/remote_link.dart';
+import 'package:beam_remoteplus/core/protocol/mod_message.dart';
 import 'package:beam_remoteplus/core/settings/app_settings.dart';
+import 'package:beam_remoteplus/themes/kit/video_hud.dart';
 import 'package:beam_remoteplus/themes/theme_registry.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -55,6 +58,30 @@ void main() {
         await right.up();
       });
 
+      testWidgets('over the video: no dashboard from a seat, the light one elsewhere', (tester) async {
+        final link = FakeLink();
+        addTearDown(link.dispose);
+        await pumpDrivingView(tester, theme: theme, link: link, settings: const AppSettings(povVideo: true));
+        link.events_.add(const SessionMessage(commands: ['pov']));
+        link.telemetry_.add(sampleTelemetry);
+        await tester.pump();
+        link.povPictures_.add(const PovPicture(textureId: 1, width: 1280, height: 720));
+        link.events_.add(const PovMessage(state: PovMessage.live, inside: true));
+        await tester.pump();
+        await tester.pump();
+        expect(find.byType(Texture), findsOneWidget);
+        expect(find.byType(VideoHud), findsNothing);
+        link.events_.add(const PovMessage(state: PovMessage.live));
+        await tester.pump();
+        await tester.pump();
+        expect(find.byType(VideoHud), findsOneWidget);
+        // The pedals still take the touches over it.
+        final gesture = await tester.startGesture(Offset(phoneSize.width * 0.05, phoneSize.height * 0.5));
+        await tester.pump();
+        expect(link.brake, greaterThan(0));
+        await gesture.up();
+      });
+
       testWidgets('buttons take their own touches, not the pedals', (tester) async {
         final link = FakeLink();
         addTearDown(link.dispose);
@@ -67,6 +94,20 @@ void main() {
       });
     });
   }
+
+  testWidgets('without an encoder on the PC, says why there is no video', (tester) async {
+    final link = FakeLink();
+    addTearDown(link.dispose);
+    await pumpDrivingView(tester, theme: availableThemes.first, link: link, settings: const AppSettings(povVideo: true));
+    link.events_.add(const SessionMessage(commands: ['pov']));
+    await tester.pump();
+    link.events_.add(const PovMessage(state: PovMessage.failed, error: PovMessage.errorEncoder));
+    await tester.pump();
+    await tester.pump();
+    expect(find.byIcon(Icons.videocam_off), findsOneWidget);
+    expect(find.textContaining('DirectX'), findsOneWidget);
+    expect(find.byType(Texture), findsNothing);
+  });
 
   testWidgets('touch steering keeps the middle of the screen for the steering bar', (tester) async {
     final link = FakeLink();

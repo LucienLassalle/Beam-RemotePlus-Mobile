@@ -207,6 +207,7 @@
   "debugModeOff": "Mode debug désactivé",
   "actionSignals": "Clignotants",
   "vehiclePanelTooltip": "Radar et dégâts",
+  "povTooltip": "Vidéo vue conducteur",
   "secondScreenTitle": "Second écran",
   "secondScreenSubtitle": "Tableau de bord, radar et dégâts uniquement : conduisez avec votre volant ou votre manette",
   "settingsSecondScreenTitle": "Second écran uniquement",
@@ -217,6 +218,8 @@
   "settingsColorBlindSubtitle": "Orange et bleu au lieu de rouge et vert : pédales, voyants de passage de rapport, vue des dégâts",
   "settingsVehiclePanelTitle": "Panneau radar et dégâts",
   "settingsVehiclePanelSubtitle": "Véhicules proches, dégâts de carrosserie et mécaniques, températures des freins et des pneus (pneus : mod Tyre Thermals and Wear requis)",
+  "settingsPovTitle": "Vidéo vue conducteur",
+  "settingsPovSubtitle": "La vue depuis votre siège, filmée par le jeu, derrière les commandes (BeamNG.drive 0.40 ou plus récent). La carte graphique du PC l'encode : le jeu ralentit à peine",
   "settingsSimpleDamageTitle": "Dégâts simplifiés",
   "settingsSimpleDamageSubtitle": "Le schéma de la version 0.0.3 (carrosserie en six zones et pneus) au lieu de la structure réelle du véhicule",
   "settingsDamageCarPartsTitle": "Pictogrammes moteur, radiateur et réservoir",
@@ -266,5 +269,11 @@
   "optionalModFr17": "FR17",
   "optionalModFr17Features": "Bouton DRS (thème F4)",
   "dashFuel": "Carburant",
-  "dashCoolant": "Temp."
+  "dashCoolant": "Temp.",
+  "dashOil": "Huile",
+  "dashWater": "Eau",
+  "settingsPovQualityTitle": "Qualité de la vidéo",
+  "settingsPovQualitySubtitle": "720p 60 et 1080p 30 conviennent à la plupart des téléphones et des réseaux Wi-Fi. 1080p 60 est gourmand : 16 Mbit/s de Wi-Fi, et le téléphone chauffe et se décharge plus vite",
+  "povErrorEncoder": "Pas de vidéo : le jeu n'a pas pu démarrer l'encodeur vidéo de la carte graphique du PC. Sous Windows, utilisez le rendu DirectX 11 ou 12 et mettez à jour le pilote graphique ; sous Linux, il faut un Mesa avec l'encodage H.264 (par exemple mesa-vulkan-drivers-freeworld). Le journal du jeu (beamng.log, lignes videoStream) donne la raison.",
+  "povErrorDecoder": "Pas de vidéo : ce téléphone n'a pas pu la décoder. Essayez une qualité plus basse dans les réglages."
 }
