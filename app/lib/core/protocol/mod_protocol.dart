@@ -11,6 +11,9 @@ class ModProtocol {
   /// The app listens here (phone side).
   static const int clientPort = 4447;
 
+  /// Point of view video frames arrive here (phone side), see [PovFrame].
+  static const int povPort = 4448;
+
   /// Highest protocol version this app speaks.
   static const int version = 2;
 
@@ -127,6 +130,10 @@ class ModCommand {
   // Asks for the vehicle skeleton (allowed on a second screen too)
   static const skeleton = 'skeleton';
 
+  // Point of view video on (`1`) or off (`0`), offered by mods on BeamNG.drive
+  // 0.40 or newer (allowed on a second screen too)
+  static const pov = 'pov';
+
   static const Set<String> holds = {horn, highBeam, starter, recover, handbrake, debug};
 }
 
@@ -183,5 +190,27 @@ class DiscoveredHost {
       hostAddress: hostAddress,
       label: label.isEmpty ? defaultLabel : label,
     );
+  }
+}
+
+/// One point of view video frame of the mod (port [ModProtocol.povPort]):
+/// "BRPV" | frame number (uint32, big endian) | JPEG image.
+class PovFrame {
+  final int number;
+  final Uint8List jpeg;
+
+  const PovFrame(this.number, this.jpeg);
+
+  static const List<int> magic = [0x42, 0x52, 0x50, 0x56]; // BRPV
+  static const int headerLength = 8;
+
+  /// Null for anything that is not a frame.
+  static PovFrame? parse(Uint8List data) {
+    if (data.length <= headerLength) return null;
+    for (var i = 0; i < magic.length; i++) {
+      if (data[i] != magic[i]) return null;
+    }
+    final number = ByteData.sublistView(data, 4, 8).getUint32(0, Endian.big);
+    return PovFrame(number, Uint8List.sublistView(data, headerLength));
   }
 }

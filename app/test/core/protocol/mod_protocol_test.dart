@@ -87,4 +87,25 @@ void main() {
       expect(NativeProtocol.expectedAnswer('1234'), 'beamng|1234');
     });
   });
+
+  group('point of view video', () {
+    Uint8List frame(int number, List<int> jpeg) {
+      final b = BytesBuilder()
+        ..add(PovFrame.magic)
+        ..add((ByteData(4)..setUint32(0, number)).buffer.asUint8List())
+        ..add(jpeg);
+      return b.toBytes();
+    }
+
+    test('reads the frame number and the JPEG', () {
+      final f = PovFrame.parse(frame(258, [0xFF, 0xD8, 1]))!;
+      expect(f.number, 258);
+      expect(f.jpeg, [0xFF, 0xD8, 1]);
+    });
+
+    test('ignores anything else', () {
+      expect(PovFrame.parse(Uint8List.fromList('{"type":"telemetry"}'.codeUnits)), isNull);
+      expect(PovFrame.parse(frame(1, [])), isNull);
+    });
+  });
 }
