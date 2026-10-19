@@ -209,6 +209,20 @@ class _DisplayTab extends StatelessWidget {
       _switch(l10n.settingsVehiclePanelTitle, l10n.settingsVehiclePanelSubtitle, s.showVehiclePanel,
           (v) => _set(context, (s) => s.copyWith(showVehiclePanel: v))),
       _switch(l10n.settingsPovTitle, l10n.settingsPovSubtitle, s.povVideo, (v) => _set(context, (s) => s.copyWith(povVideo: v))),
+      if (s.povVideo)
+        ListTile(
+          title: Text(l10n.settingsPovQualityTitle),
+          subtitle: Text(l10n.settingsPovQualitySubtitle),
+          trailing: SegmentedButton<PovQuality>(
+            segments: const [
+              ButtonSegment(value: PovQuality.low, label: Text('360p')),
+              ButtonSegment(value: PovQuality.medium, label: Text('540p')),
+              ButtonSegment(value: PovQuality.high, label: Text('720p')),
+            ],
+            selected: {s.povQuality},
+            onSelectionChanged: (v) => _set(context, (s) => s.copyWith(povQuality: v.first)),
+          ),
+        ),
       _switch(l10n.settingsSimpleDamageTitle, l10n.settingsSimpleDamageSubtitle, s.simpleDamage,
           (v) => _set(context, (s) => s.copyWith(simpleDamage: v))),
       // The pictograms only exist on the real structure.

@@ -425,5 +425,7 @@
   "dashCoolant": "Temp",
   "@dashCoolant": {
     "description": "Short gauge label of the coolant temperature on dashboards (shown in capitals)."
-  }
+  },
+  "settingsPovQualityTitle": "Video quality",
+  "settingsPovQualitySubtitle": "360p: 30 images per second. 540p and 720p: sharper, 20 images per second. The higher, the lower the frame rate of the game"
 }

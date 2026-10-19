@@ -269,5 +269,7 @@
   "optionalModFr17": "FR17",
   "optionalModFr17Features": "Bouton DRS (thème F4)",
   "dashFuel": "Carburant",
-  "dashCoolant": "Temp."
+  "dashCoolant": "Temp.",
+  "settingsPovQualityTitle": "Qualité de la vidéo",
+  "settingsPovQualitySubtitle": "360p : 30 images par seconde. 540p et 720p : plus net, 20 images par seconde. Plus elle est haute, plus le jeu perd d'images par seconde"
 }

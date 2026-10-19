@@ -1,5 +1,7 @@
+import '../protocol/mod_protocol.dart';
 import 'units.dart';
 
+export '../protocol/mod_protocol.dart' show PovQuality;
 export 'units.dart';
 
 /// Sensor read by tilt steering: [auto] = the gyroscope when the phone has
@@ -32,6 +34,10 @@ class AppSettings {
   /// Video of the view from the driver's seat behind the controls (mod on
   /// BeamNG.drive 0.40 or newer). Costs the PC an extra render.
   final bool povVideo;
+
+  /// Image size and frame rate of that video: the higher, the lower the
+  /// frame rate of the game.
+  final PovQuality povQuality;
 
   /// Damage schematic of the real vehicle structure (with the mod's
   /// skeleton): engine, radiator and fuel tank / battery pictograms, and
@@ -119,6 +125,7 @@ class AppSettings {
     this.colorBlind = false,
     this.showVehiclePanel = false,
     this.povVideo = false,
+    this.povQuality = PovQuality.medium,
     this.simpleDamage = false,
     this.damageCarParts = false,
     this.damageWheelParts = true,
@@ -170,6 +177,7 @@ class AppSettings {
     bool? colorBlind,
     bool? showVehiclePanel,
     bool? povVideo,
+    PovQuality? povQuality,
     bool? simpleDamage,
     bool? damageCarParts,
     bool? damageWheelParts,
@@ -209,6 +217,7 @@ class AppSettings {
       colorBlind: colorBlind ?? this.colorBlind,
       showVehiclePanel: showVehiclePanel ?? this.showVehiclePanel,
       povVideo: povVideo ?? this.povVideo,
+      povQuality: povQuality ?? this.povQuality,
       simpleDamage: simpleDamage ?? this.simpleDamage,
       damageCarParts: damageCarParts ?? this.damageCarParts,
       damageWheelParts: damageWheelParts ?? this.damageWheelParts,
@@ -250,6 +259,7 @@ class AppSettings {
         'colorBlind': colorBlind,
         'showVehiclePanel': showVehiclePanel,
         'povVideo': povVideo,
+        'povQuality': povQuality.name,
         'simpleDamage': simpleDamage,
         'damageCarParts': damageCarParts,
         'damageWheelParts': damageWheelParts,
@@ -307,6 +317,7 @@ class AppSettings {
       colorBlind: pick('colorBlind', d.colorBlind),
       showVehiclePanel: pick('showVehiclePanel', d.showVehiclePanel),
       povVideo: pick('povVideo', d.povVideo),
+      povQuality: enumByName(PovQuality.values, json['povQuality'], d.povQuality),
       simpleDamage: pick('simpleDamage', d.simpleDamage),
       damageCarParts: pick('damageCarParts', d.damageCarParts),
       damageWheelParts: pick('damageWheelParts', d.damageWheelParts),
