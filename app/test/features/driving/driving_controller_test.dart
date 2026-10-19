@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:beam_remoteplus/core/platform/hardware_keys.dart';
 import 'package:beam_remoteplus/core/protocol/mod_message.dart';
+import 'package:beam_remoteplus/core/protocol/mod_protocol.dart';
 import 'package:beam_remoteplus/core/protocol/telemetry.dart';
 import 'package:beam_remoteplus/core/protocol/vehicle_command.dart';
 import 'package:beam_remoteplus/core/protocol/vehicle_skeleton.dart';
@@ -170,6 +171,11 @@ void main() {
       await Future<void>.delayed(Duration.zero);
     }
 
+    Future<void> frame(List<int> jpeg, {bool inside = false}) async {
+      link.povFrames_.add(PovFrame(1, Uint8List.fromList(jpeg), inside: inside));
+      await Future<void>.delayed(Duration.zero);
+    }
+
     test('is asked for only when the setting is on and the mod offers it', () async {
       await session(pov: false);
       controller.settings = const AppSettings(povVideo: true);
@@ -177,25 +183,46 @@ void main() {
       expect(controller.povAvailable, isFalse);
       await session();
       expect(controller.povAvailable, isTrue);
-      expect(link.povRequests, [true]);
+      expect(link.povRequests, [PovQuality.medium]);
     });
 
     test('is asked for again on each session, the mod may have restarted', () async {
       controller.settings = const AppSettings(povVideo: true);
       await session();
       await session();
-      expect(link.povRequests, [true, true]);
+      expect(link.povRequests, [PovQuality.medium, PovQuality.medium]);
+    });
+
+    test('is asked for again in another quality', () async {
+      controller.settings = const AppSettings(povVideo: true);
+      await session();
+      controller.settings = const AppSettings(povVideo: true, povQuality: PovQuality.high);
+      expect(link.povRequests, [PovQuality.medium, PovQuality.high]);
+    });
+
+    test('tells whether the camera is a seat camera', () async {
+      controller.settings = const AppSettings(povVideo: true);
+      await session();
+      expect(controller.povInside, isNull);
+      var notified = 0;
+      controller.addListener(() => notified++);
+      await frame([1], inside: true);
+      expect(controller.povInside, isTrue);
+      await frame([2], inside: true);
+      expect(notified, 1);
+      await frame([3]);
+      expect(controller.povInside, isFalse);
     });
 
     test('stops when the setting is switched off, and forgets the last frame', () async {
       controller.settings = const AppSettings(povVideo: true);
       await session();
-      link.povFrames_.add(Uint8List.fromList([1, 2]));
-      await Future<void>.delayed(Duration.zero);
+      await frame([1, 2], inside: true);
       expect(controller.povFrame.value, [1, 2]);
       controller.settings = const AppSettings();
-      expect(link.povRequests, [true, false]);
+      expect(link.povRequests, [PovQuality.medium, null]);
       expect(controller.povFrame.value, isNull);
+      expect(controller.povInside, isNull);
     });
 
     test('stops without the mod', () async {
@@ -204,7 +231,7 @@ void main() {
       link.modActive = false;
       link.modActive_.add(false);
       await Future<void>.delayed(Duration.zero);
-      expect(link.povRequests, [true, false]);
+      expect(link.povRequests, [PovQuality.medium, null]);
       expect(controller.povAvailable, isFalse);
     });
   });

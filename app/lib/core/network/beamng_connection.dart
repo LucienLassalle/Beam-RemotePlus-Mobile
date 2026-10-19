@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 
 import '../debug/debug_log.dart';
 import '../platform/app_version.dart';
@@ -29,7 +28,7 @@ class BeamngConnection implements RemoteLink {
   final _telemetry = StreamController<Telemetry>.broadcast();
   final _events = StreamController<ModMessage>.broadcast();
   final _quality = StreamController<void>.broadcast();
-  final _povFrames = StreamController<Uint8List>.broadcast();
+  final _povFrames = StreamController<PovFrame>.broadcast();
 
   LinkState _state = LinkState.idle;
   bool _modActive = false;
@@ -44,7 +43,7 @@ class BeamngConnection implements RemoteLink {
   RawDatagramSocket? _modSocket; // mod: pong, telemetry, events + sending
   RawDatagramSocket? _povSocket; // mod: point of view video frames
   bool _povOn = false;
-  int _lastPovFrame = 0;
+  PovAssembler _povAssembler = PovAssembler();
   Timer? _controlTimer;
   Timer? _modPingTimer;
   InternetAddress? _host;
@@ -101,7 +100,7 @@ class BeamngConnection implements RemoteLink {
   @override
   Stream<void> get qualityChanges => _quality.stream;
   @override
-  Stream<Uint8List> get povFrames => _povFrames.stream;
+  Stream<PovFrame> get povFrames => _povFrames.stream;
 
   void _qualityChanged() {
     if (!_quality.isClosed) _quality.add(null);
@@ -358,11 +357,11 @@ class BeamngConnection implements RemoteLink {
   }
 
   @override
-  void setPovVideo(bool on) {
-    _povOn = on;
-    if (on) {
+  void setPovVideo(PovQuality? quality) {
+    _povOn = quality != null;
+    if (quality != null) {
       unawaited(_openPov());
-      sendCommand(ModCommand.pov, '1');
+      sendCommand(ModCommand.pov, quality.name);
     } else {
       sendCommand(ModCommand.pov, '0');
       _closePov();
@@ -384,19 +383,15 @@ class BeamngConnection implements RemoteLink {
       return;
     }
     _povSocket = socket;
-    _lastPovFrame = 0;
+    _povAssembler = PovAssembler();
     socket.listen((event) {
       if (event != RawSocketEvent.read) return;
       final dg = socket.receive();
       // Only the paired PC.
       if (dg == null || dg.address != _host) return;
-      final frame = PovFrame.parse(dg.data);
-      if (frame == null) return;
-      // Late frames are dropped; a much smaller number is a new video
-      // (the mod restarted it).
-      if (frame.number <= _lastPovFrame && frame.number > _lastPovFrame - 100) return;
-      _lastPovFrame = frame.number;
-      if (!_povFrames.isClosed) _povFrames.add(frame.jpeg);
+      final part = PovPart.parse(dg.data);
+      final frame = part == null ? null : _povAssembler.add(part);
+      if (frame != null && !_povFrames.isClosed) _povFrames.add(frame);
     });
   }
 

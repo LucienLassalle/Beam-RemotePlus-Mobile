@@ -42,7 +42,8 @@ class DrivingController extends ChangeNotifier {
   ActionsMessage? _moreCommands;
   final Set<String> _heldMore = {};
   bool _povOffered = false;
-  bool _povOn = false;
+  PovQuality? _povSent; // quality asked for, null while the video is off
+  bool? _povInside;
 
   /// Latest point of view video frame (JPEG), null while the video is off.
   /// Apart from [notifyListeners]: it changes up to 30 times a second.
@@ -67,9 +68,7 @@ class DrivingController extends ChangeNotifier {
     _subs.add(link.telemetry.listen(_onTelemetry));
     _subs.add(link.events.listen(_onEvent));
     _subs.add(link.qualityChanges.listen((_) => notifyListeners()));
-    _subs.add(link.povFrames.listen((jpeg) {
-      if (_povOn) povFrame.value = jpeg;
-    }));
+    _subs.add(link.povFrames.listen(_onPovFrame));
   }
 
   bool get modActive => link.modActive;
@@ -107,6 +106,10 @@ class DrivingController extends ChangeNotifier {
   /// The mod can stream the view from the driver's seat (BeamNG.drive 0.40
   /// or newer): the video button and setting apply.
   bool get povAvailable => _povOffered;
+
+  /// The video shows a seat camera (the car's own dashboard is in view);
+  /// null while no frame has arrived.
+  bool? get povInside => _povInside;
 
   /// Commands (horn...) only reach the game with the mod and outside read-only.
   bool get commandsEnabled => modActive && !_readOnly;
@@ -147,14 +150,24 @@ class DrivingController extends ChangeNotifier {
   /// Point of view video on while the setting asks for it and the mod
   /// offers it.
   void _syncPov({bool resend = false}) {
-    final want = _settings.povVideo && _povOffered && link.modActive;
-    if (want && (!_povOn || resend)) {
-      _povOn = true;
-      link.setPovVideo(true);
-    } else if (!want && _povOn) {
-      _povOn = false;
-      link.setPovVideo(false);
+    final want = _settings.povVideo && _povOffered && link.modActive ? _settings.povQuality : null;
+    if (want != null && (want != _povSent || resend)) {
+      _povSent = want;
+      link.setPovVideo(want);
+    } else if (want == null && _povSent != null) {
+      _povSent = null;
+      link.setPovVideo(null);
       povFrame.value = null;
+      _povInside = null;
+    }
+  }
+
+  void _onPovFrame(PovFrame frame) {
+    if (_povSent == null) return;
+    povFrame.value = frame.jpeg;
+    if (frame.inside != _povInside) {
+      _povInside = frame.inside;
+      notifyListeners();
     }
   }
 
@@ -298,7 +311,7 @@ class DrivingController extends ChangeNotifier {
   @override
   void dispose() {
     releaseAllHolds();
-    if (_povOn) link.setPovVideo(false);
+    if (_povSent != null) link.setPovVideo(null);
     povFrame.dispose();
     _flashTimer?.cancel();
     for (final s in _subs) {

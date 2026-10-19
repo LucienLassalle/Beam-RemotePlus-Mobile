@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import '../protocol/mod_message.dart';
 import '../protocol/mod_protocol.dart';
 import '../protocol/telemetry.dart';
@@ -43,14 +41,13 @@ abstract class RemoteLink {
   /// Sends `cmd|name` or `cmd|name|arg` to the mod (ignored without mod).
   void sendCommand(String name, [String? arg]);
 
-  /// Point of view video frames (JPEG images, see [PovFrame]), while
-  /// [setPovVideo] is on.
-  Stream<Uint8List> get povFrames;
+  /// Point of view video frames, while [setPovVideo] is on.
+  Stream<PovFrame> get povFrames;
 
-  /// Starts or stops the point of view video of the mod: listens on
-  /// [ModProtocol.povPort] and asks the mod for it. Asking again (new mod
-  /// session) is harmless.
-  void setPovVideo(bool on);
+  /// Starts the point of view video of the mod in [quality] (listens on
+  /// [ModProtocol.povPort] and asks the mod for it), or stops it (null).
+  /// Asking again (new mod session, other quality) is harmless.
+  void setPovVideo(PovQuality? quality);
 
   Future<void> disconnect();
   void dispose();

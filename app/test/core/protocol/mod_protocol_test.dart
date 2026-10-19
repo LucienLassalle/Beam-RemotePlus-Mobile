@@ -89,23 +89,52 @@ void main() {
   });
 
   group('point of view video', () {
-    Uint8List frame(int number, List<int> jpeg) {
+    Uint8List datagram(int number, List<int> jpeg, {int part = 0, int parts = 1, int flags = 0}) {
       final b = BytesBuilder()
         ..add(PovFrame.magic)
         ..add((ByteData(4)..setUint32(0, number)).buffer.asUint8List())
+        ..add([part, parts, flags])
         ..add(jpeg);
       return b.toBytes();
     }
 
-    test('reads the frame number and the JPEG', () {
-      final f = PovFrame.parse(frame(258, [0xFF, 0xD8, 1]))!;
-      expect(f.number, 258);
-      expect(f.jpeg, [0xFF, 0xD8, 1]);
+    PovFrame? join(PovAssembler a, Uint8List data) => a.add(PovPart.parse(data)!);
+
+    test('reads the frame number, the part and the flags', () {
+      final p = PovPart.parse(datagram(258, [0xFF, 0xD8, 1], part: 1, parts: 2, flags: 1))!;
+      expect(p.number, 258);
+      expect([p.part, p.parts, p.flags], [1, 2, 1]);
+      expect(p.data, [0xFF, 0xD8, 1]);
     });
 
     test('ignores anything else', () {
-      expect(PovFrame.parse(Uint8List.fromList('{"type":"telemetry"}'.codeUnits)), isNull);
-      expect(PovFrame.parse(frame(1, [])), isNull);
+      expect(PovPart.parse(Uint8List.fromList('{"type":"telemetry"}'.codeUnits)), isNull);
+      expect(PovPart.parse(datagram(1, [])), isNull);
+      expect(PovPart.parse(datagram(1, [1], part: 2, parts: 2)), isNull);
+    });
+
+    test('joins the parts of a frame, in any order', () {
+      final a = PovAssembler();
+      expect(join(a, datagram(1, [3, 4], part: 1, parts: 2, flags: 1)), isNull);
+      final f = join(a, datagram(1, [1, 2], part: 0, parts: 2, flags: 1))!;
+      expect(f.number, 1);
+      expect(f.jpeg, [1, 2, 3, 4]);
+      expect(f.inside, isTrue);
+      expect(join(a, datagram(2, [5]))!.inside, isFalse);
+    });
+
+    test('drops a frame missing a part when a newer one arrives, and late parts', () {
+      final a = PovAssembler();
+      expect(join(a, datagram(1, [1], parts: 2)), isNull);
+      expect(join(a, datagram(2, [9]))!.number, 2);
+      expect(join(a, datagram(1, [2], part: 1, parts: 2)), isNull);
+      expect(join(a, datagram(2, [9])), isNull);
+    });
+
+    test('takes a much smaller number as a new video', () {
+      final a = PovAssembler();
+      expect(join(a, datagram(500, [1])), isNotNull);
+      expect(join(a, datagram(1, [1]))!.number, 1);
     });
   });
 }

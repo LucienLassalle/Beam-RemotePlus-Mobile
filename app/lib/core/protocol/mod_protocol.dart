@@ -193,24 +193,89 @@ class DiscoveredHost {
   }
 }
 
-/// One point of view video frame of the mod (port [ModProtocol.povPort]):
-/// "BRPV" | frame number (uint32, big endian) | JPEG image.
+/// Qualities of the point of view video, as the mod names them (`cmd|pov|<name>`).
+enum PovQuality {
+  /// 640x360, 30 frames per second.
+  low,
+
+  /// 960x540, 20 frames per second.
+  medium,
+
+  /// 1280x720, 20 frames per second.
+  high,
+}
+
+/// One point of view video frame of the mod, joined from its datagrams
+/// ([PovPart], port [ModProtocol.povPort]).
 class PovFrame {
   final int number;
   final Uint8List jpeg;
 
-  const PovFrame(this.number, this.jpeg);
+  /// Seat camera (driver or passenger): the car's own dashboard is in view.
+  final bool inside;
+
+  const PovFrame(this.number, this.jpeg, {this.inside = false});
 
   static const List<int> magic = [0x42, 0x52, 0x50, 0x56]; // BRPV
-  static const int headerLength = 8;
+  static const int flagInside = 1;
+}
 
-  /// Null for anything that is not a frame.
-  static PovFrame? parse(Uint8List data) {
+/// One datagram of a [PovFrame]:
+/// "BRPV" | frame number (uint32, big endian) | part | parts | flags | JPEG part.
+class PovPart {
+  final int number;
+  final int part;
+  final int parts;
+  final int flags;
+  final Uint8List data;
+
+  const PovPart(this.number, this.part, this.parts, this.flags, this.data);
+
+  static const int headerLength = 11;
+
+  /// Null for anything that is not a part of a frame.
+  static PovPart? parse(Uint8List data) {
     if (data.length <= headerLength) return null;
-    for (var i = 0; i < magic.length; i++) {
-      if (data[i] != magic[i]) return null;
+    for (var i = 0; i < PovFrame.magic.length; i++) {
+      if (data[i] != PovFrame.magic[i]) return null;
     }
     final number = ByteData.sublistView(data, 4, 8).getUint32(0, Endian.big);
-    return PovFrame(number, Uint8List.sublistView(data, headerLength));
+    final part = data[8], parts = data[9];
+    if (part >= parts) return null;
+    return PovPart(number, part, parts, data[10], Uint8List.sublistView(data, headerLength));
+  }
+}
+
+/// Joins the parts of the newest frame. A frame still missing a part when a
+/// newer one arrives is lost, late parts are dropped.
+class PovAssembler {
+  int _last = 0; // last frame joined
+  int? _number; // frame being joined
+  List<Uint8List?> _parts = const [];
+  int _received = 0;
+
+  /// The frame [part] completes, if any.
+  PovFrame? add(PovPart part) {
+    final newest = _number ?? _last;
+    // A much smaller number is a new video (the mod restarted it).
+    final late = part.number < newest && part.number > newest - 100;
+    if (late || (part.number == _last && _number == null)) return null;
+    if (part.number != _number) {
+      _number = part.number;
+      _parts = List<Uint8List?>.filled(part.parts, null);
+      _received = 0;
+    }
+    if (part.parts != _parts.length || _parts[part.part] != null) return null;
+    _parts[part.part] = part.data;
+    _received++;
+    if (_received < _parts.length) return null;
+    final jpeg = BytesBuilder(copy: false);
+    for (final data in _parts) {
+      jpeg.add(data!);
+    }
+    _last = part.number;
+    _number = null;
+    _parts = const [];
+    return PovFrame(part.number, jpeg.takeBytes(), inside: part.flags & PovFrame.flagInside != 0);
   }
 }
