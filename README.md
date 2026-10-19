@@ -52,6 +52,10 @@ longer maintained.
 - **Vibrations**: wheelspin, locked wheels, impacts, kerbs, ABS, rev limiter.
 - **Radar and damage view**: the cars around, and the real structure of your
   vehicle with its bent parts, tyres and brakes.
+- **Driver's view video** (BeamNG.drive 0.40 or newer, camera button or
+  Settings): the view from your seat, filmed by the game, behind the
+  controls; up to 30 images per second, each phone its own car. It lowers
+  the frame rate of the game on the PC, so it is off by default.
 - **Electric cars**, **second screen** (dashboard only, next to a wheel or a
   gamepad) and **local multiplayer** (one phone per player), each player with
   the colour the game gives them (their name tag above the car) on the phone
@@ -112,18 +116,19 @@ sends nothing else, and it can be turned off in Settings > Advanced > *Check
 for updates*. Without internet, the releases seen at the last check are
 used.
 
-The app uses four UDP ports:
+The app uses five UDP ports:
 
 | Port | Listens on | Used for |
 |---|---|---|
 | UDP **4445** | phone (the app) | the game's answer to the pairing handshake |
 | UDP **4447** | phone (the app) | hello, pong, telemetry and events from the mod |
+| UDP **4448** | phone (the app) | driver's view video from the mod, only while it is on (frames from the paired PC only) |
 | UDP **4444** | PC (the game's own remote control) | pairing handshake, then basic steering/pedals until the mod answers |
 | UDP **4446** | PC (the [mod](https://github.com/LucienLassalle/Beam-RemotePlus-Mod#network)) | discovery, ping, controls (60 Hz), commands |
 
 ```mermaid
 sequenceDiagram
-    participant P as Phone (app)<br/>UDP 4445, 4447
+    participant P as Phone (app)<br/>UDP 4445, 4447, 4448
     box PC (BeamNG.drive)
         participant G as Game remote control<br/>UDP 4444
         participant M as Beam-RemotePlus mod<br/>UDP 4446
@@ -141,10 +146,13 @@ sequenceDiagram
     loop While connected
         P->>M: controls and commands (to 4446)
         M-->>P: telemetry and events (to 4447)
+        opt Driver's view video on
+            M-->>P: video frames (to 4448)
+        end
     end
 ```
 
-- A **second screen** only uses 4446 and 4447.
+- A **second screen** only uses 4446 and 4447 (and 4448 for the video).
 - Nothing has to be opened on the phone. If the phone cannot find the PC,
   allow incoming UDP 4444 and 4446 on the PC (see the
   [mod README](https://github.com/LucienLassalle/Beam-RemotePlus-Mod#network)).
