@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:beam_remoteplus/core/platform/hardware_keys.dart';
 import 'package:beam_remoteplus/core/protocol/mod_message.dart';
 import 'package:beam_remoteplus/core/protocol/telemetry.dart';
@@ -160,5 +162,50 @@ void main() {
     link.events_.add(const SessionMessage(optionalMods: {'fr17': 'enabled'}));
     await Future<void>.delayed(Duration.zero);
     expect(controller.optionalMods, {'fr17': 'enabled'});
+  });
+
+  group('point of view video', () {
+    Future<void> session({bool pov = true}) async {
+      link.events_.add(SessionMessage(commands: [if (pov) 'pov', 'horn']));
+      await Future<void>.delayed(Duration.zero);
+    }
+
+    test('is asked for only when the setting is on and the mod offers it', () async {
+      await session(pov: false);
+      controller.settings = const AppSettings(povVideo: true);
+      expect(link.povRequests, isEmpty);
+      expect(controller.povAvailable, isFalse);
+      await session();
+      expect(controller.povAvailable, isTrue);
+      expect(link.povRequests, [true]);
+    });
+
+    test('is asked for again on each session, the mod may have restarted', () async {
+      controller.settings = const AppSettings(povVideo: true);
+      await session();
+      await session();
+      expect(link.povRequests, [true, true]);
+    });
+
+    test('stops when the setting is switched off, and forgets the last frame', () async {
+      controller.settings = const AppSettings(povVideo: true);
+      await session();
+      link.povFrames_.add(Uint8List.fromList([1, 2]));
+      await Future<void>.delayed(Duration.zero);
+      expect(controller.povFrame.value, [1, 2]);
+      controller.settings = const AppSettings();
+      expect(link.povRequests, [true, false]);
+      expect(controller.povFrame.value, isNull);
+    });
+
+    test('stops without the mod', () async {
+      controller.settings = const AppSettings(povVideo: true);
+      await session();
+      link.modActive = false;
+      link.modActive_.add(false);
+      await Future<void>.delayed(Duration.zero);
+      expect(link.povRequests, [true, false]);
+      expect(controller.povAvailable, isFalse);
+    });
   });
 }

@@ -195,6 +195,17 @@ class _DrivingScreenState extends State<DrivingScreen> with WidgetsBindingObserv
           tooltip: l10n.vehiclePanelTooltip,
           onPressed: () => unawaited(settings.update((s) => s.copyWith(showVehiclePanel: !s.showVehiclePanel))),
         ),
+      // Only when the mod can stream the driver's view (BeamNG.drive 0.40).
+      ListenableBuilder(
+        listenable: _controller,
+        builder: (context, _) => !_controller.povAvailable
+            ? const SizedBox.shrink()
+            : IconButton(
+                icon: Icon(Icons.videocam, color: settings.settings.povVideo ? Colors.lightBlueAccent : Colors.white54),
+                tooltip: l10n.povTooltip,
+                onPressed: () => unawaited(settings.update((s) => s.copyWith(povVideo: !s.povVideo))),
+              ),
+      ),
       IconButton(
         icon: const Icon(Icons.help_outline, color: Colors.white54),
         tooltip: l10n.helpTitle,

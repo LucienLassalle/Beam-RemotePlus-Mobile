@@ -18,6 +18,7 @@ import 'widgets/hold_button.dart';
 import 'widgets/more_sheet.dart';
 import 'widgets/pedal_zones.dart';
 import 'widgets/player_badge.dart';
+import 'widgets/pov_background.dart';
 import 'widgets/steering_control.dart';
 import 'widgets/top_bar.dart';
 import 'widgets/touch_wheel.dart';
@@ -26,6 +27,7 @@ import 'widgets/vehicle_actions_bar.dart';
 /// Composition of the driving screen, without any platform side effect
 /// (lifecycle lives in DrivingScreen), so tests can pump it. Layers, bottom
 /// to top:
+///   0. point of view video, when on (no touches)
 ///   1. pedal zones: every touch not taken by a layer above
 ///   2. theme dashboard: lets touches through, except on its DashboardButtons
 ///   3. steering bar, buttons and overlays: only the area they cover
@@ -94,6 +96,8 @@ class DrivingView extends StatelessWidget {
             color: style.background,
             child: Stack(
               children: [
+                if (settings.povVideo && controller.povAvailable)
+                  Positioned.fill(child: IgnorePointer(child: PovBackground(frame: controller.povFrame))),
                 if (!_display)
                   Positioned.fill(
                     child: IgnorePointer(

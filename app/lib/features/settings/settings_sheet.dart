@@ -208,6 +208,7 @@ class _DisplayTab extends StatelessWidget {
           (v) => _set(context, (s) => s.copyWith(colorBlind: v))),
       _switch(l10n.settingsVehiclePanelTitle, l10n.settingsVehiclePanelSubtitle, s.showVehiclePanel,
           (v) => _set(context, (s) => s.copyWith(showVehiclePanel: v))),
+      _switch(l10n.settingsPovTitle, l10n.settingsPovSubtitle, s.povVideo, (v) => _set(context, (s) => s.copyWith(povVideo: v))),
       _switch(l10n.settingsSimpleDamageTitle, l10n.settingsSimpleDamageSubtitle, s.simpleDamage,
           (v) => _set(context, (s) => s.copyWith(simpleDamage: v))),
       // The pictograms only exist on the real structure.

@@ -41,6 +41,12 @@ class DrivingController extends ChangeNotifier {
   int? _playerColor;
   ActionsMessage? _moreCommands;
   final Set<String> _heldMore = {};
+  bool _povOffered = false;
+  bool _povOn = false;
+
+  /// Latest point of view video frame (JPEG), null while the video is off.
+  /// Apart from [notifyListeners]: it changes up to 30 times a second.
+  final ValueNotifier<Uint8List?> povFrame = ValueNotifier(null);
 
   static const flashDuration = Duration(milliseconds: 300);
 
@@ -56,11 +62,14 @@ class DrivingController extends ChangeNotifier {
     void Function(Pulse pulse)? onPulse,
   })  : onPulse = onPulse ?? _noPulse,
         _settings = settings {
-    _subs.add(link.modActiveChanges.listen((_) => notifyListeners()));
+    _subs.add(link.modActiveChanges.listen((_) => _onModActiveChanged()));
     _subs.add(link.states.listen((_) => notifyListeners()));
     _subs.add(link.telemetry.listen(_onTelemetry));
     _subs.add(link.events.listen(_onEvent));
     _subs.add(link.qualityChanges.listen((_) => notifyListeners()));
+    _subs.add(link.povFrames.listen((jpeg) {
+      if (_povOn) povFrame.value = jpeg;
+    }));
   }
 
   bool get modActive => link.modActive;
@@ -95,11 +104,16 @@ class DrivingController extends ChangeNotifier {
   VehicleSkeleton? get skeleton => _skeleton.skeleton;
   Uint8List? get skeletonLevels => _skeleton.levels;
 
+  /// The mod can stream the view from the driver's seat (BeamNG.drive 0.40
+  /// or newer): the video button and setting apply.
+  bool get povAvailable => _povOffered;
+
   /// Commands (horn...) only reach the game with the mod and outside read-only.
   bool get commandsEnabled => modActive && !_readOnly;
 
   set settings(AppSettings value) {
     _settings = value;
+    _syncPov();
     notifyListeners();
   }
 
@@ -117,7 +131,30 @@ class DrivingController extends ChangeNotifier {
     }
     if (message is SessionMessage) {
       _playerColor = message.playerColor;
+      _povOffered = message.commands.contains(ModCommand.pov);
+      // A new session may be a restarted mod: ask again.
+      _syncPov(resend: true);
       notifyListeners();
+    }
+  }
+
+  void _onModActiveChanged() {
+    if (!link.modActive) _povOffered = false;
+    _syncPov();
+    notifyListeners();
+  }
+
+  /// Point of view video on while the setting asks for it and the mod
+  /// offers it.
+  void _syncPov({bool resend = false}) {
+    final want = _settings.povVideo && _povOffered && link.modActive;
+    if (want && (!_povOn || resend)) {
+      _povOn = true;
+      link.setPovVideo(true);
+    } else if (!want && _povOn) {
+      _povOn = false;
+      link.setPovVideo(false);
+      povFrame.value = null;
     }
   }
 
@@ -261,6 +298,8 @@ class DrivingController extends ChangeNotifier {
   @override
   void dispose() {
     releaseAllHolds();
+    if (_povOn) link.setPovVideo(false);
+    povFrame.dispose();
     _flashTimer?.cancel();
     for (final s in _subs) {
       s.cancel();
