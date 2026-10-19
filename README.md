@@ -55,11 +55,14 @@ longer maintained.
 - **Driver's view video** (BeamNG.drive 0.40 or newer, camera button or
   Settings): the view from your seat, filmed by the game, behind the
   controls, each phone its own car; the camera buttons then change the
-  camera of the video, not the PC's. 360p at 30 images per second, 540p
-  (default) or 720p at 20. From a seat the car's own dashboard is in view,
-  so the theme's one hides; from the other cameras a light one stays on the
-  sides (engine on the right, gauges on the left). It lowers the frame rate
-  of the game on the PC, so it is off by default.
+  camera of the video, not the PC's. The PC's graphics card encodes it in
+  H.264 and the phone's decodes it, both in hardware, for little delay and
+  little cost to the game: 720p at 60 images per second (default), 1080p at
+  30, or 1080p at 60 (heavy on the Wi-Fi and the phone). From a seat the
+  car's own dashboard is in view, so the theme's one hides; from the other
+  cameras a light one stays on the sides (engine on the right, gauges on
+  the left). Without a video encoder on the PC, the phone says what to do.
+  Off by default.
 - **Electric cars**, **second screen** (dashboard only, next to a wheel or a
   gamepad) and **local multiplayer** (one phone per player), each player with
   the colour the game gives them (their name tag above the car) on the phone
@@ -126,7 +129,7 @@ The app uses five UDP ports:
 |---|---|---|
 | UDP **4445** | phone (the app) | the game's answer to the pairing handshake |
 | UDP **4447** | phone (the app) | hello, pong, telemetry and events from the mod |
-| UDP **4448** | phone (the app) | driver's view video from the mod, only while it is on (frames from the paired PC only) |
+| UDP **4448** | phone (the app) | driver's view video from the mod (H.264 in MPEG-TS), only while it is on (from the paired PC only) |
 | UDP **4444** | PC (the game's own remote control) | pairing handshake, then basic steering/pedals until the mod answers |
 | UDP **4446** | PC (the [mod](https://github.com/LucienLassalle/Beam-RemotePlus-Mod#network)) | discovery, ping, controls (60 Hz), commands |
 
@@ -151,7 +154,7 @@ sequenceDiagram
         P->>M: controls and commands (to 4446)
         M-->>P: telemetry and events (to 4447)
         opt Driver's view video on
-            M-->>P: video frames (to 4448)
+            M-->>P: H.264 video (to 4448)
         end
     end
 ```
