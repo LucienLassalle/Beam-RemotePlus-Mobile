@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import '../debug/debug_log.dart';
 import '../platform/app_version.dart';
@@ -28,6 +29,7 @@ class BeamngConnection implements RemoteLink {
   final _telemetry = StreamController<Telemetry>.broadcast();
   final _events = StreamController<ModMessage>.broadcast();
   final _quality = StreamController<void>.broadcast();
+  final _povFrames = StreamController<Uint8List>.broadcast();
 
   LinkState _state = LinkState.idle;
   bool _modActive = false;
@@ -40,6 +42,9 @@ class BeamngConnection implements RemoteLink {
   RawDatagramSocket? _nativeSocket; // handshake answer
   RawDatagramSocket? _controlSocket; // native control packets
   RawDatagramSocket? _modSocket; // mod: pong, telemetry, events + sending
+  RawDatagramSocket? _povSocket; // mod: point of view video frames
+  bool _povOn = false;
+  int _lastPovFrame = 0;
   Timer? _controlTimer;
   Timer? _modPingTimer;
   InternetAddress? _host;
@@ -95,6 +100,8 @@ class BeamngConnection implements RemoteLink {
   bool get signalLost => _signalLost;
   @override
   Stream<void> get qualityChanges => _quality.stream;
+  @override
+  Stream<Uint8List> get povFrames => _povFrames.stream;
 
   void _qualityChanged() {
     if (!_quality.isClosed) _quality.add(null);
@@ -351,6 +358,54 @@ class BeamngConnection implements RemoteLink {
   }
 
   @override
+  void setPovVideo(bool on) {
+    _povOn = on;
+    if (on) {
+      unawaited(_openPov());
+      sendCommand(ModCommand.pov, '1');
+    } else {
+      sendCommand(ModCommand.pov, '0');
+      _closePov();
+    }
+  }
+
+  Future<void> _openPov() async {
+    if (_povSocket != null) return;
+    final RawDatagramSocket socket;
+    try {
+      socket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, ModProtocol.povPort, reuseAddress: true);
+    } catch (e) {
+      DebugLog.log('pov: cannot bind ${ModProtocol.povPort} ($e)');
+      return;
+    }
+    // Switched off (or bound twice) while binding.
+    if (!_povOn || _povSocket != null) {
+      socket.close();
+      return;
+    }
+    _povSocket = socket;
+    _lastPovFrame = 0;
+    socket.listen((event) {
+      if (event != RawSocketEvent.read) return;
+      final dg = socket.receive();
+      // Only the paired PC.
+      if (dg == null || dg.address != _host) return;
+      final frame = PovFrame.parse(dg.data);
+      if (frame == null) return;
+      // Late frames are dropped; a much smaller number is a new video
+      // (the mod restarted it).
+      if (frame.number <= _lastPovFrame && frame.number > _lastPovFrame - 100) return;
+      _lastPovFrame = frame.number;
+      if (!_povFrames.isClosed) _povFrames.add(frame.jpeg);
+    });
+  }
+
+  void _closePov() {
+    _povSocket?.close();
+    _povSocket = null;
+  }
+
+  @override
   void updateControls({double? steering, double? throttle, double? brake}) {
     if (steering != null) _steering = steering.clamp(0.0, 1.0);
     if (throttle != null) _throttle = throttle.clamp(0.0, 1.0);
@@ -389,6 +444,8 @@ class BeamngConnection implements RemoteLink {
     _controlSocket?.close();
     _modSocket?.close();
     _nativeSocket = _controlSocket = _modSocket = null;
+    _povOn = false;
+    _closePov();
     _host = null;
     _modActive = false;
     _protocolVersion = 0;
@@ -408,5 +465,6 @@ class BeamngConnection implements RemoteLink {
     _telemetry.close();
     _events.close();
     _quality.close();
+    _povFrames.close();
   }
 }

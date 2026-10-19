@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:beam_remoteplus/core/network/remote_link.dart';
 import 'package:beam_remoteplus/core/protocol/mod_message.dart';
@@ -12,6 +13,7 @@ class FakeLink implements RemoteLink {
   final modActive_ = StreamController<bool>.broadcast();
   final telemetry_ = StreamController<Telemetry>.broadcast();
   final events_ = StreamController<ModMessage>.broadcast();
+  final povFrames_ = StreamController<Uint8List>.broadcast();
 
   @override
   LinkState state = LinkState.connected;
@@ -21,6 +23,8 @@ class FakeLink implements RemoteLink {
   int protocolVersion;
 
   final List<String> commands = [];
+  /// Every [setPovVideo] call, in order.
+  final List<bool> povRequests = [];
   double steering = 0.5, throttle = 0, brake = 0;
 
   FakeLink({this.modActive = true, this.protocolVersion = 2});
@@ -46,6 +50,12 @@ class FakeLink implements RemoteLink {
   void sendCommand(String name, [String? arg]) => commands.add(arg == null ? name : '$name|$arg');
 
   @override
+  Stream<Uint8List> get povFrames => povFrames_.stream;
+
+  @override
+  void setPovVideo(bool on) => povRequests.add(on);
+
+  @override
   void updateControls({double? steering, double? throttle, double? brake}) {
     if (steering != null) this.steering = steering;
     if (throttle != null) this.throttle = throttle;
@@ -62,5 +72,6 @@ class FakeLink implements RemoteLink {
     telemetry_.close();
     events_.close();
     quality_.close();
+    povFrames_.close();
   }
 }
