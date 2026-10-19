@@ -6,7 +6,7 @@ instead; you will get an answer within a week.
 
 ## Threat model
 
-The app talks to the game over UDP on the local network (ports 4444-4447). A phone must know the
+The app talks to the game over UDP on the local network (ports 4444-4448). A phone must know the
 5-digit pairing code of the game's native remote control to send inputs.
 Automatic discovery returns that code to any device on the same network: only
 use the mod on a network you trust (home LAN or your phone's hotspot), and lock
