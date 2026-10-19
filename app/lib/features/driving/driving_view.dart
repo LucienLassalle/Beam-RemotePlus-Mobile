@@ -99,8 +99,8 @@ class DrivingView extends StatelessWidget {
             color: style.background,
             child: Stack(
               children: [
-                if (_video)
-                  Positioned.fill(child: IgnorePointer(child: PovBackground(frame: controller.povFrame))),
+                if (_video && controller.povPicture != null && controller.povError == null)
+                  Positioned.fill(child: IgnorePointer(child: PovBackground(picture: controller.povPicture!))),
                 if (!_display)
                   Positioned.fill(
                     child: IgnorePointer(
@@ -145,6 +145,13 @@ class DrivingView extends StatelessWidget {
                       active: controller.heldCommands.contains(ModCommand.handbrake),
                       onHold: (pressed) => controller.hold(ModCommand.handbrake, pressed: pressed),
                     ),
+                  ),
+                if (_video && controller.povError != null)
+                  Positioned(
+                    top: topBarHeight,
+                    left: 0,
+                    right: 0,
+                    child: IgnorePointer(child: PovErrorBanner(error: controller.povError!)),
                   ),
                 if (controller.gearFlash != null)
                   Positioned.fill(

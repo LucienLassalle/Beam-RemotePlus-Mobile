@@ -1,7 +1,5 @@
-import 'dart:typed_data';
-
+import 'package:beam_remoteplus/core/network/remote_link.dart';
 import 'package:beam_remoteplus/core/protocol/mod_message.dart';
-import 'package:beam_remoteplus/core/protocol/mod_protocol.dart';
 import 'package:beam_remoteplus/core/settings/app_settings.dart';
 import 'package:beam_remoteplus/themes/kit/video_hud.dart';
 import 'package:beam_remoteplus/themes/theme_registry.dart';
@@ -10,15 +8,6 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../helpers/fake_link.dart';
 import '../helpers/pump_driving_view.dart';
-
-/// A 1x1 PNG, for video frames.
-final _pixel = Uint8List.fromList([
-  0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52, //
-  0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x06, 0x00, 0x00, 0x00, 0x1F, 0x15, 0xC4, //
-  0x89, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x44, 0x41, 0x54, 0x78, 0x9C, 0x63, 0x60, 0x60, 0x60, 0x60, //
-  0x00, 0x00, 0x00, 0x05, 0x00, 0x01, 0xA5, 0xF6, 0x45, 0x40, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, //
-  0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82,
-]);
 
 /// Regression test for "on F4 and Civetta you have to touch outside the
 /// dashboard to brake or accelerate": on every theme, touching anywhere on
@@ -76,10 +65,14 @@ void main() {
         link.events_.add(const SessionMessage(commands: ['pov']));
         link.telemetry_.add(sampleTelemetry);
         await tester.pump();
-        link.povFrames_.add(PovFrame(1, _pixel, inside: true));
+        link.povPictures_.add(const PovPicture(textureId: 1, width: 1280, height: 720));
+        link.events_.add(const PovMessage(state: PovMessage.live, inside: true));
         await tester.pump();
+        await tester.pump();
+        expect(find.byType(Texture), findsOneWidget);
         expect(find.byType(VideoHud), findsNothing);
-        link.povFrames_.add(PovFrame(2, _pixel));
+        link.events_.add(const PovMessage(state: PovMessage.live));
+        await tester.pump();
         await tester.pump();
         expect(find.byType(VideoHud), findsOneWidget);
         // The pedals still take the touches over it.
@@ -101,6 +94,20 @@ void main() {
       });
     });
   }
+
+  testWidgets('without an encoder on the PC, says why there is no video', (tester) async {
+    final link = FakeLink();
+    addTearDown(link.dispose);
+    await pumpDrivingView(tester, theme: availableThemes.first, link: link, settings: const AppSettings(povVideo: true));
+    link.events_.add(const SessionMessage(commands: ['pov']));
+    await tester.pump();
+    link.events_.add(const PovMessage(state: PovMessage.failed, error: PovMessage.errorEncoder));
+    await tester.pump();
+    await tester.pump();
+    expect(find.byIcon(Icons.videocam_off), findsOneWidget);
+    expect(find.textContaining('DirectX'), findsOneWidget);
+    expect(find.byType(Texture), findsNothing);
+  });
 
   testWidgets('touch steering keeps the middle of the screen for the steering bar', (tester) async {
     final link = FakeLink();
