@@ -1,10 +1,24 @@
+import 'dart:typed_data';
+
+import 'package:beam_remoteplus/core/protocol/mod_message.dart';
+import 'package:beam_remoteplus/core/protocol/mod_protocol.dart';
 import 'package:beam_remoteplus/core/settings/app_settings.dart';
+import 'package:beam_remoteplus/themes/kit/video_hud.dart';
 import 'package:beam_remoteplus/themes/theme_registry.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../helpers/fake_link.dart';
 import '../helpers/pump_driving_view.dart';
+
+/// A 1x1 PNG, for video frames.
+final _pixel = Uint8List.fromList([
+  0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52, //
+  0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x06, 0x00, 0x00, 0x00, 0x1F, 0x15, 0xC4, //
+  0x89, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x44, 0x41, 0x54, 0x78, 0x9C, 0x63, 0x60, 0x60, 0x60, 0x60, //
+  0x00, 0x00, 0x00, 0x05, 0x00, 0x01, 0xA5, 0xF6, 0x45, 0x40, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, //
+  0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82,
+]);
 
 /// Regression test for "on F4 and Civetta you have to touch outside the
 /// dashboard to brake or accelerate": on every theme, touching anywhere on
@@ -53,6 +67,26 @@ void main() {
         expect(link.throttle, greaterThan(0.5));
         await left.up();
         await right.up();
+      });
+
+      testWidgets('over the video: no dashboard from a seat, the light one elsewhere', (tester) async {
+        final link = FakeLink();
+        addTearDown(link.dispose);
+        await pumpDrivingView(tester, theme: theme, link: link, settings: const AppSettings(povVideo: true));
+        link.events_.add(const SessionMessage(commands: ['pov']));
+        link.telemetry_.add(sampleTelemetry);
+        await tester.pump();
+        link.povFrames_.add(PovFrame(1, _pixel, inside: true));
+        await tester.pump();
+        expect(find.byType(VideoHud), findsNothing);
+        link.povFrames_.add(PovFrame(2, _pixel));
+        await tester.pump();
+        expect(find.byType(VideoHud), findsOneWidget);
+        // The pedals still take the touches over it.
+        final gesture = await tester.startGesture(Offset(phoneSize.width * 0.05, phoneSize.height * 0.5));
+        await tester.pump();
+        expect(link.brake, greaterThan(0));
+        await gesture.up();
       });
 
       testWidgets('buttons take their own touches, not the pedals', (tester) async {

@@ -19,7 +19,7 @@ class PovBackground extends StatelessWidget {
           fit: BoxFit.cover,
           // Keeps the previous frame on screen while the next one decodes.
           gaplessPlayback: true,
-          filterQuality: FilterQuality.medium,
+          filterQuality: FilterQuality.high,
           excludeFromSemantics: true,
         );
       },

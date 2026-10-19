@@ -41,37 +41,7 @@ class RoadTheme extends ControlTheme {
           padding: const EdgeInsets.all(16),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             // Indicators and hazards are pressed right on their telltales.
-            Row(mainAxisSize: MainAxisSize.min, children: [
-              DashboardButton(
-                command: ModCommand.signalLeft,
-                onCommand: data.onCommand,
-                tooltip: l10n.actionSignalLeft,
-                child: WarningLamp(
-                    icon: Icons.arrow_back, on: (t.signalLeft ?? false) || (t.hazard ?? false), color: Colors.greenAccent, size: 34),
-              ),
-              const SizedBox(width: 24),
-              WarningLamp(icon: Icons.light_mode, on: t.lowBeam, color: Colors.greenAccent, size: 26),
-              WarningLamp(icon: Icons.highlight, on: t.highBeam, color: Colors.lightBlueAccent, size: 26),
-              const SizedBox(width: 12),
-              DashboardButton(
-                command: ModCommand.hazard,
-                onCommand: data.onCommand,
-                tooltip: l10n.actionHazard,
-                size: 48,
-                child: WarningLamp(icon: Icons.warning_amber, on: t.hazard, color: Colors.redAccent, size: 28),
-              ),
-              const SizedBox(width: 12),
-              WarningLamp(icon: Icons.speed, on: t.cruiseActive, color: Colors.greenAccent, size: 26),
-              WarningLamp(icon: Icons.local_parking, on: t.parkingBrake, color: Colors.redAccent, size: 26),
-              const SizedBox(width: 24),
-              DashboardButton(
-                command: ModCommand.signalRight,
-                onCommand: data.onCommand,
-                tooltip: l10n.actionSignalRight,
-                child: WarningLamp(
-                    icon: Icons.arrow_forward, on: (t.signalRight ?? false) || (t.hazard ?? false), color: Colors.greenAccent, size: 34),
-              ),
-            ]),
+            _telltales(t, data, l10n),
             const SizedBox(height: 4),
             Row(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.end, children: [
               Text(DashFormat.speed(t, kmh: data.useKmh),
@@ -98,6 +68,59 @@ class RoadTheme extends ControlTheme {
         ),
       ),
     );
+  }
+
+  /// Indicators and hazards, pressed right on their telltales: also over
+  /// the point of view video, these cars have no other button for them.
+  Widget _telltales(Telemetry t, DashboardData data, AppLocalizations l10n) => Row(mainAxisSize: MainAxisSize.min, children: [
+        DashboardButton(
+          command: ModCommand.signalLeft,
+          onCommand: data.onCommand,
+          tooltip: l10n.actionSignalLeft,
+          child: WarningLamp(
+              icon: Icons.arrow_back, on: (t.signalLeft ?? false) || (t.hazard ?? false), color: Colors.greenAccent, size: 34),
+        ),
+        const SizedBox(width: 24),
+        WarningLamp(icon: Icons.light_mode, on: t.lowBeam, color: Colors.greenAccent, size: 26),
+        WarningLamp(icon: Icons.highlight, on: t.highBeam, color: Colors.lightBlueAccent, size: 26),
+        const SizedBox(width: 12),
+        DashboardButton(
+          command: ModCommand.hazard,
+          onCommand: data.onCommand,
+          tooltip: l10n.actionHazard,
+          size: 48,
+          child: WarningLamp(icon: Icons.warning_amber, on: t.hazard, color: Colors.redAccent, size: 28),
+        ),
+        const SizedBox(width: 12),
+        WarningLamp(icon: Icons.speed, on: t.cruiseActive, color: Colors.greenAccent, size: 26),
+        WarningLamp(icon: Icons.local_parking, on: t.parkingBrake, color: Colors.redAccent, size: 26),
+        const SizedBox(width: 24),
+        DashboardButton(
+          command: ModCommand.signalRight,
+          onCommand: data.onCommand,
+          tooltip: l10n.actionSignalRight,
+          child: WarningLamp(
+              icon: Icons.arrow_forward, on: (t.signalRight ?? false) || (t.hazard ?? false), color: Colors.greenAccent, size: 34),
+        ),
+      ]);
+
+  @override
+  Widget buildVideoDashboard(BuildContext context, DashboardData data, {required bool inside}) {
+    if (!data.modActive) return const SizedBox.shrink();
+    return Stack(children: [
+      super.buildVideoDashboard(context, data, inside: inside),
+      Align(
+        alignment: Alignment.topCenter,
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            decoration: BoxDecoration(color: VideoHud.background, borderRadius: BorderRadius.circular(10)),
+            child: _telltales(data.telemetry, data, AppLocalizations.of(context)),
+          ),
+        ),
+      ),
+    ]);
   }
 }
 
