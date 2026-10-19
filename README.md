@@ -54,8 +54,12 @@ longer maintained.
   vehicle with its bent parts, tyres and brakes.
 - **Driver's view video** (BeamNG.drive 0.40 or newer, camera button or
   Settings): the view from your seat, filmed by the game, behind the
-  controls; up to 30 images per second, each phone its own car. It lowers
-  the frame rate of the game on the PC, so it is off by default.
+  controls, each phone its own car; the camera buttons then change the
+  camera of the video, not the PC's. 360p at 30 images per second, 540p
+  (default) or 720p at 20. From a seat the car's own dashboard is in view,
+  so the theme's one hides; from the other cameras a light one stays on the
+  sides (engine on the right, gauges on the left). It lowers the frame rate
+  of the game on the PC, so it is off by default.
 - **Electric cars**, **second screen** (dashboard only, next to a wheel or a
   gamepad) and **local multiplayer** (one phone per player), each player with
   the colour the game gives them (their name tag above the car) on the phone
