@@ -28,12 +28,16 @@ import java.util.Collections
  *  - vibrator: variable-strength pulses for the road-feel haptics
  *  - sensors / gravity: gravity seen by the phone, from the gyroscope fused
  *    with the accelerometer (game rotation vector), for tilt steering
+ *  - pov_video / pov_video_events: hardware player of the mod's point of
+ *    view video (PovVideoPlayer)
  */
 class MainActivity : FlutterActivity() {
     private val logTag = "BeamRemotePlus"
     private var hardwareKeysChannel: MethodChannel? = null
     private var volumeKeysCaptured = false
     private var gravityListener: SensorEventListener? = null
+    private var povPlayer: PovVideoPlayer? = null
+    private var povEvents: EventChannel.EventSink? = null
 
     // Interfaces that are never the local Wi-Fi access point (mobile data,
     // USB tethering, loopback): skipping them avoids picking the SIM address.
@@ -154,6 +158,33 @@ class MainActivity : FlutterActivity() {
             override fun onCancel(arguments: Any?) = stopGravity()
         })
 
+        val povPlayer = PovVideoPlayer(flutterEngine.renderer) { event -> povEvents?.success(event) }
+        this.povPlayer = povPlayer
+        MethodChannel(messenger, "com.beamremoteplus.app/pov_video").setMethodCallHandler { call, result ->
+            when (call.method) {
+                "start" -> try {
+                    val host = call.argument<String>("host") ?: return@setMethodCallHandler result.error("bad_argument", "host", null)
+                    result.success(povPlayer.start(host, toInt(call.argument<Any>("port")), toInt(call.argument<Any>("width")), toInt(call.argument<Any>("height"))))
+                } catch (e: Exception) {
+                    Log.e(logTag, "pov start failed", e)
+                    result.error("pov_error", e.message, null)
+                }
+                "stop" -> {
+                    povPlayer.stop()
+                    result.success(null)
+                }
+                else -> result.notImplemented()
+            }
+        }
+        EventChannel(messenger, "com.beamremoteplus.app/pov_video_events").setStreamHandler(object : EventChannel.StreamHandler {
+            override fun onListen(arguments: Any?, events: EventChannel.EventSink) {
+                povEvents = events
+            }
+            override fun onCancel(arguments: Any?) {
+                povEvents = null
+            }
+        })
+
         hardwareKeysChannel = MethodChannel(messenger, "com.beamremoteplus.app/hardware_keys").apply {
             setMethodCallHandler { call, result ->
                 if (call.method != "setVolumeKeysCaptured") return@setMethodCallHandler result.notImplemented()
@@ -161,6 +192,11 @@ class MainActivity : FlutterActivity() {
                 result.success(null)
             }
         }
+    }
+
+    override fun onDestroy() {
+        povPlayer?.stop()
+        super.onDestroy()
     }
 
     private fun sensorManager() = getSystemService(Context.SENSOR_SERVICE) as SensorManager

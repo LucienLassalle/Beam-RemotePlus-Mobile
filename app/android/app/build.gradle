@@ -69,3 +69,8 @@ kotlin {
 flutter {
     source = "../.."
 }
+
+dependencies {
+    // JVM unit tests of the native code (src/test): TsDemuxerTest.
+    testImplementation "junit:junit:4.13.2"
+}
