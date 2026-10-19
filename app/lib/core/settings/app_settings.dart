@@ -53,6 +53,10 @@ class AppSettings {
   /// Throttle on the left, brake on the right (left-handed players).
   final bool swapPedals;
   final double rotationRangeDeg;
+
+  /// Tilt steering turns 1:1 with a real wheel: full lock at half the
+  /// rotation range of phone rotation (900° = 450° each way).
+  final bool realWheel;
   final bool invertSteering;
 
   final SteeringSensor steeringSensor;
@@ -118,6 +122,7 @@ class AppSettings {
     this.touchWheel = false,
     this.swapPedals = false,
     this.rotationRangeDeg = 900,
+    this.realWheel = false,
     this.invertSteering = true,
     this.steeringSensor = SteeringSensor.auto,
     this.steeringCenterPrecision = 0,
@@ -167,6 +172,7 @@ class AppSettings {
     bool? touchWheel,
     bool? swapPedals,
     double? rotationRangeDeg,
+    bool? realWheel,
     bool? invertSteering,
     SteeringSensor? steeringSensor,
     double? steeringCenterPrecision,
@@ -204,6 +210,7 @@ class AppSettings {
       touchWheel: touchWheel ?? this.touchWheel,
       swapPedals: swapPedals ?? this.swapPedals,
       rotationRangeDeg: rotationRangeDeg ?? this.rotationRangeDeg,
+      realWheel: realWheel ?? this.realWheel,
       invertSteering: invertSteering ?? this.invertSteering,
       steeringSensor: steeringSensor ?? this.steeringSensor,
       steeringCenterPrecision: steeringCenterPrecision ?? this.steeringCenterPrecision,
@@ -243,6 +250,7 @@ class AppSettings {
         'touchWheel': touchWheel,
         'swapPedals': swapPedals,
         'rotationRangeDeg': rotationRangeDeg,
+        'realWheel': realWheel,
         'invertSteering': invertSteering,
         'steeringSensor': steeringSensor.name,
         'steeringCenterPrecision': steeringCenterPrecision,
@@ -298,6 +306,7 @@ class AppSettings {
       touchWheel: pick('touchWheel', d.touchWheel),
       swapPedals: pick('swapPedals', d.swapPedals),
       rotationRangeDeg: rotation,
+      realWheel: pick('realWheel', d.realWheel),
       invertSteering: pick('invertSteering', d.invertSteering),
       steeringSensor: enumByName(SteeringSensor.values, json['steeringSensor'], d.steeringSensor),
       steeringCenterPrecision: precision is num && precision >= 0 && precision <= 1 ? precision.toDouble() : d.steeringCenterPrecision,

@@ -92,6 +92,9 @@
       }
     }
   },
+  "settingsRealWheelTitle": "Real wheel (1:1)",
+  "settingsRealWheelSubtitle": "Turn the phone as far as the steering wheel of the vehicle: about one and a half turns each way on a road car, less on a race car (the screen is then upside down). Turning further does nothing. Off: a smaller tilt is enough.",
+  "settingsRealWheelHint": "Full lock as in the vehicle (half the rotation range above with an older mod).",
   "settingsInvertTitle": "Invert steering",
   "settingsSensorTitle": "Motion sensor",
   "settingsSensorSubtitle": "The gyroscope steers quicker and steadier. Auto uses it when the phone has one, otherwise the accelerometer.",

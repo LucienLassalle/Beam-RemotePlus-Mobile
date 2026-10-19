@@ -187,6 +187,7 @@ class _SteeringPageState extends State<_SteeringPage> {
         ? SteeringControl(
             onSteering: _onSteering,
             rotationRangeDeg: s.rotationRangeDeg,
+            realWheel: s.realWheel,
             invert: s.invertSteering,
             smoothing: s.steeringSmoothing,
             sensor: s.steeringSensor,
