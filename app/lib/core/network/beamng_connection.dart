@@ -5,6 +5,7 @@ import 'dart:io';
 import '../debug/debug_log.dart';
 import '../platform/app_version.dart';
 import '../platform/device_name.dart';
+import '../platform/pov_video.dart';
 import '../protocol/mod_message.dart';
 import '../protocol/mod_protocol.dart';
 import '../protocol/native_protocol.dart';
@@ -28,7 +29,11 @@ class BeamngConnection implements RemoteLink {
   final _telemetry = StreamController<Telemetry>.broadcast();
   final _events = StreamController<ModMessage>.broadcast();
   final _quality = StreamController<void>.broadcast();
-  final _povFrames = StreamController<PovFrame>.broadcast();
+  final _povPictures = StreamController<PovPicture>.broadcast();
+
+  /// [povPlayer]: the point of view video player (the phone's hardware
+  /// decoder by default).
+  BeamngConnection({PovPlayer? povPlayer}) : _povPlayer = povPlayer ?? NativePovPlayer();
 
   LinkState _state = LinkState.idle;
   bool _modActive = false;
@@ -41,9 +46,10 @@ class BeamngConnection implements RemoteLink {
   RawDatagramSocket? _nativeSocket; // handshake answer
   RawDatagramSocket? _controlSocket; // native control packets
   RawDatagramSocket? _modSocket; // mod: pong, telemetry, events + sending
-  RawDatagramSocket? _povSocket; // mod: point of view video frames
-  bool _povOn = false;
-  PovAssembler _povAssembler = PovAssembler();
+  final PovPlayer _povPlayer; // point of view video
+  PovQuality? _povQuality; // playing, or starting
+  PovPicture? _povPicture;
+  StreamSubscription<PovPlayerEvent>? _povEvents;
   Timer? _controlTimer;
   Timer? _modPingTimer;
   InternetAddress? _host;
@@ -100,7 +106,7 @@ class BeamngConnection implements RemoteLink {
   @override
   Stream<void> get qualityChanges => _quality.stream;
   @override
-  Stream<PovFrame> get povFrames => _povFrames.stream;
+  Stream<PovPicture> get povPictures => _povPictures.stream;
 
   void _qualityChanged() {
     if (!_quality.isClosed) _quality.add(null);
@@ -358,46 +364,55 @@ class BeamngConnection implements RemoteLink {
 
   @override
   void setPovVideo(PovQuality? quality) {
-    _povOn = quality != null;
-    if (quality != null) {
-      unawaited(_openPov());
-      sendCommand(ModCommand.pov, quality.name);
-    } else {
+    if (quality == null) {
       sendCommand(ModCommand.pov, '0');
-      _closePov();
+      _stopPov();
+      return;
+    }
+    if (quality != _povQuality) {
+      _stopPov();
+      _povQuality = quality;
+      unawaited(_startPov(quality));
+    }
+    sendCommand(ModCommand.pov, quality.wire);
+  }
+
+  Future<void> _startPov(PovQuality quality) async {
+    final host = _host;
+    if (host == null) return;
+    _povEvents ??= _povPlayer.events.listen(_onPovEvent);
+    try {
+      final id = await _povPlayer.start(host: host.address, port: ModProtocol.povPort, width: quality.width, height: quality.height);
+      // Switched off or changed while starting.
+      if (_povQuality != quality) return;
+      _setPovPicture(PovPicture(textureId: id, width: quality.width, height: quality.height));
+    } catch (e) {
+      DebugLog.log('pov: cannot start the player ($e)');
+      if (_povQuality == quality) _setPovPicture(PovPicture(textureId: -1, width: 0, height: 0, error: '$e'));
     }
   }
 
-  Future<void> _openPov() async {
-    if (_povSocket != null) return;
-    final RawDatagramSocket socket;
-    try {
-      socket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, ModProtocol.povPort, reuseAddress: true);
-    } catch (e) {
-      DebugLog.log('pov: cannot bind ${ModProtocol.povPort} ($e)');
-      return;
-    }
-    // Switched off (or bound twice) while binding.
-    if (!_povOn || _povSocket != null) {
-      socket.close();
-      return;
-    }
-    _povSocket = socket;
-    _povAssembler = PovAssembler();
-    socket.listen((event) {
-      if (event != RawSocketEvent.read) return;
-      final dg = socket.receive();
-      // Only the paired PC.
-      if (dg == null || dg.address != _host) return;
-      final part = PovPart.parse(dg.data);
-      final frame = part == null ? null : _povAssembler.add(part);
-      if (frame != null && !_povFrames.isClosed) _povFrames.add(frame);
+  void _onPovEvent(PovPlayerEvent event) {
+    final picture = _povPicture;
+    if (picture == null || _povQuality == null) return;
+    _setPovPicture(switch (event) {
+      PovPlayerSize(:final width, :final height) =>
+        PovPicture(textureId: picture.textureId, width: width, height: height),
+      PovPlayerError(:final message) =>
+        PovPicture(textureId: picture.textureId, width: picture.width, height: picture.height, error: message),
     });
   }
 
-  void _closePov() {
-    _povSocket?.close();
-    _povSocket = null;
+  void _setPovPicture(PovPicture picture) {
+    _povPicture = picture;
+    if (!_povPictures.isClosed) _povPictures.add(picture);
+  }
+
+  void _stopPov() {
+    if (_povQuality == null) return;
+    _povQuality = null;
+    _povPicture = null;
+    unawaited(_povPlayer.stop());
   }
 
   @override
@@ -439,8 +454,7 @@ class BeamngConnection implements RemoteLink {
     _controlSocket?.close();
     _modSocket?.close();
     _nativeSocket = _controlSocket = _modSocket = null;
-    _povOn = false;
-    _closePov();
+    _stopPov();
     _host = null;
     _modActive = false;
     _protocolVersion = 0;
@@ -460,6 +474,7 @@ class BeamngConnection implements RemoteLink {
     _telemetry.close();
     _events.close();
     _quality.close();
-    _povFrames.close();
+    _povPictures.close();
+    unawaited(_povEvents?.cancel());
   }
 }

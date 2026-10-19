@@ -43,11 +43,8 @@ class DrivingController extends ChangeNotifier {
   final Set<String> _heldMore = {};
   bool _povOffered = false;
   PovQuality? _povSent; // quality asked for, null while the video is off
-  bool? _povInside;
-
-  /// Latest point of view video frame (JPEG), null while the video is off.
-  /// Apart from [notifyListeners]: it changes up to 30 times a second.
-  final ValueNotifier<Uint8List?> povFrame = ValueNotifier(null);
+  PovMessage? _povState;
+  PovPicture? _povPicture;
 
   static const flashDuration = Duration(milliseconds: 300);
 
@@ -68,7 +65,7 @@ class DrivingController extends ChangeNotifier {
     _subs.add(link.telemetry.listen(_onTelemetry));
     _subs.add(link.events.listen(_onEvent));
     _subs.add(link.qualityChanges.listen((_) => notifyListeners()));
-    _subs.add(link.povFrames.listen(_onPovFrame));
+    _subs.add(link.povPictures.listen(_onPovPicture));
   }
 
   bool get modActive => link.modActive;
@@ -108,8 +105,24 @@ class DrivingController extends ChangeNotifier {
   bool get povAvailable => _povOffered;
 
   /// The video shows a seat camera (the car's own dashboard is in view);
-  /// null while no frame has arrived.
-  bool? get povInside => _povInside;
+  /// null until the video is live.
+  bool? get povInside => _povState?.state == PovMessage.live ? _povState!.inside : null;
+
+  /// What the phone's player draws, while the video is on.
+  PovPicture? get povPicture => _povPicture;
+
+  /// Why there is no video: [PovMessage.errorEncoder] (the PC's graphics
+  /// card has no usable video encoder), or [povErrorDecoder]. Null while
+  /// all is well or the video is off.
+  String? get povError {
+    if (_povSent == null) return null;
+    if (_povState?.state == PovMessage.failed) return _povState!.error ?? PovMessage.errorEncoder;
+    if (_povPicture?.error != null) return povErrorDecoder;
+    return null;
+  }
+
+  /// The phone could not decode the video.
+  static const povErrorDecoder = 'decoder';
 
   /// Commands (horn...) only reach the game with the mod and outside read-only.
   bool get commandsEnabled => modActive && !_readOnly;
@@ -130,6 +143,10 @@ class DrivingController extends ChangeNotifier {
     }
     if (message is SessionMessage && message.optionalMods != null) {
       _optionalMods = message.optionalMods;
+      notifyListeners();
+    }
+    if (message is PovMessage) {
+      _povState = message;
       notifyListeners();
     }
     if (message is SessionMessage) {
@@ -153,22 +170,21 @@ class DrivingController extends ChangeNotifier {
     final want = _settings.povVideo && _povOffered && link.modActive ? _settings.povQuality : null;
     if (want != null && (want != _povSent || resend)) {
       _povSent = want;
+      if (want != _povSent) _povState = null;
+      _povSent = want;
       link.setPovVideo(want);
     } else if (want == null && _povSent != null) {
       _povSent = null;
       link.setPovVideo(null);
-      povFrame.value = null;
-      _povInside = null;
+      _povState = null;
+      _povPicture = null;
     }
   }
 
-  void _onPovFrame(PovFrame frame) {
+  void _onPovPicture(PovPicture picture) {
     if (_povSent == null) return;
-    povFrame.value = frame.jpeg;
-    if (frame.inside != _povInside) {
-      _povInside = frame.inside;
-      notifyListeners();
-    }
+    _povPicture = picture;
+    notifyListeners();
   }
 
   void _onTelemetry(Telemetry t) {
@@ -312,7 +328,6 @@ class DrivingController extends ChangeNotifier {
   void dispose() {
     releaseAllHolds();
     if (_povSent != null) link.setPovVideo(null);
-    povFrame.dispose();
     _flashTimer?.cancel();
     for (final s in _subs) {
       s.cancel();

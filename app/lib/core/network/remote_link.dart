@@ -2,6 +2,19 @@ import '../protocol/mod_message.dart';
 import '../protocol/mod_protocol.dart';
 import '../protocol/telemetry.dart';
 
+/// The point of view video as the phone's player draws it.
+class PovPicture {
+  /// Texture to show with a Texture widget.
+  final int textureId;
+  final int width;
+  final int height;
+
+  /// The phone's decoder failed (it tries again on the next keyframe).
+  final String? error;
+
+  const PovPicture({required this.textureId, required this.width, required this.height, this.error});
+}
+
 /// [kicked]: the player removed this phone from the game; the connection is
 /// closed and does not retry.
 enum LinkState { idle, connecting, connected, timeout, error, kicked }
@@ -41,12 +54,14 @@ abstract class RemoteLink {
   /// Sends `cmd|name` or `cmd|name|arg` to the mod (ignored without mod).
   void sendCommand(String name, [String? arg]);
 
-  /// Point of view video frames, while [setPovVideo] is on.
-  Stream<PovFrame> get povFrames;
+  /// What the phone's player shows of the point of view video, while
+  /// [setPovVideo] is on: the texture to draw and the picture size, or the
+  /// failure of the phone's decoder.
+  Stream<PovPicture> get povPictures;
 
-  /// Starts the point of view video of the mod in [quality] (listens on
-  /// [ModProtocol.povPort] and asks the mod for it), or stops it (null).
-  /// Asking again (new mod session, other quality) is harmless.
+  /// Starts the point of view video of the mod in [quality] (the phone's
+  /// player listens on [ModProtocol.povPort] and the mod is asked for it),
+  /// or stops it (null). Asking again (new mod session) is harmless.
   void setPovVideo(PovQuality? quality);
 
   Future<void> disconnect();

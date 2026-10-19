@@ -13,7 +13,7 @@ class FakeLink implements RemoteLink {
   final modActive_ = StreamController<bool>.broadcast();
   final telemetry_ = StreamController<Telemetry>.broadcast();
   final events_ = StreamController<ModMessage>.broadcast();
-  final povFrames_ = StreamController<PovFrame>.broadcast();
+  final povPictures_ = StreamController<PovPicture>.broadcast();
 
   @override
   LinkState state = LinkState.connected;
@@ -50,7 +50,7 @@ class FakeLink implements RemoteLink {
   void sendCommand(String name, [String? arg]) => commands.add(arg == null ? name : '$name|$arg');
 
   @override
-  Stream<PovFrame> get povFrames => povFrames_.stream;
+  Stream<PovPicture> get povPictures => povPictures_.stream;
 
   @override
   void setPovVideo(PovQuality? quality) => povRequests.add(quality);
@@ -72,6 +72,6 @@ class FakeLink implements RemoteLink {
     telemetry_.close();
     events_.close();
     quality_.close();
-    povFrames_.close();
+    povPictures_.close();
   }
 }
