@@ -42,7 +42,8 @@ class DrivingController extends ChangeNotifier {
   ActionsMessage? _moreCommands;
   final Set<String> _heldMore = {};
   bool _povOffered = false;
-  PovQuality? _povSent; // quality asked for, null while the video is off
+  PovFormat? _povSent; // asked for, null while the video is off
+  double _screenAspect = 16 / 9;
   PovMessage? _povState;
   PovPicture? _povPicture;
 
@@ -133,6 +134,14 @@ class DrivingController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Width / height of the area the video fills: the video is asked in that
+  /// shape (a folding phone opened asks for it again).
+  set screenAspect(double value) {
+    if (value == _screenAspect) return;
+    _screenAspect = value;
+    _syncPov();
+  }
+
   static void _noPulse(Pulse _) {}
 
   void _onEvent(ModMessage message) {
@@ -165,11 +174,12 @@ class DrivingController extends ChangeNotifier {
   }
 
   /// Point of view video on while the setting asks for it and the mod
-  /// offers it.
+  /// offers it, in the shape of the screen.
   void _syncPov({bool resend = false}) {
-    final want = _settings.povVideo && _povOffered && link.modActive ? _settings.povQuality : null;
+    final want = _settings.povVideo && _povOffered && link.modActive
+        ? PovFormat.forScreen(_settings.povQuality, _screenAspect)
+        : null;
     if (want != null && (want != _povSent || resend)) {
-      _povSent = want;
       if (want != _povSent) _povState = null;
       _povSent = want;
       link.setPovVideo(want);

@@ -58,7 +58,9 @@ longer maintained.
   camera of the video, not the PC's. The PC's graphics card encodes it in
   H.264 and the phone's decodes it, both in hardware, for little delay and
   little cost to the game: 720p at 60 images per second (default), 1080p at
-  30, or 1080p at 60 (heavy on the Wi-Fi and the phone). From a seat the
+  30, or 1080p at 60 (heavy on the Wi-Fi and the phone), in the shape of
+  the screen: nothing is cut off on long phones, tablets or unfolded
+  phones. From a seat the
   car's own dashboard is in view, so the theme's one hides; from the other
   cameras a light one stays on the sides (engine on the right, gauges on
   the left). Without a video encoder on the PC, the phone says what to do.

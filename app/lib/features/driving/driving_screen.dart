@@ -85,6 +85,9 @@ class _DrivingScreenState extends State<DrivingScreen> with WidgetsBindingObserv
       _controller.settings = settings;
       widget.connection.setDebugAcks(settings.debugMode);
     }
+    // The area inside the SafeArea, filled by the video.
+    final area = MediaQuery.paddingOf(context).deflateSize(MediaQuery.sizeOf(context));
+    if (area.height > 0) _controller.screenAspect = area.width / area.height;
   }
 
   void _enterImmersive() => unawaited(SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky));

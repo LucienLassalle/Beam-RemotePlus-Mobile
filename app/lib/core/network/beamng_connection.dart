@@ -47,7 +47,7 @@ class BeamngConnection implements RemoteLink {
   RawDatagramSocket? _controlSocket; // native control packets
   RawDatagramSocket? _modSocket; // mod: pong, telemetry, events + sending
   final PovPlayer _povPlayer; // point of view video
-  PovQuality? _povQuality; // playing, or starting
+  PovFormat? _povFormat; // playing, or starting
   PovPicture? _povPicture;
   StreamSubscription<PovPlayerEvent>? _povEvents;
   Timer? _controlTimer;
@@ -363,38 +363,38 @@ class BeamngConnection implements RemoteLink {
   }
 
   @override
-  void setPovVideo(PovQuality? quality) {
-    if (quality == null) {
+  void setPovVideo(PovFormat? format) {
+    if (format == null) {
       sendCommand(ModCommand.pov, '0');
       _stopPov();
       return;
     }
-    if (quality != _povQuality) {
+    if (format != _povFormat) {
       _stopPov();
-      _povQuality = quality;
-      unawaited(_startPov(quality));
+      _povFormat = format;
+      unawaited(_startPov(format));
     }
-    sendCommand(ModCommand.pov, quality.wire);
+    sendCommand(ModCommand.pov, format.wire);
   }
 
-  Future<void> _startPov(PovQuality quality) async {
+  Future<void> _startPov(PovFormat format) async {
     final host = _host;
     if (host == null) return;
     _povEvents ??= _povPlayer.events.listen(_onPovEvent);
     try {
-      final id = await _povPlayer.start(host: host.address, port: ModProtocol.povPort, width: quality.width, height: quality.height);
+      final id = await _povPlayer.start(host: host.address, port: ModProtocol.povPort, width: format.width, height: format.height);
       // Switched off or changed while starting.
-      if (_povQuality != quality) return;
-      _setPovPicture(PovPicture(textureId: id, width: quality.width, height: quality.height));
+      if (_povFormat != format) return;
+      _setPovPicture(PovPicture(textureId: id, width: format.width, height: format.height));
     } catch (e) {
       DebugLog.log('pov: cannot start the player ($e)');
-      if (_povQuality == quality) _setPovPicture(PovPicture(textureId: -1, width: 0, height: 0, error: '$e'));
+      if (_povFormat == format) _setPovPicture(PovPicture(textureId: -1, width: 0, height: 0, error: '$e'));
     }
   }
 
   void _onPovEvent(PovPlayerEvent event) {
     final picture = _povPicture;
-    if (picture == null || _povQuality == null) return;
+    if (picture == null || _povFormat == null) return;
     _setPovPicture(switch (event) {
       PovPlayerSize(:final width, :final height) =>
         PovPicture(textureId: picture.textureId, width: width, height: height),
@@ -409,8 +409,8 @@ class BeamngConnection implements RemoteLink {
   }
 
   void _stopPov() {
-    if (_povQuality == null) return;
-    _povQuality = null;
+    if (_povFormat == null) return;
+    _povFormat = null;
     _povPicture = null;
     unawaited(_povPlayer.stop());
   }

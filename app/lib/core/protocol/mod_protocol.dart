@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 /// Beam-RemotePlus mod protocol. The reference specification lives in the
@@ -194,7 +195,8 @@ class DiscoveredHost {
 }
 
 /// Qualities of the point of view video (`cmd|pov|<wire>`), H.264 encoded
-/// by the PC's graphics card.
+/// by the PC's graphics card. [width] x [height]: the 16:9 picture, and the
+/// most pixels a picture of that quality may have (see [PovFormat]).
 enum PovQuality {
   hd60('720p60', 1280, 720),
   fullHd30('1080p30', 1920, 1080),
@@ -207,4 +209,52 @@ enum PovQuality {
   final int width;
   final int height;
   const PovQuality(this.wire, this.width, this.height);
+}
+
+/// The point of view video asked of the mod: a [quality], with a picture of
+/// [width] x [height] in the shape of the phone screen, so that filling the
+/// screen cuts nothing off (`cmd|pov|<quality>|<width>x<height>`). Older
+/// mods ignore the size and send the 16:9 picture of the quality.
+class PovFormat {
+  final PovQuality quality;
+  final int width;
+  final int height;
+
+  const PovFormat(this.quality, this.width, this.height);
+
+  /// Each side is a multiple of this (whole blocks of the PC's encoder).
+  static const int sizeStep = 8;
+
+  /// Shapes the picture follows, width / height: square (unfolded phone)
+  /// to very long phones. Beyond them the picture is cropped.
+  static const double minAspect = 1;
+  static const double maxAspect = 2.5;
+
+  /// [quality] for a screen [aspect] (width / height) wide: as many pixels
+  /// as its 16:9 picture, at most.
+  factory PovFormat.forScreen(PovQuality quality, double aspect) {
+    final shape = aspect.isFinite ? aspect.clamp(minAspect, maxAspect) : quality.width / quality.height;
+    final pixels = quality.width * quality.height;
+    int step(double side) => (side / sizeStep).round() * sizeStep;
+    var height = step(math.sqrt(pixels / shape));
+    var width = step(height * shape);
+    while (width * height > pixels) {
+      height -= sizeStep;
+      width = step(height * shape);
+    }
+    return PovFormat(quality, width, height);
+  }
+
+  /// Argument of the `pov` command.
+  String get wire => '${quality.wire}|${width}x$height';
+
+  @override
+  bool operator ==(Object other) =>
+      other is PovFormat && other.quality == quality && other.width == width && other.height == height;
+
+  @override
+  int get hashCode => Object.hash(quality, width, height);
+
+  @override
+  String toString() => 'PovFormat($wire)';
 }

@@ -59,10 +59,10 @@ abstract class RemoteLink {
   /// failure of the phone's decoder.
   Stream<PovPicture> get povPictures;
 
-  /// Starts the point of view video of the mod in [quality] (the phone's
+  /// Starts the point of view video of the mod in [format] (the phone's
   /// player listens on [ModProtocol.povPort] and the mod is asked for it),
   /// or stops it (null). Asking again (new mod session) is harmless.
-  void setPovVideo(PovQuality? quality);
+  void setPovVideo(PovFormat? format);
 
   Future<void> disconnect();
   void dispose();
