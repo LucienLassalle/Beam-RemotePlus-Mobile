@@ -50,10 +50,10 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('goes through the six pages and is not shown again', (tester) async {
+  testWidgets('goes through the seven pages and is not shown again', (tester) async {
     await open(tester);
     expect(find.text('Drive with your phone'), findsOneWidget);
-    for (final title in ['Steering', 'Pedals', 'Volume buttons', 'Buttons to hold', 'Settings']) {
+    for (final title in ['Steering', 'Pedals', 'Volume buttons', 'Buttons to hold', 'Camera and video', 'Settings']) {
       await next(tester);
       expect(find.text(title), findsWidgets);
     }
@@ -111,5 +111,18 @@ void main() {
     await tester.pump();
     expect(find.text('Vehicle reset!'), findsOneWidget);
     await hold.up();
+  });
+
+  testWidgets('the camera button: a tap for the next camera, a long press for the previous one', (tester) async {
+    await open(tester);
+    for (var i = 0; i < 5; i++) {
+      await next(tester);
+    }
+    await tester.tap(find.byIcon(Icons.cameraswitch).last);
+    await tester.pump();
+    expect(find.text('Next camera!'), findsOneWidget);
+    await tester.longPress(find.byIcon(Icons.cameraswitch).last);
+    await tester.pump();
+    expect(find.text('Previous camera!'), findsOneWidget);
   });
 }
