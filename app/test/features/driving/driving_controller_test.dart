@@ -301,11 +301,16 @@ void main() {
       expect(link.commands, ['look|10|1']);
     });
 
-    test('a seat camera turns back to the road when the finger leaves', () async {
+    test('a seat camera turns back to the road a moment after the finger leaves', () async {
       await video(inside: true);
       controller.look(4, 0);
       controller.lookEnded();
-      expect(link.commands, ['look|8|0', 'look_center']);
+      controller.look(1, 0); // the finger is back: no recentring yet
+      controller.lookEnded();
+      await Future<void>.delayed(DrivingController.lookInterval * 2);
+      expect(link.commands, ['look|10|0']);
+      await Future<void>.delayed(DrivingController.recenterDelay);
+      expect(link.commands, ['look|10|0', 'look_center']);
     });
 
     test('other cameras stay where they were left, a double tap recentres them', () async {

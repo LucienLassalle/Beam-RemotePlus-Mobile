@@ -49,6 +49,7 @@ class DrivingController extends ChangeNotifier {
   bool _lookOffered = false;
   double _lookX = 0, _lookY = 0; // not sent yet
   Timer? _lookTimer;
+  Timer? _recenterTimer;
   double _flyThrottle = 0, _flyBrake = 0;
   double _flySent = 0;
   Timer? _flyTimer;
@@ -62,6 +63,10 @@ class DrivingController extends ChangeNotifier {
 
   /// Finger moves are gathered and sent at most this often (~30 Hz).
   static const lookInterval = Duration(milliseconds: 33);
+
+  /// A seat camera waits this long after the finger left before turning
+  /// back to the road (the mod then eases it back).
+  static const recenterDelay = Duration(seconds: 1);
 
   /// A fly command lasts 1 s in the mod: repeated well before.
   static const flyRepeat = Duration(milliseconds: 250);
@@ -283,6 +288,7 @@ class DrivingController extends ChangeNotifier {
   /// camera (moves gathered, sent at most every [lookInterval]).
   void look(double dx, double dy) {
     if (!povCameraControl) return;
+    _recenterTimer?.cancel();
     _lookX += dx * lookGain;
     _lookY += dy * lookGain;
     _lookTimer ??= Timer(lookInterval, _sendLook);
@@ -299,14 +305,16 @@ class DrivingController extends ChangeNotifier {
   }
 
   /// The finger left the video: a seat camera turns back to the road by
-  /// itself, like a head.
+  /// itself after [recenterDelay], like a head.
   void lookEnded() {
-    if (povInside == true && !freeCamera) recenterLook();
+    _recenterTimer?.cancel();
+    if (povInside == true && !freeCamera) _recenterTimer = Timer(recenterDelay, recenterLook);
   }
 
   /// Puts the camera of the video back to where it looks by default.
   void recenterLook() {
     if (!povCameraControl) return;
+    _recenterTimer?.cancel();
     _sendLook();
     _lookX = _lookY = 0;
     link.sendCommand(ModCommand.lookCenter);
@@ -447,6 +455,7 @@ class DrivingController extends ChangeNotifier {
     _flashTimer?.cancel();
     _lookTimer?.cancel();
     _flyTimer?.cancel();
+    _recenterTimer?.cancel();
     for (final s in _subs) {
       s.cancel();
     }
