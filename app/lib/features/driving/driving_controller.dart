@@ -177,7 +177,7 @@ class DrivingController extends ChangeNotifier {
   /// offers it, in the shape of the screen.
   void _syncPov({bool resend = false}) {
     final want = _settings.povVideo && _povOffered && link.modActive
-        ? PovFormat.forScreen(_settings.povQuality, _screenAspect)
+        ? PovFormat.forScreen(_settings.povQuality, _screenAspect, _settings.povBitrate)
         : null;
     if (want != null && (want != _povSent || resend)) {
       if (want != _povSent) _povState = null;

@@ -435,6 +435,11 @@
   },
   "settingsPovQualityTitle": "Video quality",
   "settingsPovQualitySubtitle": "720p 60 and 1080p 30 suit most phones and Wi-Fi networks. 1080p 60 is heavy: 16 Mbit/s of Wi-Fi, and the phone heats up and drains faster",
+  "settingsPovBitrateTitle": "Video bitrate",
+  "settingsPovBitrateSubtitle": "Higher: a finer picture (fewer blocks in fast motion and foliage), if the Wi-Fi keeps up. Lower it again if the picture freezes",
+  "povBitrateNormal": "Normal",
+  "povBitrateHigh": "High",
+  "povBitrateMax": "Max",
   "povErrorEncoder": "No video: the game could not start the video encoder of the PC's graphics card. On Windows, use the DirectX 11 or 12 renderer and update the graphics driver; on Linux, a Mesa build with H.264 encoding is needed (such as mesa-vulkan-drivers-freeworld). The game log (beamng.log, videoStream lines) tells why.",
   "povErrorDecoder": "No video: this phone could not decode it. Try a lower quality in the settings.",
   "@povErrorEncoder": {

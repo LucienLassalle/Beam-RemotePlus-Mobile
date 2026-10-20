@@ -273,6 +273,11 @@
   "dashWater": "Eau",
   "settingsPovQualityTitle": "Qualité de la vidéo",
   "settingsPovQualitySubtitle": "720p 60 et 1080p 30 conviennent à la plupart des téléphones et des réseaux Wi-Fi. 1080p 60 est gourmand : 16 Mbit/s de Wi-Fi, et le téléphone chauffe et se décharge plus vite",
+  "settingsPovBitrateTitle": "Débit de la vidéo",
+  "settingsPovBitrateSubtitle": "Plus élevé : une image plus fine (moins de blocs dans les mouvements rapides et la végétation), si le Wi-Fi suit. Redescendez-le si l'image se fige",
+  "povBitrateNormal": "Normal",
+  "povBitrateHigh": "Élevé",
+  "povBitrateMax": "Max",
   "povErrorEncoder": "Pas de vidéo : le jeu n'a pas pu démarrer l'encodeur vidéo de la carte graphique du PC. Sous Windows, utilisez le rendu DirectX 11 ou 12 et mettez à jour le pilote graphique ; sous Linux, il faut un Mesa avec l'encodage H.264 (par exemple mesa-vulkan-drivers-freeworld). Le journal du jeu (beamng.log, lignes videoStream) donne la raison.",
   "povErrorDecoder": "Pas de vidéo : ce téléphone n'a pas pu la décoder. Essayez une qualité plus basse dans les réglages."
 }

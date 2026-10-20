@@ -207,6 +207,13 @@ void main() {
       expect(link.povRequests, [hd, const PovFormat(PovQuality.fullHd60, 1920, 1080)]);
     });
 
+    test('is asked for again at another bitrate', () async {
+      controller.settings = const AppSettings(povVideo: true);
+      await session();
+      controller.settings = const AppSettings(povVideo: true, povBitrate: PovBitrate.high);
+      expect(link.povRequests, [hd, const PovFormat(PovQuality.hd60, 1280, 720, PovBitrate.high)]);
+    });
+
     test('is asked for in the shape of the screen, again when it changes', () async {
       controller.settings = const AppSettings(povVideo: true);
       controller.screenAspect = 20 / 9;

@@ -211,16 +211,22 @@ enum PovQuality {
   const PovQuality(this.wire, this.width, this.height);
 }
 
+/// Bitrates of the point of view video, times the quality's own: more bits,
+/// a finer picture, as long as the Wi-Fi carries them (the mod caps them).
+enum PovBitrate { normal, high, max }
+
 /// The point of view video asked of the mod: a [quality], with a picture of
 /// [width] x [height] in the shape of the phone screen, so that filling the
-/// screen cuts nothing off (`cmd|pov|<quality>|<width>x<height>`). Older
-/// mods ignore the size and send the 16:9 picture of the quality.
+/// screen cuts nothing off, at a [bitrate]
+/// (`cmd|pov|<quality>|<width>x<height>|<bitrate>`). Older mods ignore the
+/// size and bitrate: they send the 16:9 picture of the quality.
 class PovFormat {
   final PovQuality quality;
   final int width;
   final int height;
+  final PovBitrate bitrate;
 
-  const PovFormat(this.quality, this.width, this.height);
+  const PovFormat(this.quality, this.width, this.height, [this.bitrate = PovBitrate.normal]);
 
   /// Each side is a multiple of this (whole blocks of the PC's encoder).
   static const int sizeStep = 8;
@@ -232,7 +238,7 @@ class PovFormat {
 
   /// [quality] for a screen [aspect] (width / height) wide: as many pixels
   /// as its 16:9 picture, at most.
-  factory PovFormat.forScreen(PovQuality quality, double aspect) {
+  factory PovFormat.forScreen(PovQuality quality, double aspect, [PovBitrate bitrate = PovBitrate.normal]) {
     final shape = aspect.isFinite ? aspect.clamp(minAspect, maxAspect) : quality.width / quality.height;
     final pixels = quality.width * quality.height;
     int step(double side) => (side / sizeStep).round() * sizeStep;
@@ -242,18 +248,22 @@ class PovFormat {
       height -= sizeStep;
       width = step(height * shape);
     }
-    return PovFormat(quality, width, height);
+    return PovFormat(quality, width, height, bitrate);
   }
 
   /// Argument of the `pov` command.
-  String get wire => '${quality.wire}|${width}x$height';
+  String get wire => '${quality.wire}|${width}x$height|${bitrate.name}';
 
   @override
   bool operator ==(Object other) =>
-      other is PovFormat && other.quality == quality && other.width == width && other.height == height;
+      other is PovFormat &&
+      other.quality == quality &&
+      other.width == width &&
+      other.height == height &&
+      other.bitrate == bitrate;
 
   @override
-  int get hashCode => Object.hash(quality, width, height);
+  int get hashCode => Object.hash(quality, width, height, bitrate);
 
   @override
   String toString() => 'PovFormat($wire)';

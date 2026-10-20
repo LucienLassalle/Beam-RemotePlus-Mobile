@@ -110,7 +110,8 @@ void main() {
           expect(f.width / f.height, closeTo(aspect, 0.02));
         }
       }
-      expect(PovFormat.forScreen(PovQuality.hd60, 20 / 9).wire, '720p60|1424x640');
+      expect(PovFormat.forScreen(PovQuality.hd60, 20 / 9).wire, '720p60|1424x640|normal');
+      expect(PovFormat.forScreen(PovQuality.hd60, 20 / 9, PovBitrate.max).wire, '720p60|1424x640|max');
     });
 
     test('screens out of the usual shapes are cropped', () {
