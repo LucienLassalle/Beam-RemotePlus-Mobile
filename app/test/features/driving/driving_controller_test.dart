@@ -1,6 +1,7 @@
 import 'package:beam_remoteplus/core/network/remote_link.dart';
 import 'package:beam_remoteplus/core/platform/hardware_keys.dart';
 import 'package:beam_remoteplus/core/protocol/mod_message.dart';
+import 'package:beam_remoteplus/core/protocol/mod_protocol.dart';
 import 'package:beam_remoteplus/core/protocol/telemetry.dart';
 import 'package:beam_remoteplus/core/protocol/vehicle_command.dart';
 import 'package:beam_remoteplus/core/protocol/vehicle_skeleton.dart';
@@ -164,6 +165,9 @@ void main() {
   });
 
   group('point of view video', () {
+    // 720p 60 on a 16:9 screen (the default until the screen is known).
+    const hd = PovFormat(PovQuality.hd60, 1280, 720);
+
     Future<void> session({bool pov = true}) async {
       link.events_.add(SessionMessage(commands: [if (pov) 'pov', 'horn']));
       await Future<void>.delayed(Duration.zero);
@@ -186,21 +190,39 @@ void main() {
       expect(controller.povAvailable, isFalse);
       await session();
       expect(controller.povAvailable, isTrue);
-      expect(link.povRequests, [PovQuality.hd60]);
+      expect(link.povRequests, [hd]);
     });
 
     test('is asked for again on each session, the mod may have restarted', () async {
       controller.settings = const AppSettings(povVideo: true);
       await session();
       await session();
-      expect(link.povRequests, [PovQuality.hd60, PovQuality.hd60]);
+      expect(link.povRequests, [hd, hd]);
     });
 
     test('is asked for again in another quality', () async {
       controller.settings = const AppSettings(povVideo: true);
       await session();
       controller.settings = const AppSettings(povVideo: true, povQuality: PovQuality.fullHd60);
-      expect(link.povRequests, [PovQuality.hd60, PovQuality.fullHd60]);
+      expect(link.povRequests, [hd, const PovFormat(PovQuality.fullHd60, 1920, 1080)]);
+    });
+
+    test('is asked for again at another bitrate', () async {
+      controller.settings = const AppSettings(povVideo: true);
+      await session();
+      controller.settings = const AppSettings(povVideo: true, povBitrate: PovBitrate.high);
+      expect(link.povRequests, [hd, const PovFormat(PovQuality.hd60, 1280, 720, PovBitrate.high)]);
+    });
+
+    test('is asked for in the shape of the screen, again when it changes', () async {
+      controller.settings = const AppSettings(povVideo: true);
+      controller.screenAspect = 20 / 9;
+      await session();
+      expect(link.povRequests, [const PovFormat(PovQuality.hd60, 1424, 640)]);
+      controller.screenAspect = 20 / 9;
+      expect(link.povRequests, hasLength(1));
+      controller.screenAspect = 2176 / 1812; // folding phone opened
+      expect(link.povRequests.last, const PovFormat(PovQuality.hd60, 1048, 872));
     });
 
     test('shows the picture of the player, and tells the kind of camera once live', () async {
@@ -238,7 +260,7 @@ void main() {
       await session();
       await picture();
       controller.settings = const AppSettings();
-      expect(link.povRequests, [PovQuality.hd60, null]);
+      expect(link.povRequests, [hd, null]);
       expect(controller.povPicture, isNull);
     });
 
@@ -248,7 +270,7 @@ void main() {
       link.modActive = false;
       link.modActive_.add(false);
       await Future<void>.delayed(Duration.zero);
-      expect(link.povRequests, [PovQuality.hd60, null]);
+      expect(link.povRequests, [hd, null]);
       expect(controller.povAvailable, isFalse);
     });
   });

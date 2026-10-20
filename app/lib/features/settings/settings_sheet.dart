@@ -226,6 +226,23 @@ class _DisplayTab extends StatelessWidget {
             ),
           ]),
         ),
+      if (s.povVideo)
+        ListTile(
+          title: Text(l10n.settingsPovBitrateTitle),
+          subtitle: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(l10n.settingsPovBitrateSubtitle),
+            const SizedBox(height: 8),
+            SegmentedButton<PovBitrate>(
+              segments: [
+                ButtonSegment(value: PovBitrate.normal, label: Text(l10n.povBitrateNormal)),
+                ButtonSegment(value: PovBitrate.high, label: Text(l10n.povBitrateHigh)),
+                ButtonSegment(value: PovBitrate.max, label: Text(l10n.povBitrateMax)),
+              ],
+              selected: {s.povBitrate},
+              onSelectionChanged: (v) => _set(context, (s) => s.copyWith(povBitrate: v.first)),
+            ),
+          ]),
+        ),
       _switch(l10n.settingsSimpleDamageTitle, l10n.settingsSimpleDamageSubtitle, s.simpleDamage,
           (v) => _set(context, (s) => s.copyWith(simpleDamage: v))),
       // The pictograms only exist on the real structure.

@@ -25,6 +25,8 @@ longer maintained.
 | ![Civetta theme](docs/screenshots/civetta.png) | ![F4 theme](docs/screenshots/f4.png) |
 | **Radar & damage panel** | **Second screen** |
 | ![Radar and damage panel](docs/screenshots/vehicle-panel.png) | ![Second screen mode](docs/screenshots/second-screen.png) |
+| **Driver's view video, from the seat** | **Driver's view video, outside camera** |
+| ![Driver's view video from the seat](docs/screenshots/video-seat.jpg) | ![Driver's view video from an outside camera, with the light dashboard](docs/screenshots/video-outside.jpg) |
 | **Drift** | |
 | ![Drift theme](docs/screenshots/drift.png) | |
 
@@ -54,12 +56,15 @@ longer maintained.
   vehicle with its bent parts, tyres and brakes.
 - **Driver's view video** (BeamNG.drive 0.40 or newer, camera button or
   Settings): the view from your seat, filmed by the game, behind the
-  controls, each phone its own car; the camera buttons then change the
+  controls, each phone its own car; the camera button then changes the
   camera of the video, not the PC's. The PC's graphics card encodes it in
   H.264 and the phone's decodes it, both in hardware, for little delay and
   little cost to the game: 720p at 60 images per second (default), 1080p at
-  30, or 1080p at 60 (heavy on the Wi-Fi and the phone). From a seat the
-  car's own dashboard is in view, so the theme's one hides; from the other
+  30, or 1080p at 60 (heavy on the Wi-Fi and the phone), in the shape of
+  the screen: nothing is cut off on long phones, tablets or unfolded
+  phones. A higher bitrate (High, Max) gives a finer picture on a good
+  Wi-Fi. From a seat the car's own dashboard is in view, so the theme's
+  one hides; from the other
   cameras a light one stays on the sides (engine on the right, gauges on
   the left). Without a video encoder on the PC, the phone says what to do.
   Off by default.

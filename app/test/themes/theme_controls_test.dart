@@ -86,9 +86,11 @@ void main() {
         final link = FakeLink();
         addTearDown(link.dispose);
         await pumpDrivingView(tester, theme: theme, link: link);
-        await tester.tap(find.byIcon(Icons.flip_camera_android));
+        await tester.tap(find.byIcon(Icons.cameraswitch));
         await tester.pump();
-        expect(link.commands, ['cam_next']);
+        await tester.longPress(find.byIcon(Icons.cameraswitch));
+        await tester.pump();
+        expect(link.commands, ['cam_next', 'cam_prev']);
         expect(link.brake, 0);
         expect(link.throttle, 0);
       });
@@ -170,7 +172,7 @@ void main() {
     addTearDown(link.dispose);
     await pumpDrivingView(tester, theme: themeByName('Road'), link: link, settings: const AppSettings(secondScreen: true));
     expect(find.byIcon(Icons.restart_alt), findsNothing);
-    expect(find.byIcon(Icons.flip_camera_android), findsNothing);
+    expect(find.byIcon(Icons.cameraswitch), findsNothing);
     final gesture = await tester.startGesture(const Offset(100, 200));
     await tester.pump();
     expect(link.brake, 0);

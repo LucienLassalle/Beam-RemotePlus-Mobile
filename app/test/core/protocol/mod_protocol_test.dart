@@ -96,6 +96,30 @@ void main() {
       expect(PovQuality.fullHd30.width, 1920);
     });
 
+    test('a 16:9 screen gets the 16:9 picture of the quality', () {
+      expect(PovFormat.forScreen(PovQuality.hd60, 16 / 9), const PovFormat(PovQuality.hd60, 1280, 720));
+      expect(PovFormat.forScreen(PovQuality.fullHd60, 16 / 9), const PovFormat(PovQuality.fullHd60, 1920, 1080));
+    });
+
+    test('other screens get their shape, with at most the pixels of the quality', () {
+      for (final quality in PovQuality.values) {
+        for (final aspect in [1.0, 4 / 3, 16 / 10, 2176 / 1812, 20 / 9, 21 / 9, 2.5]) {
+          final f = PovFormat.forScreen(quality, aspect);
+          expect(f.width * f.height, lessThanOrEqualTo(quality.width * quality.height));
+          expect(f.width % PovFormat.sizeStep + f.height % PovFormat.sizeStep, 0);
+          expect(f.width / f.height, closeTo(aspect, 0.02));
+        }
+      }
+      expect(PovFormat.forScreen(PovQuality.hd60, 20 / 9).wire, '720p60|1424x640|normal');
+      expect(PovFormat.forScreen(PovQuality.hd60, 20 / 9, PovBitrate.max).wire, '720p60|1424x640|max');
+    });
+
+    test('screens out of the usual shapes are cropped', () {
+      expect(PovFormat.forScreen(PovQuality.hd60, 0.5), PovFormat.forScreen(PovQuality.hd60, PovFormat.minAspect));
+      expect(PovFormat.forScreen(PovQuality.hd60, 4), PovFormat.forScreen(PovQuality.hd60, PovFormat.maxAspect));
+      expect(PovFormat.forScreen(PovQuality.hd60, double.nan), const PovFormat(PovQuality.hd60, 1280, 720));
+    });
+
     test('reads the state of the video', () {
       ModMessage? decode(String json) => ModMessage.decode(Uint8List.fromList(utf8.encode(json)), 2);
       final live = decode('{"type":"pov","state":"live","inside":true,"quality":"720p60"}')! as PovMessage;

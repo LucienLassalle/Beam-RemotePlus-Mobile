@@ -24,7 +24,7 @@ class FakeLink implements RemoteLink {
 
   final List<String> commands = [];
   /// Every [setPovVideo] call, in order.
-  final List<PovQuality?> povRequests = [];
+  final List<PovFormat?> povRequests = [];
   double steering = 0.5, throttle = 0, brake = 0;
 
   FakeLink({this.modActive = true, this.protocolVersion = 2});
@@ -53,7 +53,7 @@ class FakeLink implements RemoteLink {
   Stream<PovPicture> get povPictures => povPictures_.stream;
 
   @override
-  void setPovVideo(PovQuality? quality) => povRequests.add(quality);
+  void setPovVideo(PovFormat? format) => povRequests.add(format);
 
   @override
   void updateControls({double? steering, double? throttle, double? brake}) {

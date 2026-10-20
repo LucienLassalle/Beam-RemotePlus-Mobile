@@ -1,7 +1,7 @@
 import '../protocol/mod_protocol.dart';
 import 'units.dart';
 
-export '../protocol/mod_protocol.dart' show PovQuality;
+export '../protocol/mod_protocol.dart' show PovBitrate, PovQuality;
 export 'units.dart';
 
 /// Sensor read by tilt steering: [auto] = the gyroscope when the phone has
@@ -38,6 +38,9 @@ class AppSettings {
   /// Image size and frame rate of that video (1080p 60 is heavy on the
   /// Wi-Fi and the phone).
   final PovQuality povQuality;
+
+  /// Bitrate of that video: higher, a finer picture if the Wi-Fi keeps up.
+  final PovBitrate povBitrate;
 
   /// Damage schematic of the real vehicle structure (with the mod's
   /// skeleton): engine, radiator and fuel tank / battery pictograms, and
@@ -126,6 +129,7 @@ class AppSettings {
     this.showVehiclePanel = false,
     this.povVideo = false,
     this.povQuality = PovQuality.hd60,
+    this.povBitrate = PovBitrate.normal,
     this.simpleDamage = false,
     this.damageCarParts = false,
     this.damageWheelParts = true,
@@ -159,7 +163,8 @@ class AppSettings {
   /// Some road-feel vibration is enabled.
   bool get anyRoadHaptics => hapticSpin || hapticLock || hapticImpacts || hapticKerbs || hapticAbs;
 
-  /// Brakes, tyres and axles can only be hidden with the engine   bool get anyRoadHaptics => hapticSpin || hapticLock || hapticImpacts || hapticKerbs || hapticAbs; co.
+  /// Brakes, tyres and axles can only be hidden along with the engine,
+  /// radiator and tank pictograms.
   bool get showsDamageWheelParts => damageCarParts || damageWheelParts;
 
   static const double minHapticStrength = 0.1;
@@ -178,6 +183,7 @@ class AppSettings {
     bool? showVehiclePanel,
     bool? povVideo,
     PovQuality? povQuality,
+    PovBitrate? povBitrate,
     bool? simpleDamage,
     bool? damageCarParts,
     bool? damageWheelParts,
@@ -218,6 +224,7 @@ class AppSettings {
       showVehiclePanel: showVehiclePanel ?? this.showVehiclePanel,
       povVideo: povVideo ?? this.povVideo,
       povQuality: povQuality ?? this.povQuality,
+      povBitrate: povBitrate ?? this.povBitrate,
       simpleDamage: simpleDamage ?? this.simpleDamage,
       damageCarParts: damageCarParts ?? this.damageCarParts,
       damageWheelParts: damageWheelParts ?? this.damageWheelParts,
@@ -260,6 +267,7 @@ class AppSettings {
         'showVehiclePanel': showVehiclePanel,
         'povVideo': povVideo,
         'povQuality': povQuality.name,
+        'povBitrate': povBitrate.name,
         'simpleDamage': simpleDamage,
         'damageCarParts': damageCarParts,
         'damageWheelParts': damageWheelParts,
@@ -318,6 +326,7 @@ class AppSettings {
       showVehiclePanel: pick('showVehiclePanel', d.showVehiclePanel),
       povVideo: pick('povVideo', d.povVideo),
       povQuality: enumByName(PovQuality.values, json['povQuality'], d.povQuality),
+      povBitrate: enumByName(PovBitrate.values, json['povBitrate'], d.povBitrate),
       simpleDamage: pick('simpleDamage', d.simpleDamage),
       damageCarParts: pick('damageCarParts', d.damageCarParts),
       damageWheelParts: pick('damageWheelParts', d.damageWheelParts),

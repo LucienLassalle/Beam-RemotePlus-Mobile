@@ -16,6 +16,7 @@ void main() {
         steeringSensor: SteeringSensor.accelerometer,
         povVideo: true,
         povQuality: PovQuality.fullHd60,
+        povBitrate: PovBitrate.high,
       );
       final back = AppSettings.fromJson(s.toJson());
       expect(back.themeName, 'Civetta');
@@ -28,6 +29,7 @@ void main() {
       expect(back.steeringSensor, SteeringSensor.accelerometer);
       expect(back.povVideo, isTrue);
       expect(back.povQuality, PovQuality.fullHd60);
+      expect(back.povBitrate, PovBitrate.high);
     });
 
     test('keeps the vibration strength between 10 and 100 %', () {
@@ -69,6 +71,7 @@ void main() {
       expect(s.debugMode, isFalse);
       expect(s.povVideo, isFalse);
       expect(s.povQuality, PovQuality.hd60);
+      expect(s.povBitrate, PovBitrate.normal);
       expect(s.showActionsBar, isTrue);
       expect(s.simpleDamage, isFalse);
       expect(s.damageCarParts, isFalse);
