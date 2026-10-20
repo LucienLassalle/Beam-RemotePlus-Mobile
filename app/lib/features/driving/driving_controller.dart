@@ -46,8 +46,28 @@ class DrivingController extends ChangeNotifier {
   double _screenAspect = 16 / 9;
   PovMessage? _povState;
   PovPicture? _povPicture;
+  bool _lookOffered = false;
+  double _lookX = 0, _lookY = 0; // not sent yet
+  Timer? _lookTimer;
+  double _flyThrottle = 0, _flyBrake = 0;
+  double _flySent = 0;
+  Timer? _flyTimer;
 
   static const flashDuration = Duration(milliseconds: 300);
+
+  /// Look commands per logical pixel of finger travel (the mod's unit is
+  /// the game's mouse count): a swipe across a phone turns the seat
+  /// camera about half a turn.
+  static const double lookGain = 2;
+
+  /// Finger moves are gathered and sent at most this often (~30 Hz).
+  static const lookInterval = Duration(milliseconds: 33);
+
+  /// A fly command lasts 1 s in the mod: repeated well before.
+  static const flyRepeat = Duration(milliseconds: 250);
+
+  /// Steps of the fly value sent (fewer commands for the same feel).
+  static const double flyStep = 0.05;
 
   /// Share of the max RPM where the limiter vibration fires, and where it
   /// re-arms (hysteresis: one vibration per hit, not per frame).
@@ -125,6 +145,14 @@ class DrivingController extends ChangeNotifier {
   /// The phone could not decode the video.
   static const povErrorDecoder = 'decoder';
 
+  /// The camera of the video can be turned with a finger, and switched to
+  /// the free camera (newer mods, while the video is on and well).
+  bool get povCameraControl => _lookOffered && _povSent != null && povError == null;
+
+  /// The video shows the game's free camera: the pedals fly it, the car
+  /// coasts.
+  bool get freeCamera => povCameraControl && _povState?.free == true;
+
   /// Commands (horn...) only reach the game with the mod and outside read-only.
   bool get commandsEnabled => modActive && !_readOnly;
 
@@ -155,12 +183,15 @@ class DrivingController extends ChangeNotifier {
       notifyListeners();
     }
     if (message is PovMessage) {
+      final wasFree = freeCamera;
       _povState = message;
+      if (freeCamera != wasFree) _onFreeCameraChanged();
       notifyListeners();
     }
     if (message is SessionMessage) {
       _playerColor = message.playerColor;
       _povOffered = message.commands.contains(ModCommand.pov);
+      _lookOffered = message.commands.contains(ModCommand.look);
       // A new session may be a restarted mod: ask again.
       _syncPov(resend: true);
       notifyListeners();
@@ -185,6 +216,7 @@ class DrivingController extends ChangeNotifier {
       link.setPovVideo(want);
     } else if (want == null && _povSent != null) {
       _povSent = null;
+      _stopFlying();
       link.setPovVideo(null);
       _povState = null;
       _povPicture = null;
@@ -229,15 +261,89 @@ class DrivingController extends ChangeNotifier {
   /// [value]: 0 (full right) .. 1 (full left), shaped by the centre
   /// precision setting.
   void steer(double value) {
-    if (!_readOnly) link.updateControls(steering: SteeringCurve.apply(value, _settings.steeringCenterPrecision));
+    if (freeCamera || _readOnly) return;
+    link.updateControls(steering: SteeringCurve.apply(value, _settings.steeringCenterPrecision));
   }
 
+  /// In the free camera the brake flies it backward instead.
   void brake(double value) {
+    if (freeCamera) return _fly(brake: value);
     if (!_readOnly) link.updateControls(brake: value);
   }
 
+  /// In the free camera the throttle flies it forward instead.
   void throttle(double value) {
+    if (freeCamera) return _fly(throttle: value);
     if (!_readOnly) link.updateControls(throttle: value);
+  }
+
+  // Camera of the video ------------------------------------------------------------
+
+  /// Finger moved by [dx], [dy] logical pixels over the video: turns its
+  /// camera (moves gathered, sent at most every [lookInterval]).
+  void look(double dx, double dy) {
+    if (!povCameraControl) return;
+    _lookX += dx * lookGain;
+    _lookY += dy * lookGain;
+    _lookTimer ??= Timer(lookInterval, _sendLook);
+  }
+
+  void _sendLook() {
+    _lookTimer?.cancel();
+    _lookTimer = null;
+    final x = _lookX.truncate(), y = _lookY.truncate();
+    if (x == 0 && y == 0) return;
+    _lookX -= x;
+    _lookY -= y;
+    link.sendCommand(ModCommand.look, '$x|$y');
+  }
+
+  /// The finger left the video: a seat camera turns back to the road by
+  /// itself, like a head.
+  void lookEnded() {
+    if (povInside == true && !freeCamera) recenterLook();
+  }
+
+  /// Puts the camera of the video back to where it looks by default.
+  void recenterLook() {
+    if (!povCameraControl) return;
+    _sendLook();
+    _lookX = _lookY = 0;
+    link.sendCommand(ModCommand.lookCenter);
+  }
+
+  /// Free camera on or off (the mod's pov message confirms it).
+  void toggleFreeCamera() {
+    if (povCameraControl) link.sendCommand(ModCommand.freecam, freeCamera ? '0' : '1');
+  }
+
+  // Entering the free camera lets the car coast, wheels straight; leaving it
+  // stops the flight (the pedals drive again from their next move).
+  void _onFreeCameraChanged() {
+    if (freeCamera) {
+      link.updateControls(steering: 0.5, throttle: 0, brake: 0);
+    } else {
+      _stopFlying();
+    }
+  }
+
+  void _fly({double? throttle, double? brake}) {
+    _flyThrottle = throttle ?? _flyThrottle;
+    _flyBrake = brake ?? _flyBrake;
+    final value = ((_flyThrottle - _flyBrake) / flyStep).round() * flyStep;
+    if (value == _flySent) return;
+    _flySent = value;
+    _sendFly();
+    _flyTimer?.cancel();
+    _flyTimer = value == 0 ? null : Timer.periodic(flyRepeat, (_) => _sendFly());
+  }
+
+  void _sendFly() => link.sendCommand(ModCommand.fly, _flySent.toStringAsFixed(2));
+
+  void _stopFlying() {
+    _flyTimer?.cancel();
+    _flyTimer = null;
+    _flyThrottle = _flyBrake = _flySent = 0;
   }
 
   // Commands --------------------------------------------------------------------
@@ -339,6 +445,8 @@ class DrivingController extends ChangeNotifier {
     releaseAllHolds();
     if (_povSent != null) link.setPovVideo(null);
     _flashTimer?.cancel();
+    _lookTimer?.cancel();
+    _flyTimer?.cancel();
     for (final s in _subs) {
       s.cancel();
     }

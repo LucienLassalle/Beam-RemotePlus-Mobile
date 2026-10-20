@@ -22,49 +22,62 @@ class VehicleSwitchButtons extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return Row(mainAxisSize: MainAxisSize.min, children: [
-      _HoldToSwitch(
-        controller: controller,
+      HoldRingButton(
         icon: Icons.skip_previous,
         tooltip: l10n.vehiclePrev,
-        command: ModCommand.prevVehicle,
         color: color,
+        enabled: controller.commandsEnabled,
+        holdDelay: holdDelay,
+        size: size,
+        onHeld: () => controller.press(ModCommand.prevVehicle),
       ),
-      _HoldToSwitch(
-        controller: controller,
+      HoldRingButton(
         icon: Icons.skip_next,
         tooltip: l10n.vehicleNext,
-        command: ModCommand.nextVehicle,
         color: color,
+        enabled: controller.commandsEnabled,
+        holdDelay: holdDelay,
+        size: size,
+        onHeld: () => controller.press(ModCommand.nextVehicle),
       ),
     ]);
   }
 }
 
-class _HoldToSwitch extends StatefulWidget {
-  final DrivingController controller;
+/// Round button acting only once held for [holdDelay], while a ring fills
+/// up: nothing happens on a short tap or a resting thumb.
+class HoldRingButton extends StatefulWidget {
   final IconData icon;
   final String tooltip;
-  final String command;
   final Color color;
+  final bool enabled;
+  final bool active;
+  final Duration holdDelay;
+  final double size;
+  final VoidCallback onHeld;
 
-  const _HoldToSwitch({
-    required this.controller,
+  const HoldRingButton({
+    super.key,
     required this.icon,
     required this.tooltip,
-    required this.command,
     required this.color,
+    required this.holdDelay,
+    required this.onHeld,
+    this.enabled = true,
+    this.active = false,
+    this.size = 42,
   });
 
   @override
-  State<_HoldToSwitch> createState() => _HoldToSwitchState();
+  State<HoldRingButton> createState() => _HoldRingButtonState();
 }
 
-class _HoldToSwitchState extends State<_HoldToSwitch> with SingleTickerProviderStateMixin {
-  late final AnimationController _progress = AnimationController(vsync: this, duration: VehicleSwitchButtons.holdDelay)
+class _HoldRingButtonState extends State<HoldRingButton> with SingleTickerProviderStateMixin {
+  late final AnimationController _progress = AnimationController(vsync: this, duration: widget.holdDelay)
     ..addStatusListener((status) {
       if (status != AnimationStatus.completed) return;
       HapticFeedback.mediumImpact();
-      widget.controller.press(widget.command);
+      widget.onHeld();
       _progress.reset();
     });
 
@@ -76,7 +89,7 @@ class _HoldToSwitchState extends State<_HoldToSwitch> with SingleTickerProviderS
 
   @override
   Widget build(BuildContext context) {
-    const size = VehicleSwitchButtons.size;
+    final size = widget.size;
     return AnimatedBuilder(
       animation: _progress,
       builder: (context, child) => Stack(alignment: Alignment.center, children: [
@@ -94,7 +107,8 @@ class _HoldToSwitchState extends State<_HoldToSwitch> with SingleTickerProviderS
         icon: widget.icon,
         tooltip: widget.tooltip,
         color: widget.color,
-        enabled: widget.controller.commandsEnabled,
+        enabled: widget.enabled,
+        active: widget.active,
         size: size,
         onHold: (pressed) => pressed ? _progress.forward(from: 0) : _progress.reset(),
       ),
@@ -207,6 +221,28 @@ class CameraButton extends StatelessWidget {
         HapticFeedback.selectionClick();
         controller.press(ModCommand.camPrev);
       },
+    );
+  }
+}
+
+/// Free camera of the video on / off, held for [holdDelay]: the pedals then
+/// fly the camera instead of driving, so no tap may switch it by mistake.
+class FreeCameraButton extends StatelessWidget {
+  final DrivingController controller;
+  final Color color;
+  const FreeCameraButton({super.key, required this.controller, required this.color});
+
+  static const holdDelay = Duration(seconds: 1);
+
+  @override
+  Widget build(BuildContext context) {
+    return HoldRingButton(
+      icon: Icons.control_camera,
+      tooltip: AppLocalizations.of(context).freeCameraTooltip,
+      color: color,
+      active: controller.freeCamera,
+      holdDelay: holdDelay,
+      onHeld: controller.toggleFreeCamera,
     );
   }
 }

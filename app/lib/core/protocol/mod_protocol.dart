@@ -135,6 +135,15 @@ class ModCommand {
   // 0.40 or newer (allowed on a second screen too)
   static const pov = 'pov';
 
+  // Camera of that video: look|<dx>|<dy> turns it (relative, like a mouse),
+  // look_center puts it back, freecam|1/0 the free camera, fly|<-1..1> flies
+  // it (repeated while it should keep flying). Offered with the video by
+  // newer mods (listed in the session commands).
+  static const look = 'look';
+  static const lookCenter = 'look_center';
+  static const freecam = 'freecam';
+  static const fly = 'fly';
+
   static const Set<String> holds = {horn, highBeam, starter, recover, handbrake, debug};
 }
 

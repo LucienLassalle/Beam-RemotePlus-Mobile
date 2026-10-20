@@ -31,6 +31,20 @@ void main() {
     });
   });
 
+  group('PedalMapping.video (over the video)', () {
+    const m = PedalMapping.video;
+    test('a quarter of the width on each side, the middle half turns the camera', () {
+      expect(m.pedalAt(249, 1000), Pedal.brake);
+      expect(m.pedalAt(300, 1000), isNull);
+      expect(m.pedalAt(700, 1000), isNull);
+      expect(m.pedalAt(750, 1000), Pedal.throttle);
+      expect(m.freeSpan, (0.25, 0.75));
+    });
+    test('the free span of the thumb wheel layout is on the left', () {
+      expect(PedalMapping.rightThumb.freeSpan, (0, 0.6));
+    });
+  });
+
   group('PedalMapping.sides (touch steering)', () {
     const m = PedalMapping.sides;
     test('leaves the middle free for the steering bar', () {

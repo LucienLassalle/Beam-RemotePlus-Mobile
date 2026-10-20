@@ -63,10 +63,13 @@ longer maintained.
   30, or 1080p at 60 (heavy on the Wi-Fi and the phone), in the shape of
   the screen: nothing is cut off on long phones, tablets or unfolded
   phones. A higher bitrate (High, Max) gives a finer picture on a good
-  Wi-Fi. From a seat the car's own dashboard is in view, so the theme's
-  one hides; from the other
-  cameras a light one stays on the sides (engine on the right, gauges on
-  the left). Without a video encoder on the PC, the phone says what to do.
+  Wi-Fi. Over the video the pedals are narrower: swipe the middle of
+  the screen to look around (from a seat the view turns back to the road
+  when you let go, a double tap recentres it), or hold the free camera
+  button 1 s to fly around with the pedals while the car coasts. From a
+  seat the car's own dashboard is in view, so the theme's one hides; from
+  the other cameras a light one stays on the sides (engine on the right,
+  gauges on the left). Without a video encoder on the PC, the phone says what to do.
   Off by default.
 - **Electric cars**, **second screen** (dashboard only, next to a wheel or a
   gamepad) and **local multiplayer** (one phone per player), each player with

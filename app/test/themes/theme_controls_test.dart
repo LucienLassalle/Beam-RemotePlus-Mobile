@@ -1,6 +1,7 @@
 import 'package:beam_remoteplus/core/network/remote_link.dart';
 import 'package:beam_remoteplus/core/protocol/mod_message.dart';
 import 'package:beam_remoteplus/core/settings/app_settings.dart';
+import 'package:beam_remoteplus/features/driving/driving_controller.dart';
 import 'package:beam_remoteplus/themes/kit/video_hud.dart';
 import 'package:beam_remoteplus/themes/theme_registry.dart';
 import 'package:flutter/material.dart';
@@ -109,6 +110,29 @@ void main() {
     expect(find.byIcon(Icons.videocam_off), findsOneWidget);
     expect(find.textContaining('DirectX'), findsOneWidget);
     expect(find.byType(Texture), findsNothing);
+  });
+
+  testWidgets('over the video, a swipe in the middle turns the camera, the button held 1 s frees it', (tester) async {
+    final link = FakeLink();
+    addTearDown(link.dispose);
+    await pumpDrivingView(tester, theme: availableThemes.first, link: link, settings: const AppSettings(povVideo: true));
+    link.events_.add(const SessionMessage(commands: ['pov', 'look']));
+    await tester.pump();
+    link.povPictures_.add(const PovPicture(textureId: 1, width: 1280, height: 720));
+    link.events_.add(const PovMessage(state: PovMessage.live));
+    await tester.pump();
+    await tester.pump();
+    await tester.dragFrom(Offset(phoneSize.width * 0.4, phoneSize.height * 0.5), const Offset(60, 0));
+    await tester.pump(DrivingController.lookInterval * 2);
+    expect(link.commands.where((c) => c.startsWith('look|')), isNotEmpty);
+    expect(link.brake + link.throttle, 0); // not a pedal any more
+    final hold = await tester.startGesture(tester.getCenter(find.byIcon(Icons.control_camera)));
+    await tester.pump(); // the ring starts on the next frame
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(link.commands, isNot(contains('freecam|1')));
+    await tester.pump(const Duration(milliseconds: 600));
+    expect(link.commands, contains('freecam|1'));
+    await hold.up();
   });
 
   testWidgets('touch steering keeps the middle of the screen for the steering bar', (tester) async {

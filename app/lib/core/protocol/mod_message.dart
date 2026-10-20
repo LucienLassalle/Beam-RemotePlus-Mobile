@@ -59,6 +59,7 @@ sealed class ModMessage {
           state: json['state'] is String ? json['state']! as String : '?',
           error: json['error'] is String ? json['error']! as String : null,
           inside: json['inside'] == true,
+          free: json['free'] == true,
         );
       case 'actions':
         return ActionsMessage(
@@ -125,7 +126,10 @@ class PovMessage extends ModMessage {
   /// A seat camera: the car's own dashboard is in view.
   final bool inside;
 
-  const PovMessage({required this.state, this.error, this.inside = false});
+  /// The free camera of the video is on.
+  final bool free;
+
+  const PovMessage({required this.state, this.error, this.inside = false, this.free = false});
 
   static const live = 'live';
   static const failed = 'error';
