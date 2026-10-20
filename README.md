@@ -54,7 +54,7 @@ longer maintained.
   vehicle with its bent parts, tyres and brakes.
 - **Driver's view video** (BeamNG.drive 0.40 or newer, camera button or
   Settings): the view from your seat, filmed by the game, behind the
-  controls, each phone its own car; the camera buttons then change the
+  controls, each phone its own car; the camera button then changes the
   camera of the video, not the PC's. The PC's graphics card encodes it in
   H.264 and the phone's decodes it, both in hardware, for little delay and
   little cost to the game: 720p at 60 images per second (default), 1080p at

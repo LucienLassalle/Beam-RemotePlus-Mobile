@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
 /// Round icon button reporting press and release (for hold commands such as
-/// the horn) or a simple tap ([onPressed]). A short [label] ("DRS") may
-/// replace the icon, like the buttons of a race steering wheel.
+/// the horn) or a simple tap ([onPressed]), and a long press
+/// ([onLongPress]). A short [label] ("DRS") may replace the icon, like the
+/// buttons of a race steering wheel.
 class HoldButton extends StatelessWidget {
   final IconData? icon;
   final String? label;
@@ -15,6 +16,7 @@ class HoldButton extends StatelessWidget {
   final Color? activeColor;
   final ValueChanged<bool>? onHold;
   final VoidCallback? onPressed;
+  final VoidCallback? onLongPress;
   final double size;
 
   const HoldButton({
@@ -28,6 +30,7 @@ class HoldButton extends StatelessWidget {
     this.active = false,
     this.onHold,
     this.onPressed,
+    this.onLongPress,
     this.size = 42,
   }) : assert(icon != null || label != null);
 
@@ -43,6 +46,7 @@ class HoldButton extends StatelessWidget {
         onPointerCancel: enabled && onHold != null ? (_) => onHold!(false) : null,
         child: GestureDetector(
           onTap: enabled ? onPressed : null,
+          onLongPress: enabled ? onLongPress : null,
           child: Container(
             width: size,
             height: size,

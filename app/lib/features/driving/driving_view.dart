@@ -252,7 +252,7 @@ class DrivingView extends StatelessWidget {
                             VehicleActionsBar(controller: controller, actions: actions, color: style.buttonColor),
                             const SizedBox(width: 12),
                           ],
-                          CameraButtons(controller: controller, color: style.buttonColor),
+                          CameraButton(controller: controller, color: style.buttonColor),
                         ]),
                       ),
                     ),

@@ -38,7 +38,7 @@ Future<void> showHelpSheet(BuildContext context, {Map<String, String>? optionalM
             if (settings.hornOnVolume || settings.flashOnVolume)
               _HelpRow(Icons.volume_up, Colors.amberAccent, l10n.helpVolumeKeys, l10n.helpVolumeKeysDesc, modRequired: true),
             _HelpRow(Icons.skip_next, Colors.white54, l10n.helpVehicle, l10n.helpVehicleDesc, modRequired: true),
-            _HelpRow(Icons.flip_camera_android, Colors.white54, l10n.helpCamera, l10n.helpCameraDesc, modRequired: true),
+            _HelpRow(Icons.cameraswitch, Colors.white54, l10n.helpCamera, l10n.helpCameraDesc, modRequired: true),
             _HelpRow(Icons.restart_alt, Colors.orangeAccent, l10n.helpResetVehicle, l10n.helpResetVehicleDesc, modRequired: true),
             Align(
               alignment: Alignment.centerLeft,

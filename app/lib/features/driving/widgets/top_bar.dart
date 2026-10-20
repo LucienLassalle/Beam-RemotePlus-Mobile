@@ -188,30 +188,26 @@ class _RecoverButtonState extends State<RecoverButton> with SingleTickerProvider
   }
 }
 
-class CameraButtons extends StatelessWidget {
+/// One camera button: a tap for the next camera, a long press for the
+/// previous one (one button less on a small screen).
+class CameraButton extends StatelessWidget {
   final DrivingController controller;
   final Color color;
-  const CameraButtons({super.key, required this.controller, required this.color});
+  const CameraButton({super.key, required this.controller, required this.color});
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    return Row(mainAxisSize: MainAxisSize.min, children: [
-      HoldButton(
-        icon: Icons.photo_camera_back,
-        tooltip: l10n.camPrev,
-        color: color,
-        enabled: controller.commandsEnabled,
-        onPressed: () => controller.press(ModCommand.camPrev),
-      ),
-      HoldButton(
-        icon: Icons.flip_camera_android,
-        tooltip: l10n.camNext,
-        color: color,
-        enabled: controller.commandsEnabled,
-        onPressed: () => controller.press(ModCommand.camNext),
-      ),
-    ]);
+    return HoldButton(
+      icon: Icons.cameraswitch,
+      tooltip: AppLocalizations.of(context).camSwitch,
+      color: color,
+      enabled: controller.commandsEnabled,
+      onPressed: () => controller.press(ModCommand.camNext),
+      onLongPress: () {
+        HapticFeedback.selectionClick();
+        controller.press(ModCommand.camPrev);
+      },
+    );
   }
 }
 
