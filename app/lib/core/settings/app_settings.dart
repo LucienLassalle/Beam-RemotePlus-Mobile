@@ -159,7 +159,8 @@ class AppSettings {
   /// Some road-feel vibration is enabled.
   bool get anyRoadHaptics => hapticSpin || hapticLock || hapticImpacts || hapticKerbs || hapticAbs;
 
-  /// Brakes, tyres and axles can only be hidden with the engine   bool get anyRoadHaptics => hapticSpin || hapticLock || hapticImpacts || hapticKerbs || hapticAbs; co.
+  /// Brakes, tyres and axles can only be hidden along with the engine,
+  /// radiator and tank pictograms.
   bool get showsDamageWheelParts => damageCarParts || damageWheelParts;
 
   static const double minHapticStrength = 0.1;
