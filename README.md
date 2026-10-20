@@ -25,6 +25,8 @@ longer maintained.
 | ![Civetta theme](docs/screenshots/civetta.png) | ![F4 theme](docs/screenshots/f4.png) |
 | **Radar & damage panel** | **Second screen** |
 | ![Radar and damage panel](docs/screenshots/vehicle-panel.png) | ![Second screen mode](docs/screenshots/second-screen.png) |
+| **Driver's view video, from the seat** | **Driver's view video, outside camera** |
+| ![Driver's view video from the seat](docs/screenshots/video-seat.jpg) | ![Driver's view video from an outside camera, with the light dashboard](docs/screenshots/video-outside.jpg) |
 | **Drift** | |
 | ![Drift theme](docs/screenshots/drift.png) | |
 
