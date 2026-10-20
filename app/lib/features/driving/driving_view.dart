@@ -15,6 +15,7 @@ import 'driving_controller.dart';
 import 'pedal_mapping.dart';
 import 'tilt_steering.dart';
 import 'widgets/hold_button.dart';
+import 'widgets/look_zone.dart';
 import 'widgets/more_sheet.dart';
 import 'widgets/pedal_zones.dart';
 import 'widgets/player_badge.dart';
@@ -69,8 +70,15 @@ class DrivingView extends StatelessWidget {
   /// Room the touch steering takes under the buttons (none when tilting).
   double get _touchSteeringHeight => settings.tiltSteering || settings.touchWheel ? 0 : touchSteeringHeight;
 
-  PedalMapping get _pedalMapping =>
-      settings.tiltSteering ? PedalMapping.wide : (settings.touchWheel ? PedalMapping.rightThumb : PedalMapping.sides);
+  PedalMapping get _pedalMapping {
+    if (settings.touchWheel && !settings.tiltSteering) return PedalMapping.rightThumb;
+    // Over the video the middle of the screen turns the camera.
+    if (_video) return PedalMapping.video;
+    return settings.tiltSteering ? PedalMapping.wide : PedalMapping.sides;
+  }
+
+  /// A second screen has no pedals: all of it turns the camera.
+  PedalMapping get _lookMapping => _display ? const PedalMapping(zoneFraction: 0) : _pedalMapping;
 
   @override
   Widget build(BuildContext context) {
@@ -114,6 +122,16 @@ class DrivingView extends StatelessWidget {
                         throttleColor: settings.colorBlind ? ColorVision.throttle : style.throttleColor,
                         swapped: settings.swapPedals,
                       ),
+                    ),
+                  ),
+                if (_video && controller.povCameraControl)
+                  Positioned.fill(
+                    child: LookZone(
+                      mapping: _lookMapping,
+                      swapped: settings.swapPedals,
+                      onLook: controller.look,
+                      onLookEnd: controller.lookEnded,
+                      onDoubleTap: controller.recenterLook,
                     ),
                   ),
                 // The dashboard gets the space between the button rows, so
@@ -252,6 +270,8 @@ class DrivingView extends StatelessWidget {
                             VehicleActionsBar(controller: controller, actions: actions, color: style.buttonColor),
                             const SizedBox(width: 12),
                           ],
+                          if (_video && controller.povCameraControl)
+                            FreeCameraButton(controller: controller, color: style.buttonColor),
                           CameraButton(controller: controller, color: style.buttonColor),
                         ]),
                       ),

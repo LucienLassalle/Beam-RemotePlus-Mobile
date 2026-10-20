@@ -274,4 +274,80 @@ void main() {
       expect(controller.povAvailable, isFalse);
     });
   });
+
+  group('camera of the video', () {
+    Future<void> video({bool look = true, bool inside = false, bool free = false}) async {
+      controller.settings = const AppSettings(povVideo: true);
+      link.events_.add(SessionMessage(commands: ['pov', if (look) 'look']));
+      link.events_.add(PovMessage(state: PovMessage.live, inside: inside, free: free));
+      await Future<void>.delayed(Duration.zero);
+      link.commands.clear();
+    }
+
+    test('only with a mod that offers it', () async {
+      await video(look: false);
+      expect(controller.povCameraControl, isFalse);
+      controller.look(10, 0);
+      controller.recenterLook();
+      expect(link.commands, isEmpty);
+    });
+
+    test('finger moves are gathered, then sent', () async {
+      await video();
+      controller.look(3, 1);
+      controller.look(2, -0.5);
+      expect(link.commands, isEmpty);
+      await Future<void>.delayed(DrivingController.lookInterval * 2);
+      expect(link.commands, ['look|10|1']);
+    });
+
+    test('a seat camera turns back to the road a moment after the finger leaves', () async {
+      await video(inside: true);
+      controller.look(4, 0);
+      controller.lookEnded();
+      controller.look(1, 0); // the finger is back: no recentring yet
+      controller.lookEnded();
+      await Future<void>.delayed(DrivingController.lookInterval * 2);
+      expect(link.commands, ['look|10|0']);
+      await Future<void>.delayed(DrivingController.recenterDelay);
+      expect(link.commands, ['look|10|0', 'look_center']);
+    });
+
+    test('other cameras stay where they were left, a double tap recentres them', () async {
+      await video();
+      controller.lookEnded();
+      expect(link.commands, isEmpty);
+      controller.recenterLook();
+      expect(link.commands, ['look_center']);
+    });
+
+    test('the free camera is switched on and off', () async {
+      await video();
+      controller.toggleFreeCamera();
+      link.events_.add(const PovMessage(state: PovMessage.live, free: true));
+      await Future<void>.delayed(Duration.zero);
+      expect(controller.freeCamera, isTrue);
+      controller.toggleFreeCamera();
+      expect(link.commands, ['freecam|1', 'freecam|0']);
+    });
+
+    test('in the free camera the pedals fly it and the car coasts, wheels straight', () async {
+      await video();
+      controller.throttle(0.8);
+      controller.steer(0.2);
+      link.events_.add(const PovMessage(state: PovMessage.live, free: true));
+      await Future<void>.delayed(Duration.zero);
+      expect((link.throttle, link.brake, link.steering), (0, 0, 0.5));
+      controller.throttle(1);
+      controller.brake(0.25);
+      controller.steer(0.9);
+      expect(link.commands, ['fly|1.00', 'fly|0.75']);
+      expect((link.throttle, link.brake, link.steering), (0, 0, 0.5));
+      await Future<void>.delayed(DrivingController.flyRepeat * 1.5);
+      expect(link.commands.last, 'fly|0.75'); // repeated while held
+      controller.throttle(0);
+      controller.brake(0);
+      expect(link.commands.last, 'fly|0.00');
+    });
+  });
 }

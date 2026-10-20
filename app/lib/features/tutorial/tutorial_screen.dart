@@ -8,8 +8,10 @@ import '../../core/settings/app_settings.dart';
 import '../../core/settings/settings_scope.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../themes/default/default_theme.dart';
+import '../driving/driving_controller.dart';
 import '../driving/pedal_mapping.dart';
 import '../driving/tilt_steering.dart';
+import '../driving/widgets/hold_button.dart';
 import '../driving/widgets/pedal_zones.dart';
 import '../driving/widgets/steering_control.dart';
 import '../driving/widgets/touch_wheel.dart';
@@ -26,16 +28,17 @@ Future<void> showTutorial(BuildContext context, {bool lockLandscape = true, Stre
       builder: (_) => TutorialScreen(lockLandscape: lockLandscape, accelerometer: accelerometer),
     ));
 
-/// Six pages, tried for real without a PC: what the app does, steering (in
+/// Seven pages, tried for real without a PC: what the app does, steering (in
 /// the steering mode of the settings), the pedals, the volume buttons, the
-/// reset and vehicle buttons, and where the settings are.
+/// reset and vehicle buttons, the camera (and the video's), and where the
+/// settings are.
 class TutorialScreen extends StatefulWidget {
   /// Tilt samples for the steering page (tests inject them).
   final bool lockLandscape;
   final Stream<AccelerometerEvent>? accelerometer;
   const TutorialScreen({super.key, this.lockLandscape = true, this.accelerometer});
 
-  static const int pageCount = 6;
+  static const int pageCount = 7;
 
   @override
   State<TutorialScreen> createState() => _TutorialScreenState();
@@ -94,6 +97,7 @@ class _TutorialScreenState extends State<TutorialScreen> {
                 _PedalsPage(settings: settings),
                 const _VolumePage(),
                 const _HoldButtonsPage(),
+                const _CameraPage(),
                 const _SettingsPage(),
               ],
             ),
@@ -389,6 +393,136 @@ class _HoldDemoState extends State<_HoldDemo> with SingleTickerProviderStateMixi
           child: _done ? Text(widget.done, style: TextStyle(color: widget.color, fontWeight: FontWeight.bold)) : null,
         ),
       ]);
+}
+
+/// The camera button (tap: next, hold: previous), looking around the video
+/// with a finger, and the free camera button held 1 s.
+class _CameraPage extends StatelessWidget {
+  const _CameraPage();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return _Page(
+      icon: Icons.cameraswitch,
+      title: l10n.tutorialCameraTitle,
+      text: l10n.tutorialCameraText,
+      child: Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+        const _CameraButtonDemo(),
+        const _LookDemo(),
+        _HoldDemo(
+          icon: Icons.control_camera,
+          color: Colors.lightBlueAccent,
+          hold: const Duration(seconds: 1),
+          label: l10n.helpFreeCamera,
+          done: l10n.tutorialFreeCameraDone,
+        ),
+      ]),
+    );
+  }
+}
+
+/// The camera button of the driving screen: says which camera it would show.
+class _CameraButtonDemo extends StatefulWidget {
+  const _CameraButtonDemo();
+
+  @override
+  State<_CameraButtonDemo> createState() => _CameraButtonDemoState();
+}
+
+class _CameraButtonDemoState extends State<_CameraButtonDemo> {
+  String? _done;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+      HoldButton(
+        icon: Icons.cameraswitch,
+        tooltip: l10n.camSwitch,
+        color: Colors.white70,
+        size: 56,
+        onPressed: () => setState(() => _done = l10n.tutorialCameraNextDone),
+        onLongPress: () {
+          HapticFeedback.selectionClick();
+          setState(() => _done = l10n.tutorialCameraPrevDone);
+        },
+      ),
+      const SizedBox(height: 8),
+      Text(l10n.helpCamera, style: const TextStyle(color: Colors.white70)),
+      SizedBox(
+        height: 22,
+        child: _done == null ? null : Text(_done!, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+      ),
+    ]);
+  }
+}
+
+/// A window on the video: a swipe turns the view, which comes back to the
+/// centre a moment after the finger leaves (like a seat camera), or at once
+/// on a double tap.
+class _LookDemo extends StatefulWidget {
+  const _LookDemo();
+
+  static const Size size = Size(180, 110);
+
+  @override
+  State<_LookDemo> createState() => _LookDemoState();
+}
+
+class _LookDemoState extends State<_LookDemo> with SingleTickerProviderStateMixin {
+  Offset _view = Offset.zero;
+  Timer? _recenter;
+  late final AnimationController _back = AnimationController(vsync: this, duration: const Duration(milliseconds: 450))
+    ..addListener(() => setState(() => _view = _from * (1 - Curves.easeOut.transform(_back.value))));
+  Offset _from = Offset.zero;
+
+  void _recentre() {
+    _recenter?.cancel();
+    _from = _view;
+    unawaited(_back.forward(from: 0));
+  }
+
+  @override
+  void dispose() {
+    _recenter?.cancel();
+    _back.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final limit = Offset(_LookDemo.size.width / 2 - 20, _LookDemo.size.height / 2 - 20);
+    return Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+      GestureDetector(
+        onPanUpdate: (d) {
+          _recenter?.cancel();
+          _back.stop();
+          setState(() => _view = Offset(
+                (_view.dx + d.delta.dx).clamp(-limit.dx, limit.dx),
+                (_view.dy + d.delta.dy).clamp(-limit.dy, limit.dy),
+              ));
+        },
+        onPanEnd: (_) => _recenter = Timer(DrivingController.recenterDelay, _recentre),
+        onDoubleTap: _recentre,
+        child: Container(
+          width: _LookDemo.size.width,
+          height: _LookDemo.size.height,
+          decoration: BoxDecoration(border: Border.all(color: Colors.white38), borderRadius: BorderRadius.circular(10)),
+          child: Center(
+            child: Transform.translate(
+              offset: _view,
+              child: const Icon(Icons.visibility, color: Colors.lightBlueAccent, size: 32),
+            ),
+          ),
+        ),
+      ),
+      const SizedBox(height: 8),
+      Text(l10n.tutorialLookLabel, style: const TextStyle(color: Colors.white70)),
+      const SizedBox(height: 22),
+    ]);
+  }
 }
 
 /// The driving screen with its gear, top right, pointed at: the settings.

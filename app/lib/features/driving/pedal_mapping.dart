@@ -28,6 +28,13 @@ class PedalMapping {
   /// Thumb wheel on the left: brake and throttle under the right thumb.
   static const rightThumb = PedalMapping(zoneFraction: 0.2, bothRight: true);
 
+  /// Over the driver's view video: 25% on each side, the middle half turns
+  /// the camera (see LookZone).
+  static const video = PedalMapping(zoneFraction: 0.25);
+
+  /// Horizontal span no pedal takes, in fractions of the width.
+  (double, double) get freeSpan => bothRight ? (0, 1 - 2 * zoneFraction) : (zoneFraction, 1 - zoneFraction);
+
   /// Horizontal span of a pedal zone, in fractions of the width.
   (double, double) spanOf(Pedal pedal) => switch ((pedal, bothRight)) {
         (Pedal.brake, false) => (0, zoneFraction),
