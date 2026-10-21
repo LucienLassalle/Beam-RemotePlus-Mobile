@@ -193,6 +193,16 @@ void main() {
       expect(link.povRequests, [hd]);
     });
 
+    test('says why the game cannot stream it, until it can', () async {
+      expect(controller.povUnavailable, isNull);
+      link.events_.add(const SessionMessage(commands: ['horn'], povUnavailable: 'platform'));
+      await Future<void>.delayed(Duration.zero);
+      expect(controller.povAvailable, isFalse);
+      expect(controller.povUnavailable, 'platform');
+      await session();
+      expect(controller.povUnavailable, isNull);
+    });
+
     test('is asked for again on each session, the mod may have restarted', () async {
       controller.settings = const AppSettings(povVideo: true);
       await session();

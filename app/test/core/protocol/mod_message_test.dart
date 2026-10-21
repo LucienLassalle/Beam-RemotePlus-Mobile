@@ -26,6 +26,13 @@ void main() {
     expect(m.player, 1);
     expect(m.commands, ['horn']);
     expect(m.optionalMods, isNull);
+    expect(m.povUnavailable, isNull);
+  });
+
+  test('decodes why the game cannot stream the video', () {
+    final m = ModMessage.decode(_json({'type': 'session', 'commands': [], 'povUnavailable': 'platform'}), 2)!
+        as SessionMessage;
+    expect(m.povUnavailable, SessionMessage.povUnavailablePlatform);
   });
 
   test('decodes the state of the optional mods', () {
