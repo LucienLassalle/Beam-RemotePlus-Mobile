@@ -48,6 +48,7 @@ sealed class ModMessage {
                 }
               : null,
           playerColor: parseHexColor(json['playerColor']),
+          povUnavailable: json['povUnavailable'] is String ? json['povUnavailable']! as String : null,
         );
       case 'skeleton':
         final chunk = SkeletonChunk.fromJson(json);
@@ -105,7 +106,23 @@ class SessionMessage extends ModMessage {
   /// unassigned.
   final int? playerColor;
 
-  const SessionMessage({this.modVersion, this.player, this.commands = const [], this.optionalMods, this.playerColor});
+  /// Why the game cannot stream the driver's view at all:
+  /// [povUnavailableGame] (older than 0.40), [povUnavailablePlatform] (a
+  /// build of the game without video streaming, the native Linux one) or
+  /// another reason of a newer mod. Null when it can, or for older mods.
+  final String? povUnavailable;
+
+  static const povUnavailableGame = 'game_version';
+  static const povUnavailablePlatform = 'platform';
+
+  const SessionMessage({
+    this.modVersion,
+    this.player,
+    this.commands = const [],
+    this.optionalMods,
+    this.playerColor,
+    this.povUnavailable,
+  });
 }
 
 /// The player kicked this phone from the mod's in-game panel: the session

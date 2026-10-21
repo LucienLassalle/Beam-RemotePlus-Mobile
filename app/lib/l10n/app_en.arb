@@ -451,8 +451,14 @@
   "povBitrateNormal": "Normal",
   "povBitrateHigh": "High",
   "povBitrateMax": "Max",
-  "povErrorEncoder": "No video: the game could not start the video encoder of the PC's graphics card. On Windows, use the DirectX 11 or 12 renderer and update the graphics driver; on Linux, a Mesa build with H.264 encoding is needed (such as mesa-vulkan-drivers-freeworld). The game log (beamng.log, videoStream lines) tells why.",
+  "povErrorEncoder": "No video: the game could not start the video encoder of the PC's graphics card. On Windows, use the DirectX 11 or 12 renderer and update the graphics driver; on Linux (the Windows version through Proton), a Mesa build with H.264 encoding is needed (such as mesa-vulkan-drivers-freeworld). The game log (beamng.log, videoStream lines) tells why.",
   "povErrorDecoder": "No video: this phone could not decode it. Try a lower quality in the settings.",
+  "povUnavailablePlatform": "No driver's view video with this version of the game: only the Windows version of BeamNG.drive streams video. On Linux, launch it through Proton (Steam > BeamNG.drive > Properties > Compatibility), the native Linux version cannot.",
+  "@povUnavailablePlatform": {
+    "description": "Shown when the video button is tapped and the game build has no video streaming (native Linux build)."
+  },
+  "povUnavailableGame": "No driver's view video: it needs BeamNG.drive 0.40 or newer.",
+  "povUnavailableOther": "No driver's view video: the game cannot stream it. The game log (beamng.log) tells why.",
   "@povErrorEncoder": {
     "description": "Shown over the driving screen when the PC cannot encode the point of view video."
   }

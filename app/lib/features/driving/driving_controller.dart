@@ -42,6 +42,7 @@ class DrivingController extends ChangeNotifier {
   ActionsMessage? _moreCommands;
   final Set<String> _heldMore = {};
   bool _povOffered = false;
+  String? _povUnavailable;
   PovFormat? _povSent; // asked for, null while the video is off
   double _screenAspect = 16 / 9;
   PovMessage? _povState;
@@ -130,6 +131,11 @@ class DrivingController extends ChangeNotifier {
   /// or newer): the video button and setting apply.
   bool get povAvailable => _povOffered;
 
+  /// Why the game cannot stream the driver's view at all (see
+  /// [SessionMessage.povUnavailable]): the video button says so instead of
+  /// hiding. Null when it can, or when the mod does not tell.
+  String? get povUnavailable => _povOffered ? null : _povUnavailable;
+
   /// The video shows a seat camera (the car's own dashboard is in view);
   /// null until the video is live.
   bool? get povInside => _povState?.state == PovMessage.live ? _povState!.inside : null;
@@ -196,6 +202,7 @@ class DrivingController extends ChangeNotifier {
     if (message is SessionMessage) {
       _playerColor = message.playerColor;
       _povOffered = message.commands.contains(ModCommand.pov);
+      _povUnavailable = message.povUnavailable;
       _lookOffered = message.commands.contains(ModCommand.look);
       // A new session may be a restarted mod: ask again.
       _syncPov(resend: true);
@@ -204,7 +211,10 @@ class DrivingController extends ChangeNotifier {
   }
 
   void _onModActiveChanged() {
-    if (!link.modActive) _povOffered = false;
+    if (!link.modActive) {
+      _povOffered = false;
+      _povUnavailable = null;
+    }
     _syncPov();
     notifyListeners();
   }

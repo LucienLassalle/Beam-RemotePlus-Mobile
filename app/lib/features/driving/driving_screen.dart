@@ -145,6 +145,19 @@ class _DrivingScreenState extends State<DrivingScreen> with WidgetsBindingObserv
     ));
   }
 
+  void _showPovUnavailable(String reason) {
+    final l10n = AppLocalizations.of(context);
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(switch (reason) {
+        SessionMessage.povUnavailableGame => l10n.povUnavailableGame,
+        SessionMessage.povUnavailablePlatform => l10n.povUnavailablePlatform,
+        _ => l10n.povUnavailableOther,
+      }),
+      duration: const Duration(seconds: 10),
+      behavior: SnackBarBehavior.floating,
+    ));
+  }
+
   void _onQuality() {
     if (!mounted) return;
     final lost = widget.connection.signalLost;
@@ -198,11 +211,18 @@ class _DrivingScreenState extends State<DrivingScreen> with WidgetsBindingObserv
           tooltip: l10n.vehiclePanelTooltip,
           onPressed: () => unawaited(settings.update((s) => s.copyWith(showVehiclePanel: !s.showVehiclePanel))),
         ),
-      // Only when the mod can stream the driver's view (BeamNG.drive 0.40).
+      // Only when the mod can stream the driver's view (BeamNG.drive 0.40),
+      // or crossed out when the mod tells why the game cannot.
       ListenableBuilder(
         listenable: _controller,
         builder: (context, _) => !_controller.povAvailable
-            ? const SizedBox.shrink()
+            ? (_controller.povUnavailable == null
+                ? const SizedBox.shrink()
+                : IconButton(
+                    icon: const Icon(Icons.videocam_off, color: Colors.white38),
+                    tooltip: l10n.povTooltip,
+                    onPressed: () => _showPovUnavailable(_controller.povUnavailable!),
+                  ))
             : IconButton(
                 icon: Icon(Icons.videocam, color: settings.settings.povVideo ? Colors.lightBlueAccent : Colors.white54),
                 tooltip: l10n.povTooltip,
