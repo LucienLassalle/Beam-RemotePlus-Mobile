@@ -4,17 +4,11 @@ name: iOS (untested)
 # which sign it with the user's own Apple ID). UNTESTED: nobody on the
 # project has an iPhone. Kept apart from release.yml so a failure here never
 # blocks the Android release.
-# - release published: attaches the .ipa (and its SHA-256) to the release
-# - manual run (Actions tab), or a pull request touching the iOS side:
-#   keeps the .ipa as a build artifact only (checks that it still builds)
+# Runs only when a release is published: attaches the .ipa (and its
+# SHA-256) to the release.
 on:
   release:
     types: [published]
-  workflow_dispatch:
-  pull_request:
-    paths:
-      - app/ios/**
-      - .github/workflows/ios.yml
 
 permissions:
   contents: read
@@ -41,7 +35,7 @@ jobs:
       - name: Version
         id: version
         run: |
-          if [ "$GITHUB_EVENT_NAME" = release ]; then version="${GITHUB_REF_NAME#v}"; else version="0.0.0"; fi
+          version="${GITHUB_REF_NAME#v}"
           IFS='.' read -r major minor patch <<< "${version%%-*}"
           # iOS wants a plain x.y.z version (no "-0.40" game suffix) in the app.
           echo "short=${version%%-*}" >> "$GITHUB_OUTPUT"
@@ -68,14 +62,6 @@ jobs:
           (cd dist && shasum -a 256 "$ipa" > "$ipa.sha256")
           ls -l dist
       - name: Upload to the release
-        if: github.event_name == 'release'
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh release upload "${GITHUB_REF_NAME}" --clobber dist/* --repo "$GITHUB_REPOSITORY"
-      - name: Keep as a build artifact
-        if: github.event_name != 'release'
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: ios-unsigned
-          path: dist/
-          retention-days: 7
