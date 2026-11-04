@@ -122,6 +122,20 @@ the game.
    connection with the PC: Wi-Fi hotspot or USB tethering), load a level and
    tap **Automatic connection**.
 
+### Verifying the APK
+
+Releases after 1.0.0 are signed with the project key (see
+[docs/SIGNING.md](docs/SIGNING.md)); older ones used a throw-away key, so the
+first signed version must be installed after uninstalling the old one
+(settings are reset). Every APK of a release is listed in `SHA256SUMS.txt`.
+To check the signature: `apksigner verify --print-certs <apk>` must show
+the certificate SHA-256 digest below (also shown by apps such as
+AppVerifier).
+
+```
+Certificate SHA-256: (published with the first signed release)
+```
+
 ## Network
 
 The app talks to the PC on your local network only. The one exception is
