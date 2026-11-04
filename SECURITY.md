@@ -14,3 +14,9 @@ device on the same network can get it too: only use the app on a network you
 trust (home LAN or your phone's hotspot). What the PC accepts from phones
 (locking out new phones, kicking one, commands) is described in the
 [mod's security policy](https://github.com/LucienLassalle/Beam-RemotePlus-Mod/blob/master/SECURITY.md).
+
+## Releases
+
+Release APKs are built and signed by GitHub Actions only; the signing key
+never reaches a job that runs third-party code. How the key is protected,
+and how to check an APK's signature: [docs/SIGNING.md](docs/SIGNING.md).

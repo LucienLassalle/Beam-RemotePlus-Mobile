@@ -1,12 +1,13 @@
 name: Release
 
 # Runs when a GitHub release is published (tag vX.Y.Z): builds the APKs,
-# generates the SBOMs and attaches everything to the release.
+# generates the SBOMs, signs the APKs and attaches everything to the release.
 #
-# Optional signing secrets (recommended, so updates install over the
-# previous version): ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD,
-# ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD. Without them the APKs are signed
-# with a throw-away debug key.
+# Two jobs, so the signing key is only ever seen by a few lines of shell:
+# - build: no secret at all. Third-party actions (Flutter, SBOM) run here.
+# - sign: environment "release" (tags v* only, approval required), whose
+#   secrets hold the key. No third-party action, only apksigner from the
+#   runner's Android SDK. See docs/SIGNING.md.
 on:
   release:
     types: [published]
@@ -18,14 +19,14 @@ env:
   FLUTTER_VERSION: 3.47.7
 
 jobs:
-  assets:
-    name: Release assets
+  build:
+    name: Build
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    permissions:
-      contents: write # upload release assets
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
         with:
           distribution: temurin
@@ -42,24 +43,6 @@ jobs:
           IFS='.' read -r major minor patch <<< "${version%%-*}"
           echo "name=$version" >> "$GITHUB_OUTPUT"
           echo "code=$(( major * 10000 + minor * 100 + patch ))" >> "$GITHUB_OUTPUT"
-      - name: Signing key
-        env:
-          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        run: |
-          if [ -z "$KEYSTORE_BASE64" ]; then
-            echo "::warning::No signing secrets: APKs are signed with a debug key"
-            exit 0
-          fi
-          echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/upload.jks"
-          {
-            echo "storeFile=$RUNNER_TEMP/upload.jks"
-            echo "storePassword=$KEYSTORE_PASSWORD"
-            echo "keyAlias=$KEY_ALIAS"
-            echo "keyPassword=$KEY_PASSWORD"
-          } > app/android/key.properties
       - name: Tests
         working-directory: app
         run: flutter pub get && flutter gen-l10n && flutter test
@@ -68,6 +51,8 @@ jobs:
         env:
           NAME: ${{ steps.version.outputs.name }}
           CODE: ${{ steps.version.outputs.code }}
+        # Signed with the debug key here (no key.properties); the sign job
+        # replaces that signature with the release key.
         run: |
           flags="--release --obfuscate --split-debug-info=build/symbols --build-name=$NAME --build-number=$CODE"
           flutter build apk $flags --split-per-abi
@@ -94,10 +79,63 @@ jobs:
           output-file: dist/Beam-RemotePlus-Mobile.cdx.json
           upload-artifact: false
           upload-release-assets: false
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: unsigned
+          path: dist/
+          retention-days: 1
+          if-no-files-found: error
+
+  sign:
+    name: Sign and publish
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Secrets of this environment only reach this job, after approval, and
+    # only for a v* tag (environment settings, see docs/SIGNING.md).
+    environment: release
+    permissions:
+      contents: write # upload release assets
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: unsigned
+          path: dist
+      - name: Sign the APKs
+        env:
+          APK_KEYSTORE_BASE64: ${{ secrets.APK_KEYSTORE_BASE64 }}
+          APK_KEYSTORE_PASSWORD: ${{ secrets.APK_KEYSTORE_PASSWORD }}
+          APK_KEY_ALIAS: ${{ secrets.APK_KEY_ALIAS }}
+          APK_CERT_SHA256: ${{ vars.APK_CERT_SHA256 }}
+        run: |
+          set -euo pipefail
+          if [ -z "$APK_KEYSTORE_BASE64" ] || [ -z "$APK_KEYSTORE_PASSWORD" ] || [ -z "$APK_KEY_ALIAS" ] || [ -z "$APK_CERT_SHA256" ]; then
+            echo "::error::Signing key or certificate fingerprint missing in the 'release' environment (docs/SIGNING.md)"
+            exit 1
+          fi
+          apksigner="$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -n 1)apksigner"
+          keystore="$RUNNER_TEMP/release.p12"
+          trap 'rm -f "$keystore"' EXIT
+          (umask 077 && echo "$APK_KEYSTORE_BASE64" | base64 -d > "$keystore")
+          expected="$(echo "$APK_CERT_SHA256" | tr -d ': ' | tr 'A-F' 'a-f')"
+          for apk in dist/*.apk; do
+            # The password goes through the environment, never the command line.
+            "$apksigner" sign --ks "$keystore" --ks-type PKCS12 --ks-key-alias "$APK_KEY_ALIAS" \
+              --ks-pass env:APK_KEYSTORE_PASSWORD "$apk"
+            # Exactly one signer, and it is the published certificate.
+            certs="$("$apksigner" verify --print-certs "$apk" | grep 'certificate SHA-256 digest' | sort -u)"
+            if [ "$(echo "$certs" | wc -l)" -ne 1 ] || [ "${certs##*: }" != "$expected" ]; then
+              echo "::error::$apk is not signed by the expected certificate only"
+              exit 1
+            fi
+          done
+          # v4 signature files, only useful for incremental adb installs.
+          rm -f dist/*.idsig
+          echo "Signed with certificate SHA-256 $expected"
       - name: Checksums
         working-directory: dist
         run: sha256sum * > SHA256SUMS.txt
       - name: Upload to the release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release upload "${GITHUB_REF_NAME}" --clobber dist/*
+        run: gh release upload "${GITHUB_REF_NAME}" --clobber dist/* --repo "$GITHUB_REPOSITORY"
