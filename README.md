@@ -133,7 +133,7 @@ the certificate SHA-256 digest below (also shown by apps such as
 AppVerifier).
 
 ```
-Certificate SHA-256: (published with the first signed release)
+Certificate SHA-256: 95:F1:43:9E:C1:AB:EF:39:03:52:CD:D7:49:40:A4:B2:A0:89:C8:DA:8A:F3:9C:14:F2:89:14:00:2D:7A:8A:13
 ```
 
 ### iPhone (untested)
