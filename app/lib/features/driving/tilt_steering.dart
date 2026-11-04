@@ -9,7 +9,10 @@ import 'dart:math' as math;
 /// - Full rotation: the roll is the angle of gravity around the steering
 ///   axis (atan2, not asin, which folds back after 90°), followed from one
 ///   sample to the next across ±180°, so the phone can turn like a real
-///   wheel, beyond a half turn each way.
+///   wheel, beyond a half turn each way. Past full lock the steering stays
+///   at full lock, but the roll keeps following the phone (minus whole
+///   turns, see [overshootDegFor]): the calibrated position stays the
+///   centre, however the phone was spun.
 /// - Smoothing: a light EMA removes sensor jitter; a small dead zone keeps
 ///   the centre steady.
 /// - Shake rejection: under pure rotation the acceleration magnitude stays
@@ -96,9 +99,10 @@ class TiltSteering {
   double _rawRoll(double x, double y, double z) => math.atan2(y, x * _downX + z * _downZ) * 180 / math.pi;
 
   /// Adds the rotation since the last sample to the followed roll, through
-  /// the ±180° seam, stopping at full lock like a real wheel: turning
-  /// further does nothing, turning back steers back at once. A sample held
-  /// along the axis changes nothing.
+  /// the ±180° seam. The roll is never clamped (only the steering is), so
+  /// it stays tied to how the phone is held: back in the calibrated
+  /// position, the wheel is centred again. A sample held along the axis
+  /// changes nothing.
   void _follow(double x, double y, double z) {
     final h = x * _downX + z * _downZ;
     if (math.sqrt(y * y + h * h) < minPlanarGravity) return;
@@ -107,8 +111,35 @@ class TiltSteering {
     if (delta > 180) delta -= 360;
     if (delta < -180) delta += 360;
     _lastRaw = raw;
+    _roll += delta;
+  }
+
+  /// How far the roll may go past full lock before a whole turn is taken
+  /// off it, for a full lock of [lockDeg]. Gravity only tells the phone's
+  /// angle modulo 360°, so taking off whole turns never shifts the centre;
+  /// it only keeps spins past full lock from winding up.
+  /// - Full lock under 360°: the turn comes off as soon as the phone reaches
+  ///   the other full lock (360° - lock), so the calibrated position always
+  ///   reads as the centre and turning back never needs extra turns.
+  /// - Full lock of 360° or more (real wheel): the same position can mean
+  ///   the centre or a whole turn; a past-lock overshoot under half a turn
+  ///   is kept exactly, a bigger one comes off a turn at a time.
+  static double overshootDegFor(double lockDeg) => lockDeg < 360 ? math.max(0.0, 360 - 2 * lockDeg) : 180;
+
+  /// Takes whole turns off the roll (and its smoothed value, so smoothing
+  /// does not sweep across) once past full lock + [overshootDegFor]. Also
+  /// applied when full lock changes (another vehicle).
+  void _unwind() {
     final lock = _fullLockDeg;
-    _roll = (_roll + delta).clamp(-lock, lock);
+    final limit = lock + overshootDegFor(lock);
+    while (_roll > limit) {
+      _roll -= 360;
+      if (_smoothedRoll != null) _smoothedRoll = _smoothedRoll! - 360;
+    }
+    while (_roll < -limit) {
+      _roll += 360;
+      if (_smoothedRoll != null) _smoothedRoll = _smoothedRoll! + 360;
+    }
   }
 
   /// Steering value for this sample (0.5 while calibrating or for an
@@ -139,6 +170,7 @@ class TiltSteering {
     }
 
     _follow(x, y, z);
+    _unwind();
     var roll = _roll;
     final deviation = (mag - _restMag).abs();
     final confidence = deviation <= shakeSoftDeviation
