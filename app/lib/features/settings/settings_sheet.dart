@@ -333,7 +333,7 @@ class _GameplayTab extends StatelessWidget {
 
   Future<void> _customRange(BuildContext context, double current) async {
     final value = await showDialog<double>(context: context, builder: (_) => _RotationRangeDialog(current: current));
-    if (value != null && context.mounted) _set(context, (s) => s.copyWith(rotationRangeDeg: value));
+    if (value != null && context.mounted) _set(context, (s) => s.copyWith(rotationRangeDeg: value, autoRotationRange: false));
   }
 
   @override
@@ -341,6 +341,8 @@ class _GameplayTab extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final s = SettingsScope.of(context).settings;
     final custom = !AppSettings.rotationRanges.contains(s.rotationRangeDeg);
+    // Auto only applies to tilt steering; the touch wheel shows its range.
+    final auto = s.tiltSteering && s.autoRotationRange;
     return _Tab([
       ListTile(
         title: Text(l10n.settingsDrivingModeTitle),
@@ -365,25 +367,33 @@ class _GameplayTab extends StatelessWidget {
           Text(l10n.settingsRotationRangeSubtitle),
           const SizedBox(height: 6),
           Wrap(spacing: 8, runSpacing: 4, children: [
+            // Tilt only: the touch wheel has no vehicle to follow.
+            ChoiceChip(
+              label: Text(l10n.settingsRotationRangeAuto),
+              selected: auto,
+              onSelected: s.tiltSteering ? (_) => _set(context, (s) => s.copyWith(autoRotationRange: true)) : null,
+            ),
             for (final r in AppSettings.rotationRanges)
               ChoiceChip(
                 label: Text('${r.round()}°'),
-                selected: s.rotationRangeDeg == r,
-                onSelected: (_) => _set(context, (s) => s.copyWith(rotationRangeDeg: r)),
+                selected: !auto && s.rotationRangeDeg == r,
+                onSelected: (_) => _set(context, (s) => s.copyWith(rotationRangeDeg: r, autoRotationRange: false)),
               ),
             ChoiceChip(
               label: Text(custom ? '${s.rotationRangeDeg.round()}°' : l10n.settingsRotationRangeCustom),
               avatar: const Icon(Icons.edit, size: 16),
-              selected: custom,
+              selected: !auto && custom,
               onSelected: (_) => unawaited(_customRange(context, s.rotationRangeDeg)),
             ),
           ]),
-          Text(s.realWheel ? l10n.settingsRealWheelHint : l10n.settingsRotationRangeHint(TiltSteering.maxTiltDegFor(s.rotationRangeDeg).round()),
-              style: const TextStyle(fontSize: 11, color: Colors.white38)),
+          if (s.tiltSteering)
+            Text(
+                auto
+                    ? l10n.settingsRotationRangeAutoHint((TiltSteering.autoFallbackRangeDeg / 2).round())
+                    : l10n.settingsRotationRangeHint(TiltSteering.fullLockDegFor(s.rotationRangeDeg).round()),
+                style: const TextStyle(fontSize: 11, color: Colors.white38)),
         ]),
       ),
-      _switch(l10n.settingsRealWheelTitle, l10n.settingsRealWheelSubtitle, s.realWheel,
-          s.tiltSteering ? (v) => _set(context, (s) => s.copyWith(realWheel: v)) : null),
       // Tilt only: the touch bar and the thumb wheel follow the finger.
       _switch(l10n.settingsInvertTitle, null, s.invertSteering,
           s.tiltSteering ? (v) => _set(context, (s) => s.copyWith(invertSteering: v)) : null),

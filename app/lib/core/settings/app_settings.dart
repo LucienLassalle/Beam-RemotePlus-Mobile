@@ -65,11 +65,14 @@ class AppSettings {
 
   /// Throttle on the left, brake on the right (left-handed players).
   final bool swapPedals;
+  /// Tilt steering turns the phone 1:1 with the steering wheel: full lock
+  /// at half the rotation range (900° = 450° each way). Also the touch
+  /// wheel's range.
   final double rotationRangeDeg;
 
-  /// Tilt steering turns 1:1 with a real wheel: full lock at half the
-  /// rotation range of phone rotation (900° = 450° each way).
-  final bool realWheel;
+  /// "Auto" rotation range: full lock as the steering wheel of the
+  /// vehicle (from the mod) instead of [rotationRangeDeg].
+  final bool autoRotationRange;
   final bool invertSteering;
 
   final SteeringSensor steeringSensor;
@@ -138,7 +141,7 @@ class AppSettings {
     this.touchWheel = false,
     this.swapPedals = false,
     this.rotationRangeDeg = 900,
-    this.realWheel = false,
+    this.autoRotationRange = true,
     this.invertSteering = true,
     this.steeringSensor = SteeringSensor.auto,
     this.steeringCenterPrecision = 0,
@@ -192,7 +195,7 @@ class AppSettings {
     bool? touchWheel,
     bool? swapPedals,
     double? rotationRangeDeg,
-    bool? realWheel,
+    bool? autoRotationRange,
     bool? invertSteering,
     SteeringSensor? steeringSensor,
     double? steeringCenterPrecision,
@@ -233,7 +236,7 @@ class AppSettings {
       touchWheel: touchWheel ?? this.touchWheel,
       swapPedals: swapPedals ?? this.swapPedals,
       rotationRangeDeg: rotationRangeDeg ?? this.rotationRangeDeg,
-      realWheel: realWheel ?? this.realWheel,
+      autoRotationRange: autoRotationRange ?? this.autoRotationRange,
       invertSteering: invertSteering ?? this.invertSteering,
       steeringSensor: steeringSensor ?? this.steeringSensor,
       steeringCenterPrecision: steeringCenterPrecision ?? this.steeringCenterPrecision,
@@ -276,7 +279,7 @@ class AppSettings {
         'touchWheel': touchWheel,
         'swapPedals': swapPedals,
         'rotationRangeDeg': rotationRangeDeg,
-        'realWheel': realWheel,
+        'autoRotationRange': autoRotationRange,
         'invertSteering': invertSteering,
         'steeringSensor': steeringSensor.name,
         'steeringCenterPrecision': steeringCenterPrecision,
@@ -335,7 +338,9 @@ class AppSettings {
       touchWheel: pick('touchWheel', d.touchWheel),
       swapPedals: pick('swapPedals', d.swapPedals),
       rotationRangeDeg: rotation,
-      realWheel: pick('realWheel', d.realWheel),
+      // Settings saved before "Auto": the 1:1 "real wheel" switch on is Auto
+      // (full lock as the vehicle), off keeps the chosen range.
+      autoRotationRange: pick('autoRotationRange', json['realWheel'] is bool ? json['realWheel']! as bool : d.autoRotationRange),
       invertSteering: pick('invertSteering', d.invertSteering),
       steeringSensor: enumByName(SteeringSensor.values, json['steeringSensor'], d.steeringSensor),
       steeringCenterPrecision: precision is num && precision >= 0 && precision <= 1 ? precision.toDouble() : d.steeringCenterPrecision,

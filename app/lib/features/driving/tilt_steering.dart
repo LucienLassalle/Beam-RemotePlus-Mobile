@@ -8,11 +8,14 @@ import 'dart:math' as math;
 ///   sensor bias and the natural holding angle.
 /// - Full rotation: the roll is the angle of gravity around the steering
 ///   axis (atan2, not asin, which folds back after 90°), followed from one
-///   sample to the next across ±180°, so the phone can turn like a real
-///   wheel, beyond a half turn each way. Past full lock the steering stays
-///   at full lock, but the roll keeps following the phone (minus whole
-///   turns, see [overshootDegFor]): the calibrated position stays the
-///   centre, however the phone was spun.
+///   sample to the next across ±180°, so the phone turns 1:1 like the
+///   steering wheel: half the rotation range each way (900° = 450°), or the
+///   vehicle's own wheel rotation with [autoRange].
+/// - Full lock like a real car: the roll follows every turn of the phone,
+///   never clamped. Past full lock the steering stays at full lock; it
+///   steers back only once the phone is back within full lock, however
+///   many turns past it the phone went. So the calibrated position is
+///   always the centre.
 /// - Smoothing: a light EMA removes sensor jitter; a small dead zone keeps
 ///   the centre steady.
 /// - Shake rejection: under pure rotation the acceleration magnitude stays
@@ -26,16 +29,22 @@ class TiltSteering {
   static const double shakeHardDeviation = 6.0; // m/s²
   static const double shakeMinConfidence = 0.08;
 
-  /// Phone tilt (degrees from rest) giving full lock for a virtual wheel
-  /// rotation range: 360° -> 75°, 900° -> 187.5°.
-  static double maxTiltDegFor(double rotationRangeDeg) => rotationRangeDeg * (75.0 / 360.0);
+  /// Thumb rotation of the on-screen touch wheel (not the phone) giving
+  /// full lock: 360° -> 75°, 900° -> 187.5°.
+  static double touchWheelMaxDegFor(double rotationRangeDeg) => rotationRangeDeg * (75.0 / 360.0);
 
-  /// Phone rotation (degrees from rest) giving full lock: [maxTiltDegFor],
-  /// or, when the phone turns like a real wheel, the steering wheel
-  /// rotation of the vehicle ([vehicleLockDeg], e.g. 450° each way), half
-  /// the range when unknown.
-  static double fullLockDegFor(double rotationRangeDeg, {bool realWheel = false, double? vehicleLockDeg}) =>
-      realWheel ? (vehicleLockDeg != null && vehicleLockDeg > 0 ? vehicleLockDeg : rotationRangeDeg / 2) : maxTiltDegFor(rotationRangeDeg);
+  /// Rotation range used by "Auto" when the vehicle's is unknown (older
+  /// mod): a road car.
+  static const double autoFallbackRangeDeg = 900;
+
+  /// Phone rotation (degrees from rest, each way) giving full lock, 1:1
+  /// with the steering wheel: half the rotation range (900° -> 450°), or
+  /// with [auto] the vehicle's wheel rotation ([vehicleLockDeg], from the
+  /// mod), half of [autoFallbackRangeDeg] while unknown.
+  static double fullLockDegFor(double rotationRangeDeg, {bool auto = false, double? vehicleLockDeg}) {
+    if (auto) return vehicleLockDeg != null && vehicleLockDeg > 0 ? vehicleLockDeg : autoFallbackRangeDeg / 2;
+    return rotationRangeDeg / 2;
+  }
 
   /// Below this part of gravity around the steering axis (m/s²: phone held
   /// nearly along the axis) the roll is unreliable: it is kept as it was.
@@ -45,15 +54,15 @@ class TiltSteering {
   bool invert;
   bool smoothing;
 
-  /// Full lock at half the rotation range of phone rotation (1:1 with a
-  /// real wheel), see [fullLockDegFor].
-  bool realWheel;
+  /// "Auto" rotation range: full lock as the vehicle's steering wheel
+  /// ([vehicleLockDeg]) instead of half of [rotationRangeDeg].
+  bool autoRange;
 
   /// Steering wheel rotation of the vehicle giving full lock, degrees each
-  /// way (from the mod), for [realWheel].
+  /// way (from the mod), for [autoRange].
   double? vehicleLockDeg;
 
-  double get _fullLockDeg => fullLockDegFor(rotationRangeDeg, realWheel: realWheel, vehicleLockDeg: vehicleLockDeg);
+  double get _fullLockDeg => fullLockDegFor(rotationRangeDeg, auto: autoRange, vehicleLockDeg: vehicleLockDeg);
 
   /// Samples come from the gyroscope fused with the accelerometer
   /// (GravitySensor) instead of the raw accelerometer. They have no
@@ -79,7 +88,7 @@ class TiltSteering {
     this.invert = false,
     this.smoothing = true,
     this.fused = false,
-    this.realWheel = false,
+    this.autoRange = false,
     this.vehicleLockDeg,
   });
 
@@ -100,9 +109,8 @@ class TiltSteering {
 
   /// Adds the rotation since the last sample to the followed roll, through
   /// the ±180° seam. The roll is never clamped (only the steering is), so
-  /// it stays tied to how the phone is held: back in the calibrated
-  /// position, the wheel is centred again. A sample held along the axis
-  /// changes nothing.
+  /// it stays the phone's total rotation since calibration, like a car's
+  /// steering column. A sample held along the axis changes nothing.
   void _follow(double x, double y, double z) {
     final h = x * _downX + z * _downZ;
     if (math.sqrt(y * y + h * h) < minPlanarGravity) return;
@@ -114,33 +122,6 @@ class TiltSteering {
     _roll += delta;
   }
 
-  /// How far the roll may go past full lock before a whole turn is taken
-  /// off it, for a full lock of [lockDeg]. Gravity only tells the phone's
-  /// angle modulo 360°, so taking off whole turns never shifts the centre;
-  /// it only keeps spins past full lock from winding up.
-  /// - Full lock under 360°: the turn comes off as soon as the phone reaches
-  ///   the other full lock (360° - lock), so the calibrated position always
-  ///   reads as the centre and turning back never needs extra turns.
-  /// - Full lock of 360° or more (real wheel): the same position can mean
-  ///   the centre or a whole turn; a past-lock overshoot under half a turn
-  ///   is kept exactly, a bigger one comes off a turn at a time.
-  static double overshootDegFor(double lockDeg) => lockDeg < 360 ? math.max(0.0, 360 - 2 * lockDeg) : 180;
-
-  /// Takes whole turns off the roll (and its smoothed value, so smoothing
-  /// does not sweep across) once past full lock + [overshootDegFor]. Also
-  /// applied when full lock changes (another vehicle).
-  void _unwind() {
-    final lock = _fullLockDeg;
-    final limit = lock + overshootDegFor(lock);
-    while (_roll > limit) {
-      _roll -= 360;
-      if (_smoothedRoll != null) _smoothedRoll = _smoothedRoll! - 360;
-    }
-    while (_roll < -limit) {
-      _roll += 360;
-      if (_smoothedRoll != null) _smoothedRoll = _smoothedRoll! + 360;
-    }
-  }
 
   /// Steering value for this sample (0.5 while calibrating or for an
   /// unusable sample).
@@ -170,7 +151,6 @@ class TiltSteering {
     }
 
     _follow(x, y, z);
-    _unwind();
     var roll = _roll;
     final deviation = (mag - _restMag).abs();
     final confidence = deviation <= shakeSoftDeviation

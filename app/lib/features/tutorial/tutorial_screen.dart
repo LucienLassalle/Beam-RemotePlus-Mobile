@@ -185,6 +185,9 @@ class _SteeringPageState extends State<_SteeringPage> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final s = widget.settings;
+    final lockDeg = s.tiltSteering
+        ? TiltSteering.fullLockDegFor(s.rotationRangeDeg, auto: s.autoRotationRange)
+        : 90.0;
     final text = s.tiltSteering
         ? l10n.tutorialSteeringTilt
         : (s.touchWheel ? l10n.tutorialSteeringWheel : l10n.tutorialSteeringBar);
@@ -192,25 +195,26 @@ class _SteeringPageState extends State<_SteeringPage> {
         ? SteeringControl(
             onSteering: _onSteering,
             rotationRangeDeg: s.rotationRangeDeg,
-            realWheel: s.realWheel,
+            autoRange: s.autoRotationRange,
             invert: s.invertSteering,
             smoothing: s.steeringSmoothing,
             sensor: s.steeringSensor,
             accelerometer: widget.accelerometer,
           )
         : (s.touchWheel
-            ? TouchWheel(onSteering: _onSteering, maxAngleDeg: TiltSteering.maxTiltDegFor(s.rotationRangeDeg))
+            ? TouchWheel(onSteering: _onSteering, maxAngleDeg: TiltSteering.touchWheelMaxDegFor(s.rotationRangeDeg))
             : SizedBox(width: 280, child: SteeringControl(onSteering: _onSteering, tiltMode: false)));
     return _Page(
       icon: Icons.screen_rotation,
       title: l10n.tutorialSteeringTitle,
       text: text,
       child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-        // The car's wheel, turned as the game would turn it (full lock = a
-        // half turn each way here).
+        // The car's wheel, turned as the game would turn it: 1:1 with the
+        // phone in tilt mode (no vehicle here: Auto uses its fallback),
+        // otherwise full lock = a half turn each way.
         CustomPaint(
           size: const Size.square(120),
-          painter: SteeringWheelPainter(angleDeg: (_steering - 0.5) * 180, color: Colors.lightBlueAccent),
+          painter: SteeringWheelPainter(angleDeg: (_steering - 0.5) * 2 * lockDeg, color: Colors.lightBlueAccent),
         ),
         if (!s.tiltSteering) ...[const SizedBox(width: 32), control] else control,
       ]),

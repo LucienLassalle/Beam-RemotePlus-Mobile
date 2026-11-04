@@ -38,6 +38,16 @@ void main() {
       expect(AppSettings.fromJson({'hapticStrength': 3}).hapticStrength, 1);
     });
 
+    test('rotation range Auto: default, and the old 1:1 "real wheel" switch carries over', () {
+      expect(const AppSettings().autoRotationRange, isTrue);
+      expect(AppSettings.fromJson(const {}).autoRotationRange, isTrue);
+      expect(AppSettings.fromJson({'realWheel': true, 'rotationRangeDeg': 540}).autoRotationRange, isTrue);
+      final fixed = AppSettings.fromJson({'realWheel': false, 'rotationRangeDeg': 540});
+      expect(fixed.autoRotationRange, isFalse, reason: 'kept the chosen range');
+      expect(fixed.rotationRangeDeg, 540);
+      expect(AppSettings.fromJson(const AppSettings(autoRotationRange: false).toJson()).autoRotationRange, isFalse);
+    });
+
     test('falls back to defaults for missing or invalid values', () {
       final s = AppSettings.fromJson({'useKmh': 'yes', 'rotationRangeDeg': 10, 'themeName': 4});
       expect(s.useKmh, isTrue);
