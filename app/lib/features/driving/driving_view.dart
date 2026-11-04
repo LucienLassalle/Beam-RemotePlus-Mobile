@@ -290,7 +290,7 @@ class DrivingView extends StatelessWidget {
       onSteering: controller.steer,
       tiltMode: settings.tiltSteering,
       rotationRangeDeg: settings.rotationRangeDeg,
-      realWheel: settings.realWheel,
+      autoRange: settings.autoRotationRange,
       vehicleLockDeg: controller.telemetry.steeringLock,
       invert: settings.invertSteering,
       smoothing: settings.steeringSmoothing,
@@ -312,7 +312,7 @@ class DrivingView extends StatelessWidget {
           ignoring: controller.readOnly,
           child: TouchWheel(
             onSteering: controller.steer,
-            maxAngleDeg: TiltSteering.maxTiltDegFor(settings.rotationRangeDeg),
+            maxAngleDeg: TiltSteering.touchWheelMaxDegFor(settings.rotationRangeDeg),
             color: theme.style.buttonColor,
             size: touchWheelSize,
           ),

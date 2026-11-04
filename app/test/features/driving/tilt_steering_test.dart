@@ -20,24 +20,24 @@ void main() {
     return s;
   }
 
-  test('centre at rest, full lock at the configured tilt', () {
+  test('centre at rest, the phone turns 1:1 with the wheel', () {
     final s = calibrated();
     var (x, y, z) = _rolled(0);
     expect(s.steering(x, y, z), 0.5);
-    (x, y, z) = _rolled(75); // 360° range -> 75° for full lock
-    expect(s.steering(x, y, z), closeTo(0, 1e-6));
+    (x, y, z) = _rolled(90); // 360° range: full lock at 180°, so half lock
+    expect(s.steering(x, y, z), closeTo(0.25, 1e-6));
   });
 
   test('invert flips the direction', () {
     final s = calibrated(invert: true);
-    final (x, y, z) = _rolled(75);
-    expect(s.steering(x, y, z), closeTo(1, 1e-6));
+    final (x, y, z) = _rolled(90);
+    expect(s.steering(x, y, z), closeTo(0.75, 1e-6));
   });
 
   test('bigger rotation range needs more tilt', () {
     final s = calibrated(range: 900);
     final (x, y, z) = _rolled(75);
-    expect(s.steering(x, y, z), closeTo(0.3, 1e-2));
+    expect(s.steering(x, y, z), closeTo(0.5 - 75 / 900, 1e-6));
   });
 
   test('ignores free-fall samples', () {
@@ -53,9 +53,9 @@ void main() {
     expect((shakenValue - 0.5).abs(), lessThan((calmValue - 0.5).abs()));
   });
 
-  test('maxTiltDegFor', () {
-    expect(TiltSteering.maxTiltDegFor(360), 75);
-    expect(TiltSteering.maxTiltDegFor(900), 187.5);
+  test('touchWheelMaxDegFor', () {
+    expect(TiltSteering.touchWheelMaxDegFor(360), 75);
+    expect(TiltSteering.touchWheelMaxDegFor(900), 187.5);
   });
 
   group('PitchShifter', () {
@@ -83,7 +83,7 @@ void main() {
       return 0.5 - s.steering(x, y, z);
     }
 
-    expect(firstStep(fused: true), closeTo(0.5 * 30 / 75, 1e-6), reason: '30° of a 360° range (75° tilt)');
+    expect(firstStep(fused: true), closeTo(0.5 * 30 / 180, 1e-6), reason: '30° of a 360° range (full lock at 180°)');
     expect(firstStep(fused: false), lessThan(firstStep(fused: true)));
   });
 
@@ -122,106 +122,59 @@ void main() {
       expect(at150, lessThan(at90), reason: 'further from the centre, not back towards it');
     });
 
-    test('reaches full lock with the 900° range (187.5° of tilt)', () {
-      final s = rest(TiltSteering(rotationRangeDeg: 900, smoothing: false), _rolled);
-      expect(turn(s, 0, 185, _rolled), greaterThan(0.005));
-      final (x, y, z) = _rolled(187.5);
-      expect(s.steering(x, y, z), closeTo(0, 1e-9));
-    });
-
-    test('real wheel: 450° each way for 900°, through the ±180° seam', () {
-      final s = rest(TiltSteering(rotationRangeDeg: 900, smoothing: false, realWheel: true), upright);
+    test('900°: 450° each way, through the ±180° seam', () {
+      final s = rest(TiltSteering(rotationRangeDeg: 900, smoothing: false), upright);
       expect(turn(s, 0, 225, upright), closeTo(0.25, 1e-6));
       expect(turn(s, 230, 450, upright), closeTo(0, 1e-6));
       expect(turn(s, 445, 0, upright), closeTo(0.5, 1e-6), reason: 'back to the centre');
       expect(turn(s, -5, -450, upright), closeTo(1, 1e-6));
     });
 
-    test('real wheel: full lock as the vehicle steering wheel', () {
-      final s = rest(TiltSteering(rotationRangeDeg: 900, smoothing: false, realWheel: true, vehicleLockDeg: 270), upright);
+    // The behaviour asked for: like a car whose steering wheel has no
+    // hard stop. Past full lock the wheel stays at full lock while the
+    // phone is beyond it, even turning back, and steers back only once the
+    // phone is back within full lock.
+    for (final range in [360.0, 540.0, 720.0, 900.0]) {
+      final lock = range / 2;
+      test('${range.toInt()}°: held at full lock beyond ${lock.toInt()}°, steers back once within it', () {
+        for (final dir in [1.0, -1.0]) {
+          final full = dir > 0 ? 0.0 : 1.0;
+          final s = rest(TiltSteering(rotationRangeDeg: range, smoothing: false), upright);
+          expect(turn(s, 0, dir * lock, upright), closeTo(full, 1e-6), reason: 'full lock');
+          expect(turn(s, dir * (lock + 5), dir * (lock + 200), upright), closeTo(full, 1e-6), reason: 'still turning');
+          expect(turn(s, dir * (lock + 195), dir * (lock + 20), upright), closeTo(full, 1e-6),
+              reason: 'turned back, still beyond full lock');
+          expect(turn(s, dir * (lock + 15), dir * lock / 2, upright), closeTo(0.5 - dir * 0.25, 1e-6),
+              reason: 'back within full lock: half lock');
+          expect(turn(s, dir * (lock / 2 - 5), 0, upright), closeTo(0.5, 1e-6), reason: 'calibrated position');
+        }
+      });
+    }
+
+    test('three turns past full lock need three turns back, then the centre', () {
+      final s = rest(TiltSteering(rotationRangeDeg: 900, smoothing: false), upright);
+      turn(s, 0, 450 + 1080, upright);
+      expect(turn(s, 1525, 455, upright), closeTo(0, 1e-6), reason: 'beyond 450° all the way back');
+      expect(turn(s, 450, 0, upright), closeTo(0.5, 1e-6));
+    });
+
+    test('Auto: full lock as the vehicle steering wheel', () {
+      final s = rest(TiltSteering(rotationRangeDeg: 360, smoothing: false, autoRange: true, vehicleLockDeg: 270), upright);
       expect(turn(s, 0, 135, upright), closeTo(0.25, 1e-6));
       expect(turn(s, 140, 270, upright), closeTo(0, 1e-6));
     });
 
-    // The reported bug: after spinning the phone past full lock, the
-    // calibrated position read as a turned wheel (the part of the spin
-    // past full lock was lost).
-    for (final range in [360.0, 540.0, 900.0]) {
-      for (final spin in [100.0, 300.0, 725.0, 1180.0, 3600.0]) {
-        test('$range° range: spun ${spin.toInt()}° either way, the calibrated position is the centre again', () {
-          for (final dir in [1.0, -1.0]) {
-            final s = rest(TiltSteering(rotationRangeDeg: range, smoothing: false), _rolled);
-            turn(s, 0, dir * spin, _rolled);
-            // Back the way it came...
-            expect(turn(s, dir * (spin - 5), 0, _rolled), closeTo(0.5, 1e-6), reason: 'turned back, dir $dir');
-            // ...or on to the next turn that brings it to the same place.
-            final s2 = rest(TiltSteering(rotationRangeDeg: range, smoothing: false), _rolled);
-            turn(s2, 0, dir * spin, _rolled);
-            final next = (spin / 360).ceil() * 360.0;
-            expect(turn(s2, dir * (spin + 5), dir * next, _rolled), closeTo(0.5, 1e-6), reason: 'turned on, dir $dir');
-          }
-        });
-      }
-    }
-
-    test('no winding up: after ten turns the wheel follows the phone at once', () {
-      final s = rest(TiltSteering(rotationRangeDeg: 900, smoothing: false), _rolled);
-      final at30 = turn(rest(TiltSteering(rotationRangeDeg: 900, smoothing: false), _rolled), 0, 30, _rolled);
-      expect(turn(s, 0, 3600 + 30, _rolled), closeTo(at30, 1e-6));
-      expect(turn(s, 3625, 3600, _rolled), closeTo(0.5, 1e-6));
+    test('Auto with an older mod (vehicle unknown): 450° each way', () {
+      final s = rest(TiltSteering(rotationRangeDeg: 360, smoothing: false, autoRange: true), upright);
+      expect(turn(s, 0, 225, upright), closeTo(0.25, 1e-6));
     });
 
-    test('past full lock the wheel stays there until the phone reaches the other full lock', () {
-      final s = rest(TiltSteering(rotationRangeDeg: 360, smoothing: false), _rolled); // 75° lock
-      expect(turn(s, 0, 280, _rolled), closeTo(0, 1e-6), reason: 'held at full right');
-      expect(turn(s, 285, 290, _rolled), closeTo(0.5 + 70 / 150, 1e-6), reason: '290° is 70° to the left');
-      expect(turn(s, 295, 360, _rolled), closeTo(0.5, 1e-6));
-      // Turning back from past full lock: full lock again, then the centre.
-      final back = rest(TiltSteering(rotationRangeDeg: 360, smoothing: false), _rolled);
-      turn(back, 0, 200, _rolled);
-      expect(turn(back, 195, 75, _rolled), closeTo(0, 1e-6));
-      expect(turn(back, 70, 0, _rolled), closeTo(0.5, 1e-6));
-    });
-
-    test('real wheel: an overshoot under half a turn is kept exactly', () {
-      final s = rest(TiltSteering(rotationRangeDeg: 900, smoothing: false, realWheel: true, vehicleLockDeg: 540), upright);
-      expect(turn(s, 0, 700, upright), closeTo(0, 1e-6));
-      expect(turn(s, 695, 0, upright), closeTo(0.5, 1e-6));
-    });
-
-    test('real wheel: a long spin never winds up more than half a turn past full lock', () {
-      final s = rest(TiltSteering(rotationRangeDeg: 900, smoothing: false, realWheel: true, vehicleLockDeg: 540), upright);
-      // Ten turns and a quarter: at most half a turn past full lock is kept
-      // (whole turns come off), so 450° back (not 3690°) is the centre.
-      expect(turn(s, 0, 3690, upright), closeTo(0.5 - 450 / 1080, 1e-6), reason: '450° of 540°');
-      expect(turn(s, 3685, 3690 - 450, upright), closeTo(0.5, 1e-6));
-    });
-
-    test('another vehicle with a smaller full lock does not shift the centre', () {
-      final s = rest(TiltSteering(rotationRangeDeg: 900, smoothing: false, realWheel: true, vehicleLockDeg: 540), upright);
+    test('Auto: another vehicle with a smaller full lock does not shift the centre', () {
+      final s = rest(TiltSteering(rotationRangeDeg: 900, smoothing: false, autoRange: true, vehicleLockDeg: 540), upright);
       turn(s, 0, 200, upright);
       s.vehicleLockDeg = 150;
       expect(turn(s, 200, 200, upright), closeTo(0, 1e-6), reason: 'past the new full lock');
-      // The old code clamped the roll to 150°: back here it read 50° left.
       expect(turn(s, 195, 0, upright), closeTo(0.5, 1e-6));
-    });
-
-    test('accelerometer smoothing does not sweep across when a turn comes off', () {
-      final s = rest(TiltSteering(rotationRangeDeg: 900), _rolled); // smoothed
-      turn(s, 0, 3600, _rolled);
-      // A few samples at rest after the spin settle on the centre.
-      var v = 0.0;
-      for (var i = 0; i < 30; i++) {
-        final (x, y, z) = _rolled(0);
-        v = s.steering(x, y, z);
-      }
-      expect(v, closeTo(0.5, 1e-3));
-    });
-
-    test('overshootDegFor', () {
-      expect(TiltSteering.overshootDegFor(75), 210);
-      expect(TiltSteering.overshootDegFor(187.5), 0);
-      expect(TiltSteering.overshootDegFor(450), 180);
     });
 
     test('a phone held along the steering axis keeps its last angle', () {
@@ -231,7 +184,7 @@ void main() {
     });
 
     test('turning the phone never reads as a pitch gesture', () {
-      final s = rest(TiltSteering(rotationRangeDeg: 900, smoothing: false, realWheel: true), upright);
+      final s = rest(TiltSteering(rotationRangeDeg: 900, smoothing: false), upright);
       for (final deg in [30.0, 90.0, 200.0]) {
         final (x, y, z) = upright(deg);
         expect(s.pitch(x, y, z).abs(), lessThan(1e-6), reason: '$deg°');
@@ -240,10 +193,11 @@ void main() {
       expect(s.pitch(9.81 * math.cos(0.5), 0, 9.81 * math.sin(0.5)).abs(), greaterThan(25));
     });
 
-    test('full lock angle of each mode', () {
-      expect(TiltSteering.fullLockDegFor(900), 187.5);
-      expect(TiltSteering.fullLockDegFor(900, realWheel: true), 450);
-      expect(TiltSteering.fullLockDegFor(900, realWheel: true, vehicleLockDeg: 540), 540);
+    test('full lock angle', () {
+      expect(TiltSteering.fullLockDegFor(900), 450);
+      expect(TiltSteering.fullLockDegFor(360), 180);
+      expect(TiltSteering.fullLockDegFor(360, auto: true), 450);
+      expect(TiltSteering.fullLockDegFor(360, auto: true, vehicleLockDeg: 540), 540);
     });
   });
 }

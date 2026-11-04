@@ -81,20 +81,28 @@
   },
   "settingsCancel": "Cancel",
   "settingsOk": "OK",
-  "settingsRotationRangeSubtitle": "Like a real wheel: 360° = quick, 900° = heavier and more progressive.",
-  "settingsRotationRangeHint": "Tilt about {deg}° to reach full lock.",
+  "settingsRotationRangeSubtitle": "The phone turns like the steering wheel (1:1): past full lock the wheel stays there and comes back once the phone is back within full lock. Auto: as the steering wheel of the vehicle.",
+  "settingsRotationRangeAuto": "Auto",
+  "settingsRotationRangeAutoHint": "Turn the phone as far as the steering wheel of the vehicle (about {deg}° each way with an older mod).",
+  "@settingsRotationRangeAutoHint": {
+    "description": "Shown under the rotation range chips when Auto is selected.",
+    "placeholders": {
+      "deg": {
+        "type": "int",
+        "example": "450"
+      }
+    }
+  },
+  "settingsRotationRangeHint": "Turn the phone {deg}° each way to reach full lock.",
   "@settingsRotationRangeHint": {
     "description": "Shown under the rotation range chips.",
     "placeholders": {
       "deg": {
         "type": "int",
-        "example": "75"
+        "example": "450"
       }
     }
   },
-  "settingsRealWheelTitle": "Real wheel (1:1)",
-  "settingsRealWheelSubtitle": "Turn the phone as far as the steering wheel of the vehicle: about one and a half turns each way on a road car, less on a race car (the screen is then upside down). Turning further does nothing. Off: a smaller tilt is enough.",
-  "settingsRealWheelHint": "Full lock as in the vehicle (half the rotation range above with an older mod).",
   "settingsInvertTitle": "Invert steering",
   "settingsSensorTitle": "Motion sensor",
   "settingsSensorSubtitle": "The gyroscope steers quicker and steadier. Auto uses it when the phone has one, otherwise the accelerometer.",

@@ -32,9 +32,11 @@ longer maintained.
 
 ## Features
 
-- **Steering** by tilting the phone like a wheel (with the gyroscope when
-  the phone has one, quicker and steadier), with a touch bar, or with a
-  wheel turned by a thumb.
+- **Steering** by turning the phone like a wheel, 1:1 (with the gyroscope
+  when the phone has one, quicker and steadier): the rotation range is the
+  vehicle's own (**Auto**) or a fixed one (900° = 450° each way), and past
+  full lock the wheel stays there until the phone comes back within it.
+  Or a touch bar, or a wheel turned by a thumb.
 - **Analog pedals** with both thumbs (sides swappable for left-handed
   players).
 - **Dashboard themes**, easy to make: [THEMES.md](THEMES.md). The **Drift**
