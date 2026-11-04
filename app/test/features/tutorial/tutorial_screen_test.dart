@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:beam_remoteplus/core/platform/hardware_keys.dart';
 import 'package:beam_remoteplus/core/settings/settings_controller.dart';
 import 'package:beam_remoteplus/core/settings/settings_scope.dart';
 import 'package:beam_remoteplus/core/settings/settings_store.dart';
@@ -8,6 +9,7 @@ import 'package:beam_remoteplus/features/driving/widgets/touch_wheel.dart';
 import 'package:beam_remoteplus/features/tutorial/tutorial_screen.dart';
 import 'package:beam_remoteplus/l10n/generated/app_localizations.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 
@@ -94,6 +96,43 @@ void main() {
     await tester.pump();
     await tester.pump();
     expect(wheelAngle().abs(), greaterThan(10));
+  });
+
+  testWidgets('the volume buttons are captured and show what they would do', (tester) async {
+    const channel = MethodChannel('com.beamremoteplus.app/hardware_keys');
+    final captured = <bool>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel, (call) async {
+      if (call.method == 'setVolumeKeysCaptured') captured.add(call.arguments as bool);
+      return null;
+    });
+    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel, null));
+    Future<void> volumeKey(String key, {required bool pressed}) async {
+      await tester.binding.defaultBinaryMessenger.handlePlatformMessage(
+        channel.name,
+        channel.codec.encodeMethodCall(MethodCall('onVolumeKey', {'key': key, 'pressed': pressed})),
+        (_) {},
+      );
+      await tester.pump();
+    }
+
+    await open(tester);
+    for (var i = 0; i < 3; i++) {
+      await next(tester);
+    }
+    expect(captured.last, isTrue);
+    expect(find.text('Honk!'), findsNothing);
+    await volumeKey('up', pressed: true);
+    expect(find.text('Honk!'), findsOneWidget);
+    await volumeKey('up', pressed: false);
+    expect(find.text('Honk!'), findsNothing);
+    await volumeKey('down', pressed: true);
+    expect(find.text('Headlight flash!'), findsOneWidget);
+    await volumeKey('down', pressed: false);
+
+    // Leaving the page gives the buttons back.
+    await next(tester);
+    expect(captured.last, isFalse);
+    expect(HardwareKeys.listener, isNull);
   });
 
   testWidgets('the reset button works once held, not on a tap', (tester) async {

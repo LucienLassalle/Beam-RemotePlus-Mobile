@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 
+import '../../core/platform/hardware_keys.dart';
 import '../../core/settings/app_settings.dart';
 import '../../core/settings/settings_scope.dart';
 import '../../l10n/generated/app_localizations.dart';
@@ -247,27 +248,68 @@ class _PedalsPage extends StatelessWidget {
 }
 
 /// What the phone's volume buttons do while driving, and that a theme may
-/// change it.
-class _VolumePage extends StatelessWidget {
+/// change it. The page captures the buttons, like the driving screen: a press
+/// lights its row and says what the game would do, the volume stays as it is.
+class _VolumePage extends StatefulWidget {
   const _VolumePage();
+
+  @override
+  State<_VolumePage> createState() => _VolumePageState();
+}
+
+class _VolumePageState extends State<_VolumePage> {
+  final Set<HardwareKey> _held = {};
+  // The driving screen's listener when the tutorial is opened over it.
+  HardwareKeyListener? _previous;
+
+  @override
+  void initState() {
+    super.initState();
+    _previous = HardwareKeys.listener;
+    unawaited(HardwareKeys.capture(_onKey));
+  }
+
+  @override
+  void dispose() {
+    final previous = _previous;
+    unawaited(previous != null ? HardwareKeys.capture(previous) : HardwareKeys.release());
+    super.dispose();
+  }
+
+  void _onKey(HardwareKey key, bool pressed) {
+    if (!mounted) return;
+    setState(() => pressed ? _held.add(key) : _held.remove(key));
+  }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    Widget key(IconData icon, String name, String action) => Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
-          child: Row(mainAxisSize: MainAxisSize.min, children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(border: Border.all(color: Colors.white38), borderRadius: BorderRadius.circular(8)),
-              child: Icon(icon, color: Colors.white70),
+    Widget key(HardwareKey hardwareKey, IconData icon, String name, String action, String done) {
+      final held = _held.contains(hardwareKey);
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 100),
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: held ? Colors.amberAccent : Colors.transparent,
+              border: Border.all(color: held ? Colors.amberAccent : Colors.white38),
+              borderRadius: BorderRadius.circular(8),
             ),
-            const SizedBox(width: 12),
-            Text(name, style: const TextStyle(fontWeight: FontWeight.w600)),
-            const Icon(Icons.arrow_right_alt, color: Colors.white38),
-            Text(action, style: const TextStyle(color: Colors.amberAccent)),
-          ]),
-        );
+            child: Icon(icon, color: held ? Colors.black : Colors.white70),
+          ),
+          const SizedBox(width: 12),
+          Text(name, style: const TextStyle(fontWeight: FontWeight.w600)),
+          const Icon(Icons.arrow_right_alt, color: Colors.white38),
+          Text(
+            held ? done : action,
+            style: TextStyle(color: Colors.amberAccent, fontWeight: held ? FontWeight.w800 : FontWeight.normal),
+          ),
+        ]),
+      );
+    }
+
     return _Page(
       icon: Icons.volume_up,
       title: l10n.tutorialVolumeTitle,
@@ -276,11 +318,15 @@ class _VolumePage extends StatelessWidget {
         // Left-aligned together, like the two buttons on the side of a phone.
         IntrinsicWidth(
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            key(Icons.volume_up, l10n.tutorialVolumeUp, l10n.tutorialVolumeHorn),
-            key(Icons.volume_down, l10n.tutorialVolumeDown, l10n.tutorialVolumeFlash),
+            key(HardwareKey.volumeUp, Icons.volume_up, l10n.tutorialVolumeUp, l10n.tutorialVolumeHorn,
+                l10n.tutorialVolumeHornDone),
+            key(HardwareKey.volumeDown, Icons.volume_down, l10n.tutorialVolumeDown, l10n.tutorialVolumeFlash,
+                l10n.tutorialVolumeFlashDone),
           ]),
         ),
         const SizedBox(height: 8),
+        Text(l10n.tutorialVolumeTry, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white70)),
+        const SizedBox(height: 4),
         Text(l10n.tutorialVolumeThemes, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white54)),
       ]),
     );

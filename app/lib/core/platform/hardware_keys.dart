@@ -12,6 +12,11 @@ class HardwareKeys {
   static const _channel = MethodChannel('com.beamremoteplus.app/hardware_keys');
   static HardwareKeyListener? _listener;
 
+  /// Who receives the buttons now (null: not captured). A screen that
+  /// captures them for a while (the tutorial, over the driving screen) gives
+  /// them back to this listener afterwards.
+  static HardwareKeyListener? get listener => _listener;
+
   /// Starts capturing; [listener] receives every press and release.
   static Future<void> capture(HardwareKeyListener listener) async {
     _listener = listener;
