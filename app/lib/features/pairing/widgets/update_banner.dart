@@ -7,14 +7,16 @@ import '../../../core/version/update_scope.dart';
 import '../../../l10n/generated/app_localizations.dart';
 
 /// Says that a newer app was released, with a link to its release page.
-/// Nothing when the app is up to date or the releases are unknown.
+/// Nothing when the app is up to date or the releases are unknown. Closing
+/// it hides that release; the next one shows it again.
 class UpdateBanner extends StatelessWidget {
   const UpdateBanner({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final release = UpdateScope.maybeOf(context)?.appUpdate;
-    if (release == null) return const SizedBox.shrink();
+    final updates = UpdateScope.maybeOf(context);
+    final release = updates?.appUpdate;
+    if (updates == null || release == null) return const SizedBox.shrink();
     final l10n = AppLocalizations.of(context);
     return Material(
       color: Colors.orangeAccent.withValues(alpha: 0.15),
@@ -22,10 +24,18 @@ class UpdateBanner extends StatelessWidget {
         dense: true,
         leading: const Icon(Icons.system_update, color: Colors.orangeAccent),
         title: Text(l10n.updateAppAvailable(release.version)),
-        trailing: TextButton(
-          onPressed: () => unawaited(openExternalLink(context, release.url)),
-          child: Text(l10n.updateDownload),
-        ),
+        trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+          TextButton(
+            onPressed: () => unawaited(openExternalLink(context, release.url)),
+            child: Text(l10n.updateDownload),
+          ),
+          // Hides it until the next release.
+          IconButton(
+            icon: const Icon(Icons.close),
+            tooltip: MaterialLocalizations.of(context).closeButtonTooltip,
+            onPressed: () => unawaited(updates.dismissAppUpdate()),
+          ),
+        ]),
       ),
     );
   }
