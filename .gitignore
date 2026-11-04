@@ -6,3 +6,6 @@ docker/.pub-cache/
 # Release/build output (attached to GitHub releases by CI, never committed)
 out/
 dist/
+
+# Syncthing conflict copies (never committed)
+*.sync-conflict-*

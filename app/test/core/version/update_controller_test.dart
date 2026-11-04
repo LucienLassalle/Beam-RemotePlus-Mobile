@@ -32,6 +32,21 @@ void main() {
   });
 
   group('UpdateController', () {
+    test('a dismissed app release is not offered again, a newer one is', () async {
+      final cache = MemorySettingsStore();
+      final c = _controller({UpdateController.appRepository: _app5}, cache: cache);
+      await c.check();
+      await c.dismissAppUpdate();
+      expect(c.appUpdate, isNull);
+      expect(c.latestApp?.version, _app5.version);
+
+      const app6 = LatestRelease(version: '0.0.6-0.39', url: 'https://example.org/app6');
+      final later = _controller({UpdateController.appRepository: app6}, cache: cache);
+      await later.load();
+      await later.check();
+      expect(later.appUpdate?.version, app6.version);
+    });
+
     test('offers a newer app and a newer mod', () async {
       final c = _controller({UpdateController.appRepository: _app5, UpdateController.modRepository: _mod5});
       await c.check();

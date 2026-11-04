@@ -31,6 +31,21 @@ void main() {
     expect(find.text('Download'), findsOneWidget);
   });
 
+  testWidgets('closing it hides that release, also after a restart', (tester) async {
+    final cache = MemorySettingsStore();
+    final updates = UpdateController(source: _Source(), cache: cache, appVersion: '0.0.4');
+    await updates.check();
+    await _pump(tester, updates: updates);
+    await tester.tap(find.byIcon(Icons.close));
+    await tester.pump();
+    expect(find.byType(ListTile), findsNothing);
+
+    final restarted = UpdateController(source: _Source(), cache: cache, appVersion: '0.0.4');
+    await restarted.load();
+    await restarted.check();
+    expect(restarted.appUpdate, isNull);
+  });
+
   testWidgets('nothing when up to date or without update information', (tester) async {
     final updates = UpdateController(source: _Source(), cache: MemorySettingsStore(), appVersion: '0.0.5');
     await updates.check();
