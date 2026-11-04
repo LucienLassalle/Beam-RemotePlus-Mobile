@@ -1,10 +1,10 @@
-# Beam-RemotePlus — Android app
+# Beam-RemotePlus — Android app (IOS untested)
 
 **Drive [BeamNG.drive®](https://www.beamng.com/) with your phone**: tilt to
 steer, slide your thumbs to brake and accelerate, and watch a live dashboard
 of your car.
 
-**Beam-RemotePlus** (not "BeamNG-RemotePlus") is a **community project**: a
+**Beam-RemotePlus** is a **community project**: a
 free, open source app and mod made by players. It is **not an official
 BeamNG product** and is not affiliated with, endorsed or supported by
 BeamNG GmbH. It replaces BeamNG's former phone controller,
