@@ -106,6 +106,9 @@ class UpdateController extends ChangeNotifier {
 
   LatestRelease? _app;
   LatestRelease? _mod;
+  // App release whose banner the player closed: not offered again, the
+  // next one is.
+  String? _dismissedApp;
 
   UpdateController({required ReleaseSource source, required SettingsStore cache, required this.appVersion})
       : _source = source,
@@ -116,7 +119,21 @@ class UpdateController extends ChangeNotifier {
 
   /// A newer app than this one was released (never when the version of this
   /// one is unknown).
-  LatestRelease? get appUpdate => ReleaseVersion.isNewer(_app?.version, appVersion) ? _app : null;
+  LatestRelease? get appUpdate =>
+      ReleaseVersion.isNewer(_app?.version, appVersion) && _app?.version != _dismissedApp ? _app : null;
+
+  /// Hides the offer of the current app release (closed banner); a newer
+  /// release is offered again.
+  Future<void> dismissAppUpdate() async {
+    final release = appUpdate;
+    if (release == null) return;
+    _dismissedApp = release.version;
+    notifyListeners();
+    await _save();
+  }
+
+  Future<void> _save() =>
+      _cache.save({'app': _app?.toJson(), 'mod': _mod?.toJson(), 'dismissedApp': _dismissedApp});
 
   /// A newer mod than [modVersion] (as sent by the mod) was released.
   LatestRelease? modUpdate(String? modVersion) => ReleaseVersion.isNewer(_mod?.version, modVersion) ? _mod : null;
@@ -136,6 +153,8 @@ class UpdateController extends ChangeNotifier {
     final json = await _cache.load();
     _app = LatestRelease.fromJson(json['app']);
     _mod = LatestRelease.fromJson(json['mod']);
+    final dismissed = json['dismissedApp'];
+    _dismissedApp = dismissed is String ? dismissed : null;
     notifyListeners();
   }
 
@@ -147,6 +166,6 @@ class UpdateController extends ChangeNotifier {
     _app = app ?? _app;
     _mod = mod ?? _mod;
     notifyListeners();
-    await _cache.save({'app': _app?.toJson(), 'mod': _mod?.toJson()});
+    await _save();
   }
 }
