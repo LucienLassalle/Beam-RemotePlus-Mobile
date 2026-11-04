@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
@@ -47,9 +48,11 @@ class _PairingScreenState extends State<PairingScreen> {
   }
 
   Future<void> _requestCamera() async {
-    final status = await Permission.camera.request();
+    // On iOS the scanner asks for the camera itself (permission_handler
+    // needs build flags there).
+    final granted = defaultTargetPlatform == TargetPlatform.iOS || (await Permission.camera.request()).isGranted;
     if (!mounted) return;
-    setState(() => _cameraAllowed = status.isGranted);
+    setState(() => _cameraAllowed = granted);
     if (_cameraAllowed) await _scanner.start();
   }
 
