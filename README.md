@@ -122,6 +122,22 @@ the game.
    connection with the PC: Wi-Fi hotspot or USB tethering), load a level and
    tap **Automatic connection**.
 
+### iPhone (untested)
+
+Each release also has an unsigned `…-ios-UNTESTED-unsigned.ipa`, built by
+GitHub Actions but **never tried on an iPhone**: feedback welcome in the
+issues. Install it with a sideloading tool (AltStore, SideStore,
+Sideloadly), which signs it with your own Apple ID; with a free Apple ID it
+must be re-signed every 7 days. Compared to Android:
+
+- connect with the **QR code** only (it carries the PC's address):
+  automatic connection and the 5-digit code look for the PC with UDP
+  broadcast, which iOS only allows to apps with an Apple entitlement the
+  project does not have;
+- the **volume buttons** do nothing (iOS gives apps no access to them);
+- no **driver's view video** (its player is Android-only);
+- tilt steering and haptics are implemented, untested.
+
 ## Network
 
 The app talks to the PC on your local network only. The one exception is
