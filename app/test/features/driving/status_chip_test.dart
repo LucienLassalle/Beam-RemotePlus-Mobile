@@ -1,3 +1,4 @@
+import 'package:beam_remoteplus/core/network/remote_link.dart';
 import 'package:beam_remoteplus/features/driving/widgets/top_bar.dart';
 import 'package:beam_remoteplus/themes/theme_registry.dart';
 import 'package:flutter/material.dart';
@@ -31,6 +32,19 @@ void main() {
     await tester.pump();
     await tester.pump();
     expect(find.text('Signal lost'), findsOneWidget);
+  });
+
+  testWidgets('says it is reconnecting rather than only that the signal is lost', (tester) async {
+    final link = FakeLink();
+    addTearDown(link.dispose);
+    await pumpDrivingView(tester, theme: themeByName('Default'), link: link);
+    link
+      ..signalLost = true
+      ..state = LinkState.reconnecting;
+    link.states_.add(LinkState.reconnecting);
+    await tester.pump();
+    await tester.pump();
+    expect(find.text('Reconnecting…'), findsOneWidget);
   });
 
   test('the dot turns amber, then orange, as the round trip grows', () {
