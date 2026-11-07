@@ -29,6 +29,10 @@ class FakeNetwork {
   /// Binding these ports fails (port taken by another app).
   final Set<int> busyPorts = {};
 
+  /// No network (Wi-Fi off): like Dart, a send then fails and the system
+  /// closes that socket for good.
+  bool offline = false;
+
   int _nextFreePort = 50000;
 
   Future<UdpEndpoint> bind(int port) async {
@@ -48,6 +52,7 @@ class FakeEndpoint implements UdpEndpoint {
   final FakeNetwork _network;
   final int port;
   final _incoming = StreamController<Datagram>();
+  @override
   bool closed = false;
 
   FakeEndpoint(this._network, this.port);
@@ -56,7 +61,11 @@ class FakeEndpoint implements UdpEndpoint {
   Stream<Datagram> get datagrams => _incoming.stream;
 
   @override
-  void send(List<int> data, InternetAddress host, int port) => _network.sent.add(Sent(data, host, port));
+  void send(List<int> data, InternetAddress host, int port) {
+    if (closed) return;
+    if (_network.offline) return close();
+    _network.sent.add(Sent(data, host, port));
+  }
 
   /// Delivers [text] (or [bytes]) from [from]:[fromPort] to this endpoint.
   void receive(String text, {required String from, int fromPort = 4446}) =>
