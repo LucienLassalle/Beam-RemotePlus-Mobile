@@ -69,4 +69,24 @@ void main() {
       expect([for (final p in packets.sublist(126, 130)) p.getFloat32(12)], [126, 127, 0, 1]);
     });
   });
+
+  test('sends through a new socket once the system closed the old one', () {
+    fakeAsync((async) {
+      final network = FakeNetwork();
+      final channel = NativeChannel(network.bind);
+      unawaited(channel.pair('12345', 'Pixel', [pc]));
+      async.elapse(retry);
+      network.endpoints[NativeProtocol.clientPort]!.receive('beamng|12345', from: pc, fromPort: 4444);
+      async.flushMicrotasks();
+      network.offline = true;
+      channel.sendControls(steering: 0.5, throttle: 0, brake: 0);
+      network.offline = false;
+      channel.sendControls(steering: 0.5, throttle: 0, brake: 0); // notices, binds a new one
+      async.flushMicrotasks();
+      network.sent.clear();
+      channel.sendControls(steering: 0.5, throttle: 1, brake: 0);
+      expect(network.bytesTo(NativeProtocol.hostPort), hasLength(1));
+    });
+  });
 }
+

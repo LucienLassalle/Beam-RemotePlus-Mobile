@@ -23,6 +23,12 @@ void main() {
       expect(ModProtocol.ping('1', 'Tab', display: true, features: ['delta', 'x']), 'beamremoteplus|ping|1|2|Tab|display||delta,x');
     });
 
+    test('ping ends with the session id of the connection', () {
+      expect(ModProtocol.ping('1', 'Tab', appVersion: '1.1.0', features: ['delta'], session: 'c0ffee42'),
+          'beamremoteplus|ping|1|2|Tab|controller|1.1.0|delta|c0ffee42');
+      expect(ModProtocol.ping('1', 'Tab', session: 'c0ffee42'), 'beamremoteplus|ping|1|2|Tab|controller|||c0ffee42');
+    });
+
     test('parses pongs of v1 and v2 mods, with either prefix', () {
       expect(ModProtocol.parsePong('beamremoteplus|pong|20367|2', '20367'), 2);
       expect(ModProtocol.parsePong('beamngremoteplus|pong|20367|2', '20367'), 2);
