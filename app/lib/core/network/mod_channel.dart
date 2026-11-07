@@ -91,6 +91,12 @@ class ModChannel {
 
   /// Acks, session messages... (everything but telemetry and kicks).
   Stream<ModMessage> get events => _events.stream;
+  /// Time since the mod was last heard, null while it never was.
+  Duration? get silence {
+    final last = _lastMessage;
+    return last == null ? null : _now().difference(last);
+  }
+
   int? get latencyMs => _latencyMs;
   bool get signalLost => _signalLost;
 

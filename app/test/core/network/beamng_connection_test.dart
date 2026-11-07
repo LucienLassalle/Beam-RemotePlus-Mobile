@@ -59,6 +59,15 @@ class Harness {
     fromMod('beamremoteplus|pong|12345|2');
   }
 
+  /// The mod sends telemetry 10 times a second for [duration].
+  void modTalks(Duration duration) {
+    final end = async.elapsed + duration;
+    while (async.elapsed < end) {
+      fromMod('{"type":"telemetry","speed":1}');
+      async.elapse(const Duration(milliseconds: 100));
+    }
+  }
+
   int packetsTo(int port, int size) => network.bytesTo(port).where((b) => b.length == size).length;
 }
 
@@ -153,6 +162,55 @@ void main() {
   });
 
   group('reconnection', () {
+    test('says it is reconnecting as soon as the signal is lost, before giving the mod up', () {
+      fakeAsync((async) {
+        final h = Harness(async)..paired();
+        async.elapse(ModProtocol.signalLostAfter + second);
+        expect(h.states.last, LinkState.reconnecting);
+        expect(h.connection.modActive, isTrue, reason: 'still driving through the mod');
+      });
+    });
+
+    test('a short hiccup: reconnecting, then connected once, when the mod talks steadily again', () {
+      fakeAsync((async) {
+        final h = Harness(async)..paired();
+        h.modTalks(second);
+        async.elapse(ModProtocol.signalLostAfter + second);
+        h.states.clear();
+        h.modTalks(second * 3);
+        expect(h.states, [LinkState.connected]);
+      });
+    });
+
+    test('a lone answer in a bad patch does not show connected', () {
+      fakeAsync((async) {
+        final h = Harness(async)..paired();
+        async.elapse(ModProtocol.modSilenceTimeout + second);
+        h.states.clear();
+        h.fromMod('beamremoteplus|pong|12345|2');
+        async.elapse(second * 5);
+        h.fromMod('beamremoteplus|pong|12345|2');
+        async.elapse(second * 5);
+        expect(h.states, isNot(contains(LinkState.connected)));
+        expect(h.connection.state, LinkState.reconnecting);
+      });
+    });
+
+    test('binds new sockets at each search round', () {
+      fakeAsync((async) {
+        final h = Harness(async)..paired();
+        async.elapse(ModProtocol.modSilenceTimeout + second);
+        final before = h.network.endpoints[ModProtocol.clientPort]!;
+        async.elapse(BeamngConnection.searchRefresh);
+        final after = h.network.endpoints[ModProtocol.clientPort]!;
+        expect(after, isNot(same(before)));
+        expect(before.closed, isTrue, reason: 'never two sockets on the port');
+        h.network.sent.clear();
+        async.elapse(second);
+        expect(h.network.sentTo(ModProtocol.hostPort).where((s) => s.contains('|ping|')), isNotEmpty);
+      });
+    });
+
     test('a Wi-Fi cut on the phone: back on its own once the network is back', () {
       fakeAsync((async) {
         final h = Harness(async)..paired();
@@ -165,10 +223,11 @@ void main() {
         expect(pings, isNotEmpty);
         expect(pings.first, endsWith('|c0ffee42'), reason: 'the mod recognises the phone, even from a new IP');
         h.fromMod('beamremoteplus|pong|12345|2');
-        expect(h.states.last, LinkState.connected);
+        expect(h.states.last, LinkState.reconnecting, reason: 'not steady yet');
         h.network.sent.clear();
-        async.elapse(second);
-        expect(h.packetsTo(ModProtocol.hostPort, ModControlPacket.sizeBytes), greaterThan(50));
+        h.modTalks(second * 2);
+        expect(h.states.last, LinkState.connected);
+        expect(h.packetsTo(ModProtocol.hostPort, ModControlPacket.sizeBytes), greaterThan(100), reason: 'driving again at once');
       });
     });
 
@@ -185,6 +244,7 @@ void main() {
 
         h.network.endpoints[ModProtocol.clientPort]!.receive('beamremoteplus|pong|12345|2', from: '192.168.1.42');
         async.flushMicrotasks();
+        h.modTalks(second * 2);
         expect(h.states.last, LinkState.connected);
         h.network.sent.clear();
         async.elapse(second);
