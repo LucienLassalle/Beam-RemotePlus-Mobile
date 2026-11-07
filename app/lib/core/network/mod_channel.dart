@@ -43,11 +43,18 @@ class ModChannel {
   /// Asks the mod for success acknowledgements too (debug overlay).
   bool debugAcks = false;
 
+  /// The mod answered from another address while searching (see [search]):
+  /// the PC changed address, everything now goes there.
+  void Function(InternetAddress host)? onHostChanged;
+
   UdpEndpoint? _endpoint;
   StreamSubscription<Datagram>? _datagrams;
   Timer? _pingTimer;
   InternetAddress? _host;
   ModIdentity? _identity;
+
+  /// Also pinged while the mod does not answer (see [search]).
+  List<InternetAddress> _searchTargets = const [];
 
   bool _active = false;
   int _protocolVersion = 0;
@@ -140,6 +147,19 @@ class ModChannel {
     _startPings();
   }
 
+  /// Until the mod answers, also pings [targets] (broadcast addresses): a
+  /// PC that changed address answers from the new one. Calling it again
+  /// replaces the targets (the phone may have changed network).
+  void search(List<String> targets) {
+    if (_active) return;
+    _searchTargets = [
+      for (final t in targets)
+        if (InternetAddress.tryParse(t) case final address?) address,
+    ];
+  }
+
+  bool get searching => _searchTargets.isNotEmpty;
+
   List<List<int>> _pings() {
     final id = _identity!;
     return [
@@ -180,15 +200,18 @@ class ModChannel {
     final host = _host;
     if (endpoint == null || host == null) return;
     if (_active) _pingSentAt = _now();
-    for (final p in _pings()) {
-      endpoint.send(p, host, ModProtocol.hostPort);
+    final pings = _pings();
+    for (final target in [host, if (!_active) ..._searchTargets]) {
+      for (final p in pings) {
+        endpoint.send(p, target, ModProtocol.hostPort);
+      }
     }
   }
 
   void _onDatagram(Datagram dg) {
     // Pongs are plain text, every other v2 message is JSON.
     if (dg.data.isNotEmpty && dg.data.first != 0x7B /* { */ && dg.data.length != Telemetry.legacySizeBytes) {
-      return _onPong(utf8.decode(dg.data, allowMalformed: true));
+      return _onPong(utf8.decode(dg.data, allowMalformed: true), dg.address);
     }
     if (!_active) return;
     _heard();
@@ -209,9 +232,14 @@ class ModChannel {
     }
   }
 
-  void _onPong(String answer) {
+  void _onPong(String answer, InternetAddress from) {
     final version = ModProtocol.parsePong(answer, _identity!.code);
     if (version == null) return;
+    if (searching && from != _host) {
+      DebugLog.log('mod answers from ${from.address}: the PC changed address');
+      _host = from;
+      onHostChanged?.call(from);
+    }
     _heard();
     final sentAt = _pingSentAt;
     if (sentAt != null) {
@@ -222,6 +250,7 @@ class ModChannel {
     if (_active) return;
     _keepPrefixOf(answer);
     _protocolVersion = version;
+    _searchTargets = const [];
     DebugLog.log('mod detected, protocol v$version');
     _setActive(true);
     if (debugAcks) sendCommand(ModCommand.debug, '1');
@@ -278,6 +307,7 @@ class ModChannel {
     _endpoint?.close();
     _endpoint = null;
     _host = null;
+    _searchTargets = const [];
     _active = false;
     _protocolVersion = 0;
     _prefixes = ModProtocol.prefixes;

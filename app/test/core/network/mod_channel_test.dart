@@ -213,6 +213,53 @@ void main() {
     });
   });
 
+  group('search', () {
+    test('also pings the broadcast addresses until the mod answers', () {
+      fakeAsync((async) {
+        final h = Harness(async)..open();
+        h.channel.search(['192.168.1.255', 'not an address']);
+        h.network.sent.clear();
+        async.elapse(pingEvery);
+        expect(h.network.sent.map((s) => s.host.address).toSet(), {pc, '192.168.1.255'});
+        h.fromMod(pong());
+        expect(h.channel.searching, isFalse);
+        h.network.sent.clear();
+        async.elapse(keepAlive);
+        expect(h.network.sent.map((s) => s.host.address).toSet(), {pc});
+      });
+    });
+
+    test('follows the PC to its new address', () {
+      fakeAsync((async) {
+        final h = Harness(async)..paired();
+        async.elapse(ModProtocol.modSilenceTimeout + pingEvery);
+        InternetAddress? moved;
+        h.channel.onHostChanged = (host) => moved = host;
+        h.channel.search(['192.168.1.255']);
+        h.endpoint.receive(pong(), from: '192.168.1.42');
+        async.flushMicrotasks();
+        expect(moved?.address, '192.168.1.42');
+        expect(h.channel.active, isTrue);
+        h.network.sent.clear();
+        h.channel.sendCommand(ModCommand.horn, '1');
+        expect(h.network.sent.single.host.address, '192.168.1.42');
+      });
+    });
+
+    test('is ignored while the mod answers', () {
+      fakeAsync((async) {
+        final h = Harness(async)..paired();
+        h.channel.search(['192.168.1.255']);
+        expect(h.channel.searching, isFalse);
+        h.endpoint.receive(pong(), from: '192.168.1.42');
+        async.flushMicrotasks();
+        h.network.sent.clear();
+        h.channel.sendCommand(ModCommand.horn, '1');
+        expect(h.network.sent.single.host.address, pc, reason: 'no search, no move');
+      });
+    });
+  });
+
   group('second screen', () {
     const display = ModIdentity(code: '12345', deviceName: 'Tab', display: true, appVersion: '1.0.0');
 
