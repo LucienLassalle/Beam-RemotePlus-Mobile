@@ -33,9 +33,12 @@ String randomSessionId() {
 ///
 /// The point of view video is played by a [PovSession].
 ///
-/// When the mod goes silent the connection is [LinkState.reconnecting]: the
-/// mod channel also looks for the PC on the broadcast addresses (it may have
-/// changed address, or the phone changed network) until the mod answers.
+/// When the mod goes silent the connection is [LinkState.reconnecting] (from
+/// the moment the signal is lost), and once the mod is given up the mod
+/// channel also looks for the PC on the broadcast addresses (it may have
+/// changed address, or the phone changed network), with fresh sockets. It is
+/// connected again only once the mod has answered steadily for
+/// [steadyAfter]: a lone answer in a bad patch does not flip the status.
 class BeamngConnection implements RemoteLink {
   final _states = StreamController<LinkState>.broadcast();
   final NativeChannel _native;
@@ -46,10 +49,19 @@ class BeamngConnection implements RemoteLink {
   final Future<String?> Function() _appVersion;
   final String Function() _newSession;
   late final StreamSubscription<bool> _modActivity;
+  late final StreamSubscription<void> _modQuality;
 
   /// While reconnecting, the broadcast addresses are read again this often:
   /// the phone may have joined another network.
   static const searchRefresh = Duration(seconds: 5);
+
+  /// The mod must answer without a break this long before the connection is
+  /// shown as connected again.
+  static const steadyAfter = Duration(milliseconds: 1500);
+
+  /// At the end of [steadyAfter] the mod must have been heard this recently
+  /// (it sends 30 telemetry frames a second): a lone answer is not enough.
+  static const steadyFresh = Duration(milliseconds: 500);
 
   /// [povPlayer]: the point of view video player (the phone's hardware
   /// decoder by default). The other parameters replace the network and the
@@ -72,6 +84,7 @@ class BeamngConnection implements RemoteLink {
     _mod.onKicked = () => unawaited(_onKicked());
     _mod.onHostChanged = _onHostChanged;
     _modActivity = _mod.activeChanges.listen(_onModActivity);
+    _modQuality = _mod.qualityChanges.listen((_) => _updateLinkState());
   }
 
   LinkState _state = LinkState.idle;
@@ -82,6 +95,7 @@ class BeamngConnection implements RemoteLink {
   InternetAddress? _host;
   Timer? _controlTimer;
   Timer? _searchTimer;
+  Timer? _steadyTimer;
 
   double _steering = 0.5;
   double _throttle = 0;
@@ -145,20 +159,50 @@ class BeamngConnection implements RemoteLink {
 
   void _onModActivity(bool active) {
     _restartControlTimer();
-    if (active) {
-      _stopSearch();
-      if (_state == LinkState.reconnecting) _setState(LinkState.connected);
-    } else if (_state == LinkState.connected) {
+    final linked = _state == LinkState.connected || _state == LinkState.reconnecting;
+    if (!active && linked && _searchTimer == null) {
       DebugLog.log('reconnecting: looking for the PC again');
-      _setState(LinkState.reconnecting);
       unawaited(_search());
       _searchTimer = Timer.periodic(searchRefresh, (_) => unawaited(_search()));
     }
+    _updateLinkState();
   }
 
+  // Reconnecting as soon as the signal is lost; connected again once the mod
+  // has answered without a break for [steadyAfter]. A phone without the mod
+  // never loses a signal it never had.
+  void _updateLinkState() {
+    if (_state != LinkState.connected && _state != LinkState.reconnecting) return;
+    if (_mod.signalLost) {
+      _steadyTimer?.cancel();
+      _steadyTimer = null;
+      if (_state == LinkState.connected) _setState(LinkState.reconnecting);
+      return;
+    }
+    if (_state != LinkState.reconnecting || !_mod.active || _steadyTimer != null) return;
+    _steadyTimer = Timer(steadyAfter, _checkSteady);
+  }
+
+  void _checkSteady() {
+    _steadyTimer = null;
+    if (_state != LinkState.reconnecting || !_mod.active || _mod.signalLost) return;
+    final silence = _mod.silence;
+    if (silence == null || silence > steadyFresh) {
+      _steadyTimer = Timer(steadyFresh, _checkSteady); // not talking steadily yet
+      return;
+    }
+    _stopSearch();
+    _setState(LinkState.connected);
+  }
+
+  // Each round also binds new sockets: after a network change an old one
+  // may be stuck on the network that is gone, without being closed.
   Future<void> _search() async {
     final targets = await _broadcastTargets();
-    if (_state == LinkState.reconnecting) _mod.search(targets);
+    if (_state != LinkState.reconnecting || _mod.active) return;
+    _mod.search(targets);
+    unawaited(_mod.renewSocket());
+    unawaited(_native.renewSocket());
   }
 
   void _stopSearch() {
@@ -234,6 +278,8 @@ class BeamngConnection implements RemoteLink {
     _controlTimer?.cancel();
     _controlTimer = null;
     _stopSearch();
+    _steadyTimer?.cancel();
+    _steadyTimer = null;
     _mod.close();
     _native.close();
     _pov.stop();
@@ -245,6 +291,7 @@ class BeamngConnection implements RemoteLink {
   void dispose() {
     unawaited(disconnect());
     unawaited(_modActivity.cancel());
+    unawaited(_modQuality.cancel());
     _mod.dispose();
     _pov.dispose();
     _states.close();

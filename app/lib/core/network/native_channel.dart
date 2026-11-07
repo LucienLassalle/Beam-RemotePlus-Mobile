@@ -15,6 +15,12 @@ class NativeChannel {
   InternetAddress? _host;
   int _sequence = 0;
   bool _reopening = false;
+  Timer? _reopenTimer;
+
+  /// A socket closed by the system is replaced at most this often: the
+  /// controls go 20 times a second, and each send fails while the phone has
+  /// no network.
+  static const reopenDelay = Duration(milliseconds: 500);
 
   NativeChannel(this._bind);
 
@@ -79,30 +85,46 @@ class NativeChannel {
     final control = _control;
     final host = _host;
     if (control == null || host == null) return;
-    if (control.closed) return unawaited(_reopen(control));
+    if (control.closed) {
+      _reopenTimer ??= Timer(reopenDelay, () {
+        _reopenTimer = null;
+        unawaited(_replace(control));
+      });
+      return;
+    }
     final packet = NativeControlPacket(steering: steering, throttle: throttle, brake: brake, sequenceId: _sequence);
     _sequence = (_sequence + 1) % 128;
     control.send(packet.toBytes(), host, NativeProtocol.hostPort);
   }
 
-  // Closed by the system after a failed send (no network for a moment):
-  // the controls go through a new socket.
-  Future<void> _reopen(UdpEndpoint old) async {
+  /// Binds a new socket in place of the current one (see
+  /// ModChannel.renewSocket).
+  Future<void> renewSocket() async {
+    final old = _control;
+    if (old != null) await _replace(old);
+  }
+
+  // Closed by the system after a failed send (no network for a moment), or
+  // renewed: the controls go through a new socket.
+  Future<void> _replace(UdpEndpoint old) async {
     if (_reopening) return;
     _reopening = true;
+    old.close();
     try {
       final control = await _bind(0);
-      if (_control != old) return control.close(); // closed meanwhile
+      if (_control != old) return control.close(); // the channel was closed meanwhile
       _control = control;
-      DebugLog.log('native channel: socket reopened');
+      DebugLog.log('native channel: new socket');
     } catch (e) {
-      DebugLog.log('native channel: cannot reopen the socket ($e)');
+      DebugLog.log('native channel: cannot bind a new socket ($e)');
     } finally {
       _reopening = false;
     }
   }
 
   void close() {
+    _reopenTimer?.cancel();
+    _reopenTimer = null;
     _control?.close();
     _control = null;
     _host = null;

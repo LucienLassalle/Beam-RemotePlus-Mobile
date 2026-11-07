@@ -81,8 +81,8 @@ void main() {
       network.offline = true;
       channel.sendControls(steering: 0.5, throttle: 0, brake: 0);
       network.offline = false;
-      channel.sendControls(steering: 0.5, throttle: 0, brake: 0); // notices, binds a new one
-      async.flushMicrotasks();
+      channel.sendControls(steering: 0.5, throttle: 0, brake: 0); // notices, binds a new one soon
+      async.elapse(NativeChannel.reopenDelay);
       network.sent.clear();
       channel.sendControls(steering: 0.5, throttle: 1, brake: 0);
       expect(network.bytesTo(NativeProtocol.hostPort), hasLength(1));
