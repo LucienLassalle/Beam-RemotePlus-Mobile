@@ -21,6 +21,7 @@
   "statusIdle": "Déconnecté",
   "statusKicked": "Exclu",
   "statusSignalLost": "Signal perdu",
+  "statusReconnecting": "Reconnexion…",
   "moreButton": "PLUS",
   "moreTitle": "Plus de commandes",
   "moreNoAnswer": "Le mod ne répond pas : mettez à jour le mod Beam-RemotePlus pour voir les commandes du véhicule.",

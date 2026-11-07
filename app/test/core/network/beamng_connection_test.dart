@@ -22,12 +22,12 @@ class Harness {
   final states = <LinkState>[];
   Object? error;
 
-  Harness(this.async) {
+  Harness(this.async, {Future<List<String>> Function()? broadcastTargets}) {
     final start = DateTime(2026, 11, 7);
     connection = BeamngConnection(
       povPlayer: player,
       bind: network.bind,
-      findBroadcastTargets: () async => ['192.168.1.255'],
+      findBroadcastTargets: broadcastTargets ?? () async => ['192.168.1.255'],
       deviceName: () async => 'Pixel',
       appVersion: () async => '1.0.0',
       now: () => start.add(async.elapsed),
@@ -150,4 +150,80 @@ void main() {
       expect(h.player.calls.last, 'stop');
     });
   });
+
+  group('reconnection', () {
+    test('the mod goes silent: reconnecting, the PC is looked for on the network, found at a new address', () {
+      fakeAsync((async) {
+        final h = Harness(async)..paired();
+        async.elapse(ModProtocol.modSilenceTimeout + second);
+        expect(h.states.last, LinkState.reconnecting);
+        expect(h.connection.modActive, isFalse);
+        h.network.sent.clear();
+        async.elapse(second);
+        expect(h.network.sent.where((s) => s.text.contains('|ping|')).map((s) => s.host.address).toSet(), {pc, '192.168.1.255'});
+        expect(h.packetsTo(NativeProtocol.hostPort, 16), greaterThan(0), reason: 'the native channel drives meanwhile');
+
+        h.network.endpoints[ModProtocol.clientPort]!.receive('beamremoteplus|pong|12345|2', from: '192.168.1.42');
+        async.flushMicrotasks();
+        expect(h.states.last, LinkState.connected);
+        h.network.sent.clear();
+        async.elapse(second);
+        final controls = h.network.sent.where((s) => s.data.length == ModControlPacket.sizeBytes);
+        expect(controls, isNotEmpty);
+        expect(controls.map((s) => s.host.address).toSet(), {'192.168.1.42'});
+        expect(h.network.sent.map((s) => s.host.address), isNot(contains('192.168.1.255')), reason: 'search over');
+      });
+    });
+
+    test('the video follows the PC to its new address', () {
+      fakeAsync((async) {
+        final h = Harness(async)..paired();
+        h.connection.setPovVideo(const PovFormat(PovQuality.hd60, 1424, 640));
+        async.elapse(ModProtocol.modSilenceTimeout + second);
+        h.network.endpoints[ModProtocol.clientPort]!.receive('beamremoteplus|pong|12345|2', from: '192.168.1.42');
+        async.flushMicrotasks();
+        expect(h.player.calls.sublist(1), ['stop', 'start 192.168.1.42:${ModProtocol.povPort} 1424x640']);
+      });
+    });
+
+    test('reads the broadcast addresses again while it searches: the phone may have changed network', () {
+      fakeAsync((async) {
+        var reads = 0;
+        Harness(async, broadcastTargets: () async {
+          reads++;
+          return ['192.168.1.255'];
+        }).paired();
+        final before = reads;
+        async.elapse(ModProtocol.modSilenceTimeout + second);
+        async.elapse(BeamngConnection.searchRefresh * 2);
+        expect(reads - before, 3);
+      });
+    });
+
+    test('without the mod there is nothing to lose: no search', () {
+      fakeAsync((async) {
+        final h = Harness(async)
+          ..connect()
+          ..gameAnswers();
+        h.network.sent.clear(); // the handshake itself is broadcast
+        async.elapse(second * 20);
+        expect(h.states.last, LinkState.connected);
+        expect(h.network.sent.map((s) => s.host.address), isNot(contains('192.168.1.255')));
+      });
+    });
+
+    test('leaving stops the search', () {
+      fakeAsync((async) {
+        final h = Harness(async)..paired();
+        async.elapse(ModProtocol.modSilenceTimeout + second);
+        unawaited(h.connection.disconnect());
+        async.flushMicrotasks();
+        h.network.sent.clear();
+        async.elapse(BeamngConnection.searchRefresh * 2);
+        expect(h.network.sent, isEmpty);
+        expect(h.states.last, LinkState.idle);
+      });
+    });
+  });
 }
+

@@ -68,6 +68,11 @@ class NativeChannel {
     }
   }
 
+  /// The PC changed address (found again by the mod channel).
+  void retarget(InternetAddress host) {
+    if (_control != null) _host = host;
+  }
+
   /// One control packet to the paired game (ignored before [pair]).
   void sendControls({required double steering, required double throttle, required double brake}) {
     final control = _control;

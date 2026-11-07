@@ -272,6 +272,7 @@ class StatusChip extends StatelessWidget {
       LinkState.connected when latencyMs != null => ('${l10n.statusConnected} · $latencyMs ms', latencyColor(latencyMs)),
       LinkState.connected => (l10n.statusConnected, Colors.greenAccent),
       LinkState.connecting => (l10n.statusConnecting, Colors.amberAccent),
+      LinkState.reconnecting => (l10n.statusReconnecting, Colors.orangeAccent),
       LinkState.timeout => (l10n.statusTimeout, Colors.orangeAccent),
       LinkState.error => (l10n.statusError, Colors.redAccent),
       LinkState.kicked => (l10n.statusKicked, Colors.redAccent),

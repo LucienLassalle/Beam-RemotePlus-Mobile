@@ -15,9 +15,11 @@ class PovPicture {
   const PovPicture({required this.textureId, required this.width, required this.height, this.error});
 }
 
+/// [reconnecting]: the mod went silent; the phone looks for the PC again (it
+/// may have changed address) while the native channel drives.
 /// [kicked]: the player removed this phone from the game; the connection is
 /// closed and does not retry.
-enum LinkState { idle, connecting, connected, timeout, error, kicked }
+enum LinkState { idle, connecting, connected, reconnecting, timeout, error, kicked }
 
 /// What the driving screen needs from a connection to the game. Implemented
 /// by [BeamngConnection]; tests use a fake.

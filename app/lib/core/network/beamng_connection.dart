@@ -25,6 +25,10 @@ import 'udp_endpoint.dart';
 ///    ([ModChannel]).
 ///
 /// The point of view video is played by a [PovSession].
+///
+/// When the mod goes silent the connection is [LinkState.reconnecting]: the
+/// mod channel also looks for the PC on the broadcast addresses (it may have
+/// changed address, or the phone changed network) until the mod answers.
 class BeamngConnection implements RemoteLink {
   final _states = StreamController<LinkState>.broadcast();
   final NativeChannel _native;
@@ -34,6 +38,10 @@ class BeamngConnection implements RemoteLink {
   final Future<String> Function() _deviceName;
   final Future<String?> Function() _appVersion;
   late final StreamSubscription<bool> _modActivity;
+
+  /// While reconnecting, the broadcast addresses are read again this often:
+  /// the phone may have joined another network.
+  static const searchRefresh = Duration(seconds: 5);
 
   /// [povPlayer]: the point of view video player (the phone's hardware
   /// decoder by default). The other parameters replace the network and the
@@ -52,7 +60,8 @@ class BeamngConnection implements RemoteLink {
         _deviceName = deviceName,
         _appVersion = appVersion {
     _mod.onKicked = () => unawaited(_onKicked());
-    _modActivity = _mod.activeChanges.listen((_) => _restartControlTimer());
+    _mod.onHostChanged = _onHostChanged;
+    _modActivity = _mod.activeChanges.listen(_onModActivity);
   }
 
   LinkState _state = LinkState.idle;
@@ -62,6 +71,7 @@ class BeamngConnection implements RemoteLink {
   String? _resolvedAppVersion;
   InternetAddress? _host;
   Timer? _controlTimer;
+  Timer? _searchTimer;
 
   double _steering = 0.5;
   double _throttle = 0;
@@ -122,6 +132,38 @@ class BeamngConnection implements RemoteLink {
     if (!display) unawaited(_mod.open(_host!, identity));
   }
 
+  void _onModActivity(bool active) {
+    _restartControlTimer();
+    if (active) {
+      _stopSearch();
+      if (_state == LinkState.reconnecting) _setState(LinkState.connected);
+    } else if (_state == LinkState.connected) {
+      DebugLog.log('reconnecting: looking for the PC again');
+      _setState(LinkState.reconnecting);
+      unawaited(_search());
+      _searchTimer = Timer.periodic(searchRefresh, (_) => unawaited(_search()));
+    }
+  }
+
+  Future<void> _search() async {
+    final targets = await _broadcastTargets();
+    if (_state == LinkState.reconnecting) _mod.search(targets);
+  }
+
+  void _stopSearch() {
+    _searchTimer?.cancel();
+    _searchTimer = null;
+  }
+
+  void _onHostChanged(InternetAddress host) {
+    _host = host;
+    _native.retarget(host);
+    final format = _pov.format;
+    if (format == null) return;
+    _pov.stop();
+    _pov.play(host, format);
+  }
+
   Future<void> _onKicked() async {
     await disconnect();
     _setState(LinkState.kicked);
@@ -180,6 +222,7 @@ class BeamngConnection implements RemoteLink {
     if (_mod.active) sendCommand(ModCommand.leave);
     _controlTimer?.cancel();
     _controlTimer = null;
+    _stopSearch();
     _mod.close();
     _native.close();
     _pov.stop();
