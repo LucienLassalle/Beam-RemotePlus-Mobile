@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 
 import '../debug/debug_log.dart';
@@ -11,113 +10,85 @@ import '../protocol/mod_protocol.dart';
 import '../protocol/native_protocol.dart';
 import '../protocol/telemetry.dart';
 import 'broadcast.dart';
+import 'mod_channel.dart';
+import 'native_channel.dart';
+import 'pov_session.dart';
 import 'remote_link.dart';
+import 'udp_endpoint.dart';
 
 /// Connection to BeamNG.drive.
 ///
 /// 1. Native handshake (port 4444) with the pairing code: finds the PC and
-///    gives steering + on/off pedals even without the mod.
+///    gives steering + on/off pedals even without the mod ([NativeChannel]).
 /// 2. Mod probe (port 4446): once the mod answers, controls switch to its
-///    analog channel at 60 Hz and telemetry/commands become available.
+///    analog channel at 60 Hz and telemetry/commands become available
+///    ([ModChannel]).
 ///
-/// Sockets are always bound to anyIPv4: in hotspot mode some phones report
-/// the mobile-data IP as "Wi-Fi IP", and binding to it would silently drop
-/// every answer arriving on the real Wi-Fi interface.
+/// The point of view video is played by a [PovSession].
 class BeamngConnection implements RemoteLink {
   final _states = StreamController<LinkState>.broadcast();
-  final _modActiveChanges = StreamController<bool>.broadcast();
-  final _telemetry = StreamController<Telemetry>.broadcast();
-  final _events = StreamController<ModMessage>.broadcast();
-  final _quality = StreamController<void>.broadcast();
-  final _povPictures = StreamController<PovPicture>.broadcast();
+  final NativeChannel _native;
+  final ModChannel _mod;
+  final PovSession _pov;
+  final Future<List<String>> Function() _broadcastTargets;
+  final Future<String> Function() _deviceName;
+  final Future<String?> Function() _appVersion;
+  late final StreamSubscription<bool> _modActivity;
 
   /// [povPlayer]: the point of view video player (the phone's hardware
-  /// decoder by default).
-  BeamngConnection({PovPlayer? povPlayer}) : _povPlayer = povPlayer ?? NativePovPlayer();
+  /// decoder by default). The other parameters replace the network and the
+  /// platform in tests.
+  BeamngConnection({
+    PovPlayer? povPlayer,
+    UdpBinder bind = IoUdpEndpoint.bind,
+    Future<List<String>> Function() findBroadcastTargets = broadcastTargets,
+    Future<String> Function() deviceName = resolveDeviceName,
+    Future<String?> Function() appVersion = resolveAppVersion,
+    DateTime Function()? now,
+  })  : _native = NativeChannel(bind),
+        _mod = ModChannel(bind, now: now),
+        _pov = PovSession(povPlayer ?? NativePovPlayer()),
+        _broadcastTargets = findBroadcastTargets,
+        _deviceName = deviceName,
+        _appVersion = appVersion {
+    _mod.onKicked = () => unawaited(_onKicked());
+    _modActivity = _mod.activeChanges.listen((_) => _restartControlTimer());
+  }
 
   LinkState _state = LinkState.idle;
-  bool _modActive = false;
-  int _protocolVersion = 0;
-  bool debugAcks = false;
 
   /// Second-screen phone: telemetry only, no inputs sent to the game.
   bool _display = false;
-
-  RawDatagramSocket? _nativeSocket; // handshake answer
-  RawDatagramSocket? _controlSocket; // native control packets
-  RawDatagramSocket? _modSocket; // mod: pong, telemetry, events + sending
-  final PovPlayer _povPlayer; // point of view video
-  PovFormat? _povFormat; // playing, or starting
-  PovPicture? _povPicture;
-  StreamSubscription<PovPlayerEvent>? _povEvents;
-  Timer? _controlTimer;
-  Timer? _modPingTimer;
+  String? _resolvedAppVersion;
   InternetAddress? _host;
-
-  DateTime _lastModMessage = DateTime.fromMillisecondsSinceEpoch(0);
-
-  // Link quality: round trip of the keep-alive pings, and whether the mod
-  // went silent.
-  DateTime? _pingSentAt;
-  int? _latencyMs;
-  bool _signalLost = false;
-
-  /// Handshake prefixes the pings use: both until the mod answers (mods up
-  /// to 0.0.3 only know the legacy one), then the one of its answer.
-  List<String> _pingPrefixes = ModProtocol.prefixes;
-
-  /// Sent in the pings so the mod can tell whether the app and the mod match.
-  String? _appVersion;
-
-  List<List<int>> _pings(String code, String deviceName) => [
-        for (final p in _pingPrefixes)
-          utf8.encode(ModProtocol.ping(code, deviceName, display: _display, withPrefix: p, appVersion: _appVersion)),
-      ];
-
-  /// Keeps the prefix of [answer] (a pong) for the next pings.
-  void _keepPrefixOf(String answer) {
-    final p = ModProtocol.prefixOf(answer);
-    if (p != null) _pingPrefixes = [p];
-  }
+  Timer? _controlTimer;
 
   double _steering = 0.5;
   double _throttle = 0;
   double _brake = 0;
-  int _sequence = 0;
 
   @override
   Stream<LinkState> get states => _states.stream;
   @override
   LinkState get state => _state;
   @override
-  Stream<bool> get modActiveChanges => _modActiveChanges.stream;
+  Stream<bool> get modActiveChanges => _mod.activeChanges;
   @override
-  bool get modActive => _modActive;
+  bool get modActive => _mod.active;
   @override
-  int get protocolVersion => _protocolVersion;
+  int get protocolVersion => _mod.protocolVersion;
   @override
-  Stream<Telemetry> get telemetry => _telemetry.stream;
+  Stream<Telemetry> get telemetry => _mod.telemetry;
   @override
-  Stream<ModMessage> get events => _events.stream;
+  Stream<ModMessage> get events => _mod.events;
   @override
-  int? get latencyMs => _latencyMs;
+  int? get latencyMs => _mod.latencyMs;
   @override
-  bool get signalLost => _signalLost;
+  bool get signalLost => _mod.signalLost;
   @override
-  Stream<void> get qualityChanges => _quality.stream;
+  Stream<void> get qualityChanges => _mod.qualityChanges;
   @override
-  Stream<PovPicture> get povPictures => _povPictures.stream;
-
-  void _qualityChanged() {
-    if (!_quality.isClosed) _quality.add(null);
-  }
-
-  void _setSignalLost(bool lost) {
-    if (_signalLost == lost) return;
-    _signalLost = lost;
-    DebugLog.log(lost ? 'signal lost' : 'signal back');
-    _qualityChanged();
-  }
+  Stream<PovPicture> get povPictures => _pov.pictures;
 
   void _setState(LinkState s) {
     _state = s;
@@ -133,286 +104,48 @@ class BeamngConnection implements RemoteLink {
     _display = display;
     _setState(LinkState.connecting);
 
-    final deviceName = await resolveDeviceName();
-    _appVersion ??= await resolveAppVersion();
-    final targets = [if (knownHost != null) knownHost, ...await broadcastTargets()];
+    final deviceName = await _deviceName();
+    _resolvedAppVersion ??= await _appVersion();
+    final identity = ModIdentity(code: code, deviceName: deviceName, display: display, appVersion: _resolvedAppVersion);
+    final targets = [if (knownHost != null) knownHost, ...await _broadcastTargets()];
     DebugLog.log('connect: targets=$targets device=$deviceName display=$display');
-    if (display) return _connectDisplay(code, deviceName, targets);
 
-    final InternetAddress host;
     try {
-      host = await _nativeHandshake(code, deviceName, targets);
+      _host = display ? await _mod.find(identity, targets) : await _native.pair(code, deviceName, targets);
     } on TimeoutException {
-      DebugLog.log('connect: no native answer from $targets');
+      DebugLog.log('connect: no answer from $targets');
       _setState(LinkState.timeout);
       rethrow;
     }
-    _host = host;
-    _controlSocket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, 0);
     _restartControlTimer();
     _setState(LinkState.connected);
-    unawaited(_probeMod(code, deviceName));
+    if (!display) unawaited(_mod.open(_host!, identity));
   }
 
-  Future<void> _connectDisplay(String code, String deviceName, List<String> targets) async {
-    final socket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, ModProtocol.clientPort, reuseAddress: true);
-    socket.broadcastEnabled = true;
-    _modSocket = socket;
-    final found = Completer<InternetAddress>();
-    socket.listen((event) {
-      if (event != RawSocketEvent.read) return;
-      final dg = socket.receive();
-      if (dg == null) return;
-      if (!found.isCompleted) {
-        final answer = utf8.decode(dg.data, allowMalformed: true);
-        if (ModProtocol.parsePong(answer, code) != null) {
-          _keepPrefixOf(answer);
-          found.complete(dg.address);
-        }
-        return;
-      }
-      _onModDatagram(dg, code);
-    });
-    final pings = _pings(code, deviceName);
-    final retry = Timer.periodic(const Duration(milliseconds: NativeProtocol.discoveryRetryMs), (_) {
-      for (final target in targets) {
-        try {
-          for (final ping in pings) {
-            socket.send(ping, InternetAddress(target), ModProtocol.hostPort);
-          }
-        } catch (_) {}
-      }
-    });
-    try {
-      _host = await found.future.timeout(const Duration(seconds: 6));
-    } on TimeoutException {
-      _setState(LinkState.timeout);
-      rethrow;
-    } finally {
-      retry.cancel();
-    }
-    _setState(LinkState.connected);
-    // The first pong is consumed above: hand the session to the normal
-    // keep-alive/telemetry logic.
-    _startModPings(socket, code, deviceName);
-  }
-
-  Future<InternetAddress> _nativeHandshake(String code, String deviceName, List<String> targets) async {
-    final socket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, NativeProtocol.clientPort, reuseAddress: true);
-    socket.broadcastEnabled = true;
-    _nativeSocket = socket;
-    final expected = NativeProtocol.expectedAnswer(code);
-    final answer = Completer<InternetAddress>();
-
-    // A dart:io socket can only be listened to once: this single listener
-    // handles the handshake answer, later datagrams are ignored.
-    socket.listen((event) {
-      if (event != RawSocketEvent.read) return;
-      final dg = socket.receive();
-      if (dg == null || answer.isCompleted) return;
-      final msg = utf8.decode(dg.data, allowMalformed: true);
-      DebugLog.log('handshake: "$msg" from ${dg.address.address}');
-      if (msg == expected) answer.complete(dg.address);
-    });
-
-    final payload = utf8.encode(NativeProtocol.handshake(deviceName, code));
-    var attempts = 0;
-    final retry = Timer.periodic(const Duration(milliseconds: NativeProtocol.discoveryRetryMs), (t) {
-      if (answer.isCompleted || ++attempts > NativeProtocol.discoveryMaxRetries) {
-        t.cancel();
-        return;
-      }
-      for (final target in targets) {
-        try {
-          socket.send(payload, InternetAddress(target), NativeProtocol.hostPort);
-        } catch (e) {
-          DebugLog.log('handshake: send to $target failed ($e)');
-        }
-      }
-    });
-    try {
-      return await answer.future.timeout(
-        const Duration(milliseconds: NativeProtocol.discoveryRetryMs * (NativeProtocol.discoveryMaxRetries + 2)),
-      );
-    } finally {
-      retry.cancel();
-    }
-  }
-
-  Future<void> _probeMod(String code, String deviceName) async {
-    final host = _host;
-    if (host == null) return;
-    final RawDatagramSocket socket;
-    try {
-      socket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, ModProtocol.clientPort, reuseAddress: true);
-    } catch (e) {
-      DebugLog.log('mod probe: cannot bind ${ModProtocol.clientPort} ($e)');
-      return;
-    }
-    _modSocket = socket;
-
-    socket.listen((event) {
-      if (event != RawSocketEvent.read) return;
-      final dg = socket.receive();
-      if (dg != null) _onModDatagram(dg, code);
-    });
-
-    _startModPings(socket, code, deviceName);
-  }
-
-  // Never stops pinging: fast while the mod is not found (it may be enabled
-  // after the phone connected), slowly once paired so the session is
-  // restored if the mod restarts (reload, switched off and on...).
-  void _startModPings(RawDatagramSocket socket, String code, String deviceName) {
-    final host = _host!;
-    void ping() {
-      if (_modActive) _pingSentAt = DateTime.now();
-      for (final p in _pings(code, deviceName)) {
-        socket.send(p, host, ModProtocol.hostPort);
-      }
-    }
-
-    ping();
-    var ticks = 0;
-    _modPingTimer = Timer.periodic(const Duration(milliseconds: ModProtocol.pingRetryMs), (_) {
-      ticks++;
-      // Still lost once the app fell back to the native channel, until the
-      // mod answers again.
-      final heard = _lastModMessage.millisecondsSinceEpoch > 0;
-      _setSignalLost(heard && DateTime.now().difference(_lastModMessage) > ModProtocol.signalLostAfter);
-      if (_modActive && DateTime.now().difference(_lastModMessage) > ModProtocol.modSilenceTimeout) {
-        DebugLog.log('mod silent, back to the native channel until it answers again');
-        _setModActive(false);
-      }
-      if (!_modActive || ticks % ModProtocol.keepAlivePingEvery == 0) ping();
-    });
-  }
-
-  void _setModActive(bool active) {
-    if (_modActive == active) return;
-    _modActive = active;
-    if (!active) {
-      _protocolVersion = 0;
-      // The mod may come back updated or downgraded: probe both again.
-      _pingPrefixes = ModProtocol.prefixes;
-    }
-    if (!_modActiveChanges.isClosed) _modActiveChanges.add(active);
-    _restartControlTimer();
-  }
-
-  void _onModDatagram(Datagram dg, String code) {
-    // Pongs are plain text, every other v2 message is JSON.
-    if (dg.data.isNotEmpty && dg.data.first != 0x7B /* { */ && dg.data.length != 36) {
-      final answer = utf8.decode(dg.data, allowMalformed: true);
-      final version = ModProtocol.parsePong(answer, code);
-      if (version == null) return;
-      _lastModMessage = DateTime.now();
-      final sentAt = _pingSentAt;
-      if (sentAt != null) {
-        _pingSentAt = null;
-        _latencyMs = _lastModMessage.difference(sentAt).inMilliseconds;
-        _qualityChanged();
-      }
-      _setSignalLost(false);
-      if (_modActive) return;
-      _keepPrefixOf(answer);
-      _protocolVersion = version;
-      DebugLog.log('mod detected, protocol v$version');
-      _setModActive(true);
-      if (debugAcks) sendCommand(ModCommand.debug, '1');
-      return;
-    }
-    if (!_modActive) return;
-    _lastModMessage = DateTime.now();
-    _setSignalLost(false);
-    try {
-      final message = ModMessage.decode(dg.data, _protocolVersion);
-      if (message is TelemetryMessage) {
-        if (!_telemetry.isClosed) _telemetry.add(message.telemetry);
-      } else if (message is KickedMessage) {
-        unawaited(_onKicked());
-      } else if (message != null) {
-        if (!_events.isClosed) _events.add(message);
-      }
-    } catch (e) {
-      // One malformed frame must never break the dashboard.
-      DebugLog.log('mod datagram dropped ($e)');
-    }
-  }
-
-  /// Kicked from the game: stop everything, pings included, otherwise the
-  /// keep-alive would pair the phone again at once.
   Future<void> _onKicked() async {
-    DebugLog.log('kicked by the game');
     await disconnect();
     _setState(LinkState.kicked);
   }
 
   /// Asks the mod for success acknowledgements too (debug overlay).
   void setDebugAcks(bool enabled) {
-    debugAcks = enabled;
-    if (_modActive) sendCommand(ModCommand.debug, enabled ? '1' : '0');
+    _mod.debugAcks = enabled;
+    if (_mod.active) sendCommand(ModCommand.debug, enabled ? '1' : '0');
   }
 
   @override
-  void sendCommand(String name, [String? arg]) {
-    final socket = _modSocket;
-    final host = _host;
-    if (socket == null || host == null || !_modActive) return;
-    socket.send(utf8.encode(ModProtocol.command(name, arg)), host, ModProtocol.hostPort);
-  }
+  void sendCommand(String name, [String? arg]) => _mod.sendCommand(name, arg);
 
   @override
   void setPovVideo(PovFormat? format) {
     if (format == null) {
       sendCommand(ModCommand.pov, '0');
-      _stopPov();
+      _pov.stop();
       return;
     }
-    if (format != _povFormat) {
-      _stopPov();
-      _povFormat = format;
-      unawaited(_startPov(format));
-    }
-    sendCommand(ModCommand.pov, format.wire);
-  }
-
-  Future<void> _startPov(PovFormat format) async {
     final host = _host;
-    if (host == null) return;
-    _povEvents ??= _povPlayer.events.listen(_onPovEvent);
-    try {
-      final id = await _povPlayer.start(host: host.address, port: ModProtocol.povPort, width: format.width, height: format.height);
-      // Switched off or changed while starting.
-      if (_povFormat != format) return;
-      _setPovPicture(PovPicture(textureId: id, width: format.width, height: format.height));
-    } catch (e) {
-      DebugLog.log('pov: cannot start the player ($e)');
-      if (_povFormat == format) _setPovPicture(PovPicture(textureId: -1, width: 0, height: 0, error: '$e'));
-    }
-  }
-
-  void _onPovEvent(PovPlayerEvent event) {
-    final picture = _povPicture;
-    if (picture == null || _povFormat == null) return;
-    _setPovPicture(switch (event) {
-      PovPlayerSize(:final width, :final height) =>
-        PovPicture(textureId: picture.textureId, width: width, height: height),
-      PovPlayerError(:final message) =>
-        PovPicture(textureId: picture.textureId, width: picture.width, height: picture.height, error: message),
-    });
-  }
-
-  void _setPovPicture(PovPicture picture) {
-    _povPicture = picture;
-    if (!_povPictures.isClosed) _povPictures.add(picture);
-  }
-
-  void _stopPov() {
-    if (_povFormat == null) return;
-    _povFormat = null;
-    _povPicture = null;
-    unawaited(_povPlayer.stop());
+    if (host != null) _pov.play(host, format);
+    sendCommand(ModCommand.pov, format.wire);
   }
 
   @override
@@ -422,59 +155,44 @@ class BeamngConnection implements RemoteLink {
     if (brake != null) _brake = brake.clamp(0.0, 1.0);
   }
 
+  // The mod's channel at 60 Hz while it answers, the native one at 20 Hz
+  // otherwise. A second screen never drives.
   void _restartControlTimer() {
     _controlTimer?.cancel();
-    if (_display) return; // a second screen never drives
-    final interval = _modActive ? ModProtocol.controlIntervalMs : NativeProtocol.controlIntervalMs;
+    _controlTimer = null;
+    if (_display || _host == null) return;
+    final interval = _mod.active ? ModProtocol.controlIntervalMs : NativeProtocol.controlIntervalMs;
     _controlTimer = Timer.periodic(Duration(milliseconds: interval), (_) => _sendControls());
   }
 
   void _sendControls() {
-    final host = _host;
-    if (host == null) return;
-    if (_modActive) {
-      final packet = ModControlPacket(steering: _steering, throttle: _throttle, brake: _brake);
-      _modSocket?.send(packet.toBytes(), host, ModProtocol.hostPort);
-      return;
+    if (_mod.active) {
+      _mod.sendControls(ModControlPacket(steering: _steering, throttle: _throttle, brake: _brake));
+    } else {
+      _native.sendControls(steering: _steering, throttle: _throttle, brake: _brake);
     }
-    final packet = NativeControlPacket(steering: _steering, throttle: _throttle, brake: _brake, sequenceId: _sequence);
-    _sequence = (_sequence + 1) % 128;
-    _controlSocket?.send(packet.toBytes(), host, NativeProtocol.hostPort);
   }
 
   @override
   Future<void> disconnect() async {
     // Leaving on purpose: the mod brakes the car instead of letting it run
     // on the last throttle until the phone times out.
-    if (_modActive) sendCommand(ModCommand.leave);
+    if (_mod.active) sendCommand(ModCommand.leave);
     _controlTimer?.cancel();
-    _modPingTimer?.cancel();
-    _controlTimer = _modPingTimer = null;
-    _nativeSocket?.close();
-    _controlSocket?.close();
-    _modSocket?.close();
-    _nativeSocket = _controlSocket = _modSocket = null;
-    _stopPov();
+    _controlTimer = null;
+    _mod.close();
+    _native.close();
+    _pov.stop();
     _host = null;
-    _modActive = false;
-    _protocolVersion = 0;
-    _pingPrefixes = ModProtocol.prefixes;
     if (_state != LinkState.idle) _setState(LinkState.idle);
-    _pingSentAt = null;
-    _latencyMs = null;
-    _signalLost = false;
-    _lastModMessage = DateTime.fromMillisecondsSinceEpoch(0);
   }
 
   @override
   void dispose() {
     unawaited(disconnect());
+    unawaited(_modActivity.cancel());
+    _mod.dispose();
+    _pov.dispose();
     _states.close();
-    _modActiveChanges.close();
-    _telemetry.close();
-    _events.close();
-    _quality.close();
-    _povPictures.close();
-    unawaited(_povEvents?.cancel());
   }
 }
