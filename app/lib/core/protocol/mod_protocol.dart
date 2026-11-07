@@ -44,13 +44,20 @@ class ModProtocol {
   static const Duration signalLostAfter = Duration(seconds: 3);
   static const int controlIntervalMs = 16; // ~60 Hz
 
+  /// Features this app understands, announced in its pings (older mods
+  /// ignore them). `delta`: telemetry delta frames (see `TelemetryFrames`).
+  static const List<String> features = ['delta'];
+
   /// [display]: second-screen phone, telemetry only (no virtual device).
   /// [withPrefix]: one of [prefixes]. [appVersion] goes after the role, so
-  /// the role is always written with it (older mods ignore it).
+  /// the role is always written with it (older mods ignore it), and the
+  /// [features] after the app version (empty when unknown).
   static String ping(String code, String deviceName,
-      {bool display = false, String withPrefix = prefix, String? appVersion}) {
+      {bool display = false, String withPrefix = prefix, String? appVersion, List<String> features = const []}) {
     final head = '$withPrefix|ping|$code|$version|${deviceName.replaceAll('|', ' ')}';
-    if (appVersion != null) return '$head|${display ? 'display' : 'controller'}|${appVersion.replaceAll('|', ' ')}';
+    final role = display ? 'display' : 'controller';
+    if (features.isNotEmpty) return '$head|$role|${(appVersion ?? '').replaceAll('|', ' ')}|${features.join(',')}';
+    if (appVersion != null) return '$head|$role|${appVersion.replaceAll('|', ' ')}';
     return display ? '$head|display' : head;
   }
 
