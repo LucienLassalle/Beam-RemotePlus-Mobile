@@ -7,6 +7,7 @@ import '../protocol/mod_message.dart';
 import '../protocol/mod_protocol.dart';
 import '../protocol/native_protocol.dart';
 import '../protocol/telemetry.dart';
+import '../protocol/telemetry_frames.dart';
 import 'udp_endpoint.dart';
 
 /// Who the phone is, as its pings tell the mod.
@@ -69,6 +70,8 @@ class ModChannel {
   /// Handshake prefixes the pings use: both until the mod answers (mods up
   /// to 0.0.3 only know the legacy one), then the one of its answer.
   List<String> _prefixes = ModProtocol.prefixes;
+
+  final _frames = TelemetryFrames();
 
   ModChannel(this._bind, {DateTime Function()? now}) : _now = now ?? DateTime.now;
 
@@ -164,7 +167,8 @@ class ModChannel {
     final id = _identity!;
     return [
       for (final p in _prefixes)
-        utf8.encode(ModProtocol.ping(id.code, id.deviceName, display: id.display, withPrefix: p, appVersion: id.appVersion)),
+        utf8.encode(ModProtocol.ping(id.code, id.deviceName,
+            display: id.display, withPrefix: p, appVersion: id.appVersion, features: ModProtocol.features)),
     ];
   }
 
@@ -216,7 +220,7 @@ class ModChannel {
     if (!_active) return;
     _heard();
     try {
-      final message = ModMessage.decode(dg.data, _protocolVersion);
+      final message = ModMessage.decode(dg.data, _protocolVersion, _frames);
       if (message is TelemetryMessage) {
         if (!_telemetry.isClosed) _telemetry.add(message.telemetry);
       } else if (message is KickedMessage) {
@@ -266,6 +270,7 @@ class ModChannel {
     _active = active;
     if (!active) {
       _protocolVersion = 0;
+      _frames.reset();
       // The mod may come back updated or downgraded: probe both again.
       _prefixes = ModProtocol.prefixes;
     }
@@ -308,6 +313,7 @@ class ModChannel {
     _endpoint = null;
     _host = null;
     _searchTargets = const [];
+    _frames.reset();
     _active = false;
     _protocolVersion = 0;
     _prefixes = ModProtocol.prefixes;

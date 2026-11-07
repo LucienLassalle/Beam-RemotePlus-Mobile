@@ -54,15 +54,15 @@ void main() {
     fakeAsync((async) {
       final h = Harness(async)..open();
       expect(h.pings, [
-        'beamremoteplus|ping|12345|2|Pixel|controller|1.0.0',
-        'beamngremoteplus|ping|12345|2|Pixel|controller|1.0.0',
+        'beamremoteplus|ping|12345|2|Pixel|controller|1.0.0|delta',
+        'beamngremoteplus|ping|12345|2|Pixel|controller|1.0.0|delta',
       ]);
       h.fromMod(pong(prefix: ModProtocol.legacyPrefix));
       expect(h.channel.active, isTrue);
       expect(h.channel.protocolVersion, 2);
       h.network.sent.clear();
       async.elapse(keepAlive);
-      expect(h.pings, ['beamngremoteplus|ping|12345|2|Pixel|controller|1.0.0']);
+      expect(h.pings, ['beamngremoteplus|ping|12345|2|Pixel|controller|1.0.0|delta']);
     });
   });
 
@@ -154,6 +154,31 @@ void main() {
       h.fromMod('{"type":"ack","cmd":"horn|1","ok":false,"error":"no_vehicle"}');
       expect(telemetry.single.speed, 10);
       expect(events.single, isA<AckMessage>().having((a) => a.error, 'error', 'no_vehicle'));
+    });
+  });
+
+  test('rebuilds the telemetry from the delta frames of the mod', () {
+    fakeAsync((async) {
+      final h = Harness(async)..paired();
+      final telemetry = <Telemetry>[];
+      h.channel.telemetry.listen(telemetry.add);
+      h.fromMod('{"type":"telemetry","speed":10,"maxRpm":7000}');
+      h.fromMod('{"delta":true,"speed":11,"type":"telemetry"}');
+      expect(telemetry.last.speed, 11);
+      expect(telemetry.last.maxRpm, 7000);
+    });
+  });
+
+  test('a mod back after a silence starts again from a full frame', () {
+    fakeAsync((async) {
+      final h = Harness(async)..paired();
+      final telemetry = <Telemetry>[];
+      h.channel.telemetry.listen(telemetry.add);
+      h.fromMod('{"type":"telemetry","speed":10,"maxRpm":7000}');
+      async.elapse(ModProtocol.modSilenceTimeout + pingEvery);
+      h.fromMod(pong());
+      h.fromMod('{"delta":true,"speed":11,"type":"telemetry"}');
+      expect(telemetry, hasLength(1), reason: 'the delta of another session is dropped');
     });
   });
 
@@ -270,7 +295,7 @@ void main() {
         unawaited(h.channel.find(display, ['192.168.1.255']).then((a) => found = a));
         async.elapse(const Duration(milliseconds: 250));
         expect(h.network.sent.first.host.address, '192.168.1.255');
-        expect(h.network.sent.first.text, 'beamremoteplus|ping|12345|2|Tab|display|1.0.0');
+        expect(h.network.sent.first.text, 'beamremoteplus|ping|12345|2|Tab|display|1.0.0|delta');
         h.fromMod(pong());
         expect(found?.address, pc);
         expect(h.channel.active, isFalse, reason: 'the first pong only finds the PC');
