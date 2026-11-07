@@ -211,17 +211,33 @@ class ModChannel {
   // network is back.
   Future<void> _reopenIfClosed() async {
     final old = _endpoint;
-    if (old == null || !old.closed || _reopening) return;
+    if (old != null && old.closed) await _replaceEndpoint(old);
+  }
+
+  /// Binds a new socket in place of the current one, while the mod does not
+  /// answer: after a network change the old one may be stuck on the network
+  /// that is gone without being closed.
+  Future<void> renewSocket() async {
+    final old = _endpoint;
+    if (old != null && !_active) await _replaceEndpoint(old);
+  }
+
+  // The old socket is closed first: two sockets on the same port would share
+  // the datagrams. If binding fails, the next tick tries again.
+  Future<void> _replaceEndpoint(UdpEndpoint old) async {
+    if (_reopening) return;
     _reopening = true;
+    unawaited(_datagrams?.cancel());
+    _datagrams = null;
+    old.close();
     try {
       final endpoint = await _bind(ModProtocol.clientPort);
-      if (_endpoint != old) return endpoint.close(); // closed meanwhile
-      unawaited(_datagrams?.cancel());
+      if (_endpoint != old) return endpoint.close(); // the channel was closed meanwhile
       _endpoint = endpoint;
       _datagrams = endpoint.datagrams.listen(_onDatagram);
-      DebugLog.log('mod channel: socket reopened');
+      DebugLog.log('mod channel: new socket');
     } catch (e) {
-      DebugLog.log('mod channel: cannot reopen the socket ($e)');
+      DebugLog.log('mod channel: cannot bind a new socket ($e)');
     } finally {
       _reopening = false;
     }
