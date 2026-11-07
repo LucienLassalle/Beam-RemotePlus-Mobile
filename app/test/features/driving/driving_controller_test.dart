@@ -103,6 +103,29 @@ void main() {
     expect(link.commands.length, 2);
   });
 
+  test('leaving the app centres the controls and ignores the inputs until it is back', () {
+    controller
+      ..steer(0.1)
+      ..throttle(1)
+      ..brake(0.4)
+      ..background();
+    expect((link.steering, link.throttle, link.brake), (0.5, 0.0, 0.0));
+    controller
+      ..steer(0.1)
+      ..throttle(1);
+    expect((link.steering, link.throttle), (0.5, 0.0), reason: 'the tilt keeps reporting in the background');
+    controller
+      ..foreground()
+      ..throttle(0.7);
+    expect(link.throttle, 0.7);
+  });
+
+  test('leaving the app releases the horn held with a volume button', () {
+    controller.onHardwareKey(HardwareKey.volumeUp, true);
+    controller.background();
+    expect(link.commands, ['horn|1', 'horn|0']);
+  });
+
   test('commands need the mod', () {
     link.modActive = false;
     controller.press('hazard');
@@ -358,6 +381,15 @@ void main() {
       controller.throttle(0);
       controller.brake(0);
       expect(link.commands.last, 'fly|0.00');
+    });
+
+    test('leaving the app stops the flight of the free camera at once', () async {
+      await video(free: true);
+      controller.throttle(1);
+      controller.background();
+      expect(link.commands, ['fly|1.00', 'fly|0.00']);
+      await Future<void>.delayed(DrivingController.flyRepeat * 2);
+      expect(link.commands, hasLength(2), reason: 'no longer repeated');
     });
   });
 }

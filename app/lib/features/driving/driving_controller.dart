@@ -33,6 +33,7 @@ class DrivingController extends ChangeNotifier {
   final List<StreamSubscription<Object?>> _subs = [];
   Timer? _flashTimer;
   bool _readOnly = false;
+  bool _inBackground = false;
   int _resetCount = 0;
   bool _atLimiter = false;
   GearFlash? _gearFlash;
@@ -276,18 +277,20 @@ class DrivingController extends ChangeNotifier {
   /// [value]: 0 (full right) .. 1 (full left), shaped by the centre
   /// precision setting.
   void steer(double value) {
-    if (freeCamera || _readOnly) return;
+    if (_inBackground || freeCamera || _readOnly) return;
     link.updateControls(steering: SteeringCurve.apply(value, _settings.steeringCenterPrecision));
   }
 
   /// In the free camera the brake flies it backward instead.
   void brake(double value) {
+    if (_inBackground) return;
     if (freeCamera) return _fly(brake: value);
     if (!_readOnly) link.updateControls(brake: value);
   }
 
   /// In the free camera the throttle flies it forward instead.
   void throttle(double value) {
+    if (_inBackground) return;
     if (freeCamera) return _fly(throttle: value);
     if (!_readOnly) link.updateControls(throttle: value);
   }
@@ -448,6 +451,24 @@ class DrivingController extends ChangeNotifier {
         if (pressed && t.hasPushToPass == true) press(ModCommand.pushToPass);
     }
   }
+
+  /// The app left the screen (a call, the notification shade, another app):
+  /// the car must not keep the last steering and throttle until Android
+  /// freezes the app and the mod's watchdog notices. The controls are
+  /// centred and released, holds too, and the inputs ignored until
+  /// [foreground].
+  void background() {
+    if (_inBackground) return;
+    _inBackground = true;
+    releaseAllHolds();
+    final flying = _flySent != 0;
+    _stopFlying();
+    if (flying) _sendFly(); // the free camera stops now, not when its fly runs out
+    link.updateControls(steering: 0.5, throttle: 0, brake: 0);
+  }
+
+  /// Back on screen: the inputs drive again from their next move.
+  void foreground() => _inBackground = false;
 
   void setReadOnly(bool value) {
     _readOnly = value;
