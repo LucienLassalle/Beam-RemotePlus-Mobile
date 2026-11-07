@@ -20,7 +20,6 @@
   "statusError": "Error",
   "statusIdle": "Disconnected",
   "statusKicked": "Kicked",
-  "statusSignalLost": "Signal lost",
   "statusReconnecting": "Reconnecting…",
   "moreButton": "MORE",
   "moreTitle": "More commands",

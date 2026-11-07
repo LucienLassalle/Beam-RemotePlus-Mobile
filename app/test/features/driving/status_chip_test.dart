@@ -21,7 +21,7 @@ void main() {
     expect(find.text('Connected · 12 ms'), findsOneWidget);
   });
 
-  testWidgets('says when the signal is lost', (tester) async {
+  testWidgets('says it is reconnecting as soon as the signal is lost', (tester) async {
     final link = FakeLink();
     addTearDown(link.dispose);
     await pumpDrivingView(tester, theme: themeByName('Default'), link: link);
@@ -31,7 +31,7 @@ void main() {
     link.quality_.add(null);
     await tester.pump();
     await tester.pump();
-    expect(find.text('Signal lost'), findsOneWidget);
+    expect(find.text('Reconnecting…'), findsOneWidget);
   });
 
   testWidgets('says it is reconnecting rather than only that the signal is lost', (tester) async {
