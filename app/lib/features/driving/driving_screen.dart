@@ -102,8 +102,15 @@ class _DrivingScreenState extends State<DrivingScreen> with WidgetsBindingObserv
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) _enterImmersive();
-    if (state == AppLifecycleState.paused) _controller.releaseAllHolds();
+    switch (state) {
+      case AppLifecycleState.resumed:
+        _enterImmersive();
+        _controller.foreground();
+      case AppLifecycleState.inactive || AppLifecycleState.hidden || AppLifecycleState.paused:
+        _controller.background();
+      case AppLifecycleState.detached:
+        break;
+    }
   }
 
   @override
