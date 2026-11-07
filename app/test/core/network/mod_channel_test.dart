@@ -285,6 +285,25 @@ void main() {
     });
   });
 
+  test('binds a new socket when the system closed it (failed send while offline), and pairs again', () {
+    fakeAsync((async) {
+      final h = Harness(async)..paired();
+      final dead = h.endpoint;
+      h.network.offline = true;
+      async.elapse(keepAlive);
+      expect(dead.closed, isTrue);
+      h.network.offline = false;
+      async.elapse(pingEvery * 2);
+      expect(h.endpoint, isNot(same(dead)));
+      h.network.sent.clear();
+      async.elapse(keepAlive);
+      expect(h.pings, isNotEmpty, reason: 'the pings get through again');
+      async.elapse(ModProtocol.modSilenceTimeout);
+      h.fromMod(pong());
+      expect(h.channel.active, isTrue);
+    });
+  });
+
   group('second screen', () {
     const display = ModIdentity(code: '12345', deviceName: 'Tab', display: true, appVersion: '1.0.0');
 

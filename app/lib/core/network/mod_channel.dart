@@ -57,6 +57,7 @@ class ModChannel {
   /// Also pinged while the mod does not answer (see [search]).
   List<InternetAddress> _searchTargets = const [];
 
+  bool _reopening = false;
   bool _active = false;
   int _protocolVersion = 0;
   DateTime? _lastMessage;
@@ -186,6 +187,7 @@ class ModChannel {
     var ticks = 0;
     _pingTimer = Timer.periodic(const Duration(milliseconds: ModProtocol.pingRetryMs), (_) {
       ticks++;
+      unawaited(_reopenIfClosed());
       final last = _lastMessage;
       final silence = last == null ? null : _now().difference(last);
       // Still lost once the app fell back to the native channel, until the
@@ -197,6 +199,28 @@ class ModChannel {
       }
       if (!_active || ticks % ModProtocol.keepAlivePingEvery == 0) _ping();
     });
+  }
+
+  // Dart closes a socket for good when a send fails (the phone had no
+  // network for a moment): a new one is bound on the same port as soon as
+  // the ping timer notices, so the pings get through again once the
+  // network is back.
+  Future<void> _reopenIfClosed() async {
+    final old = _endpoint;
+    if (old == null || !old.closed || _reopening) return;
+    _reopening = true;
+    try {
+      final endpoint = await _bind(ModProtocol.clientPort);
+      if (_endpoint != old) return endpoint.close(); // closed meanwhile
+      unawaited(_datagrams?.cancel());
+      _endpoint = endpoint;
+      _datagrams = endpoint.datagrams.listen(_onDatagram);
+      DebugLog.log('mod channel: socket reopened');
+    } catch (e) {
+      DebugLog.log('mod channel: cannot reopen the socket ($e)');
+    } finally {
+      _reopening = false;
+    }
   }
 
   void _ping() {
