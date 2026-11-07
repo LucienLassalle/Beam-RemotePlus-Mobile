@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math';
 
 import '../debug/debug_log.dart';
 import '../platform/app_version.dart';
@@ -15,6 +16,12 @@ import 'native_channel.dart';
 import 'pov_session.dart';
 import 'remote_link.dart';
 import 'udp_endpoint.dart';
+
+/// 8 random hex digits: the id of one connection (see [ModIdentity.session]).
+String randomSessionId() {
+  final random = Random.secure();
+  return [for (var i = 0; i < 4; i++) random.nextInt(256).toRadixString(16).padLeft(2, '0')].join();
+}
 
 /// Connection to BeamNG.drive.
 ///
@@ -37,6 +44,7 @@ class BeamngConnection implements RemoteLink {
   final Future<List<String>> Function() _broadcastTargets;
   final Future<String> Function() _deviceName;
   final Future<String?> Function() _appVersion;
+  final String Function() _newSession;
   late final StreamSubscription<bool> _modActivity;
 
   /// While reconnecting, the broadcast addresses are read again this often:
@@ -52,13 +60,15 @@ class BeamngConnection implements RemoteLink {
     Future<List<String>> Function() findBroadcastTargets = broadcastTargets,
     Future<String> Function() deviceName = resolveDeviceName,
     Future<String?> Function() appVersion = resolveAppVersion,
+    String Function() newSession = randomSessionId,
     DateTime Function()? now,
   })  : _native = NativeChannel(bind),
         _mod = ModChannel(bind, now: now),
         _pov = PovSession(povPlayer ?? NativePovPlayer()),
         _broadcastTargets = findBroadcastTargets,
         _deviceName = deviceName,
-        _appVersion = appVersion {
+        _appVersion = appVersion,
+        _newSession = newSession {
     _mod.onKicked = () => unawaited(_onKicked());
     _mod.onHostChanged = _onHostChanged;
     _modActivity = _mod.activeChanges.listen(_onModActivity);
@@ -116,7 +126,8 @@ class BeamngConnection implements RemoteLink {
 
     final deviceName = await _deviceName();
     _resolvedAppVersion ??= await _appVersion();
-    final identity = ModIdentity(code: code, deviceName: deviceName, display: display, appVersion: _resolvedAppVersion);
+    final identity = ModIdentity(
+        code: code, deviceName: deviceName, display: display, appVersion: _resolvedAppVersion, session: _newSession());
     final targets = [if (knownHost != null) knownHost, ...await _broadcastTargets()];
     DebugLog.log('connect: targets=$targets device=$deviceName display=$display');
 

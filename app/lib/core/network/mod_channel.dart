@@ -21,7 +21,11 @@ class ModIdentity {
   /// Sent so the mod can tell whether the app and the mod match.
   final String? appVersion;
 
-  const ModIdentity({required this.code, required this.deviceName, this.display = false, this.appVersion});
+  /// Random id of this connection: the mod recognises the phone when it
+  /// comes back from another address (new IP after a Wi-Fi cut).
+  final String? session;
+
+  const ModIdentity({required this.code, required this.deviceName, this.display = false, this.appVersion, this.session});
 }
 
 /// Channel to the Beam-RemotePlus mod (port 4446): keep-alive pings, the
@@ -169,7 +173,7 @@ class ModChannel {
     return [
       for (final p in _prefixes)
         utf8.encode(ModProtocol.ping(id.code, id.deviceName,
-            display: id.display, withPrefix: p, appVersion: id.appVersion, features: ModProtocol.features)),
+            display: id.display, withPrefix: p, appVersion: id.appVersion, features: ModProtocol.features, session: id.session)),
     ];
   }
 

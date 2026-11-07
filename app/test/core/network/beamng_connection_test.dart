@@ -30,6 +30,7 @@ class Harness {
       findBroadcastTargets: broadcastTargets ?? () async => ['192.168.1.255'],
       deviceName: () async => 'Pixel',
       appVersion: () async => '1.0.0',
+      newSession: () => 'c0ffee42',
       now: () => start.add(async.elapsed),
     );
     connection.states.listen(states.add);
@@ -152,6 +153,25 @@ void main() {
   });
 
   group('reconnection', () {
+    test('a Wi-Fi cut on the phone: back on its own once the network is back', () {
+      fakeAsync((async) {
+        final h = Harness(async)..paired();
+        h.network.offline = true; // every socket of the phone dies at its next send
+        async.elapse(ModProtocol.modSilenceTimeout + second);
+        expect(h.states.last, LinkState.reconnecting);
+        h.network.offline = false;
+        async.elapse(second * 2);
+        final pings = h.network.sentTo(ModProtocol.hostPort).where((s) => s.contains('|ping|'));
+        expect(pings, isNotEmpty);
+        expect(pings.first, endsWith('|c0ffee42'), reason: 'the mod recognises the phone, even from a new IP');
+        h.fromMod('beamremoteplus|pong|12345|2');
+        expect(h.states.last, LinkState.connected);
+        h.network.sent.clear();
+        async.elapse(second);
+        expect(h.packetsTo(ModProtocol.hostPort, ModControlPacket.sizeBytes), greaterThan(50));
+      });
+    });
+
     test('the mod goes silent: reconnecting, the PC is looked for on the network, found at a new address', () {
       fakeAsync((async) {
         final h = Harness(async)..paired();
