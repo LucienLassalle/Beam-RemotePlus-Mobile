@@ -14,6 +14,7 @@ class NativeChannel {
   UdpEndpoint? _control;
   InternetAddress? _host;
   int _sequence = 0;
+  bool _reopening = false;
 
   NativeChannel(this._bind);
 
@@ -78,9 +79,27 @@ class NativeChannel {
     final control = _control;
     final host = _host;
     if (control == null || host == null) return;
+    if (control.closed) return unawaited(_reopen(control));
     final packet = NativeControlPacket(steering: steering, throttle: throttle, brake: brake, sequenceId: _sequence);
     _sequence = (_sequence + 1) % 128;
     control.send(packet.toBytes(), host, NativeProtocol.hostPort);
+  }
+
+  // Closed by the system after a failed send (no network for a moment):
+  // the controls go through a new socket.
+  Future<void> _reopen(UdpEndpoint old) async {
+    if (_reopening) return;
+    _reopening = true;
+    try {
+      final control = await _bind(0);
+      if (_control != old) return control.close(); // closed meanwhile
+      _control = control;
+      DebugLog.log('native channel: socket reopened');
+    } catch (e) {
+      DebugLog.log('native channel: cannot reopen the socket ($e)');
+    } finally {
+      _reopening = false;
+    }
   }
 
   void close() {
