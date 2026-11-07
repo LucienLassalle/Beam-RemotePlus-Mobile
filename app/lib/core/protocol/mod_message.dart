@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'telemetry.dart';
+import 'telemetry_frames.dart';
 import 'vehicle_command.dart';
 import 'vehicle_skeleton.dart';
 
@@ -12,7 +13,8 @@ sealed class ModMessage {
   /// Decodes a datagram according to the negotiated protocol version.
   /// Returns null for anything that is not understood (forward compatible:
   /// a newer mod may send message types this app does not know).
-  static ModMessage? decode(Uint8List data, int protocolVersion) {
+  /// [frames] rebuilds full telemetry frames from delta frames.
+  static ModMessage? decode(Uint8List data, int protocolVersion, [TelemetryFrames? frames]) {
     if (protocolVersion < 2) {
       if (data.length != Telemetry.legacySizeBytes) return null;
       return TelemetryMessage(Telemetry.fromLegacyBytes(data));
@@ -27,7 +29,8 @@ sealed class ModMessage {
     if (json is! Map<String, Object?>) return null;
     switch (json['type']) {
       case 'telemetry':
-        return TelemetryMessage(Telemetry.fromJson(json));
+        final frame = frames == null ? json : frames.accept(json);
+        return frame == null ? null : TelemetryMessage(Telemetry.fromJson(frame));
       case 'ack':
         return AckMessage(
           command: json['cmd'] is String ? json['cmd']! as String : '?',

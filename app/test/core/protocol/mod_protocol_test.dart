@@ -18,6 +18,11 @@ void main() {
       expect(ModProtocol.ping('1', 'Tab', display: true, appVersion: '0.0.5'), 'beamremoteplus|ping|1|2|Tab|display|0.0.5');
     });
 
+    test('ping announces the features after the app version, empty when unknown', () {
+      expect(ModProtocol.ping('1', 'Tab', appVersion: '1.1.0', features: ['delta']), 'beamremoteplus|ping|1|2|Tab|controller|1.1.0|delta');
+      expect(ModProtocol.ping('1', 'Tab', display: true, features: ['delta', 'x']), 'beamremoteplus|ping|1|2|Tab|display||delta,x');
+    });
+
     test('parses pongs of v1 and v2 mods, with either prefix', () {
       expect(ModProtocol.parsePong('beamremoteplus|pong|20367|2', '20367'), 2);
       expect(ModProtocol.parsePong('beamngremoteplus|pong|20367|2', '20367'), 2);
